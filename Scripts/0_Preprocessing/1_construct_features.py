@@ -214,7 +214,10 @@ def compute_text_features(text: str):
     noun_ratio = len(nouns) / len(words)
     verb_ratio = len(verbs) / len(words)
 
-    flesch_reading_ease = textstat.flesch_reading_ease(remove_links(text))
+    exclamation_ratio = text.count('!')/len(words)
+    question_ratio = text.count('?')/len(words)
+
+    caps_ratio = sum(c.isupper() for c in text)/sum(c.isalpha() for c in text)
 
     return pd.Series(
         [
@@ -223,23 +226,11 @@ def compute_text_features(text: str):
             stopword_ratio,
             noun_ratio,
             verb_ratio,
-            flesch_reading_ease,
+            exclamation_ratio,
+            question_ratio,
+            caps_ratio
         ]
     )
-
-
-def compute_expressiveness(text: str):
-    text = remove_links(text)
-    total_chars = len(text)
-    if total_chars == 0:
-        return pd.Series([0, 0, 0])
-
-    exclamation_ratio = text.count("!") / total_chars
-    # caps ratio currently uses total chars - should change to letter-normalised in future
-    caps_ratio = sum(1 for c in text if c.isupper()) / total_chars
-    question_ratio = text.count("?") / total_chars
-
-    return pd.Series([exclamation_ratio, caps_ratio, question_ratio])
 
 
 def classify_domains(domain_str, subreddit_name):
@@ -326,7 +317,9 @@ def main():
             "stopword_ratio",
             "noun_ratio",
             "verb_ratio",
-            "reading_ease",
+            "exclamation_ratio",
+            "caps_ratio",
+            "question_ratio"
         ]
     ] = df_comments.body.apply(compute_text_features)
     print("[INFO][Text features] Threads")
@@ -338,14 +331,11 @@ def main():
             "noun_ratio",
             "verb_ratio",
             "reading_ease",
+            "exclamation_ratio",
+            "caps_ratio",
+            "question_ratio"
         ]
     ] = df_threads.subject.apply(compute_text_features)
-    df_lookup = {"body": df_comments, "subject": df_threads}
-    print("[INFO][Text features] Expressiveness")
-    for key in df_lookup:
-        df_lookup[key][
-            ["exclamation_ratio", "caps_ratio", "question_ratio"]
-        ] = df_lookup[key][key].apply(compute_expressiveness)
 
     print("[INFO] Getting reply data")
     # replies
