@@ -63,8 +63,6 @@ Notes
   Note that NLTK's downloader is silent when running in a python -c, so it may
   look like nothing is happening even when it's working.
 
-- For reproducibility across environments, pin scikit-learn version if
-  using OneHotEncoder(sparse_output=False).
 """
 
 import argparse
@@ -142,6 +140,7 @@ DOMAIN_STRS = {
 
 
 def normalize_domain(d):
+
     if d.endswith(".reddit.com"):
         return "reddit.com"
     if d == "redd.it":
@@ -228,10 +227,16 @@ def compute_text_features(text: str):
     noun_ratio = len(nouns) / len(words)
     verb_ratio = len(verbs) / len(words)
 
-    exclamation_ratio = text.count("!") / len(words)
+    letter_count = sum(c.isalpha() for c in text)
+    if letter_count == 0:
+        caps_ratio = 0
+    else:
+        caps_ratio = sum(c.isupper() for c in text) / sum(c.isalpha() for c in text)
+
+    non_ws_char_ = [c for c in text if not c.isspace()]
+    exclamation_ratio = text.count("!") / len(non_ws_chars)
     question_ratio = text.count("?") / len(words)
 
-    caps_ratio = sum(c.isupper() for c in text) / sum(c.isalpha() for c in text)
 
     return pd.Series(
         [
