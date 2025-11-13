@@ -326,7 +326,6 @@ def main():
             "stopword_ratio",
             "noun_ratio",
             "verb_ratio",
-            "reading_ease",
             "exclamation_ratio",
             "caps_ratio",
             "question_ratio",
@@ -361,17 +360,16 @@ def main():
     print("[INFO] Merging with thread data")
     # merge with thread data
     df_threads = df_threads.merge(
-        reply_counts, left_on="thread_id", right_on="id", how="left"
+        reply_counts, left_on="thread_id", right_index=True, how="left"
     ).fillna(0)
     df_threads = df_threads.merge(
         reply_sentiments,
         left_on="thread_id",
-        right_on="id",
         right_index=True,
         how="left",
     ).fillna(0)
     df_threads = df_threads.merge(
-        reply_lengths, left_on="thread_id", right_on="id", how="left"
+        reply_lengths, left_on="thread_id", right_index=True, how="left"
     ).fillna(0)
 
     print("[INFO] Getting thread depth")
