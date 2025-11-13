@@ -37,14 +37,13 @@ Engineered features (examples)
 Per-comment:
     body_length, direct_reply_count, direct_reply_sentiment_std,
     mean_direct_reply_length, avg_word_length, unique_word_ratio,
-    stopword_ratio, noun_ratio, verb_ratio, reading_ease,
-    exclamation_ratio, caps_ratio, question_ratio, clean_text
+    stopword_ratio, noun_ratio, verb_ratio, exclamation_ratio,
+    caps_ratio, question_ratio, clean_text
 
 Per-thread:
-    includes_body, subject_length, hour, dayofweek,
-    domain_type + one-hot columns, encoded_domain,
-    avg_word_length, unique_word_ratio, stopword_ratio,
-    noun_ratio, verb_ratio, reading_ease, exclamation_ratio,
+    includes_body, subject_length, hour, dayofweek, includes_image,
+    includes_video, reddit_domain, avg_word_length, unique_word_ratio,
+    stopword_ratio, noun_ratio, verb_ratio, exclamation_ratio,
     caps_ratio, question_ratio, reply_count, reply_sentiment_std,
     reply_length_mean, thread_depth, clean_text, log_thread_size
 
@@ -73,16 +72,14 @@ import sys
 import os
 
 import datetime as dt
-import joblib
 
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import OneHotEncoder
 
-import textstat
 import re
 import nltk
 from nltk.corpus import stopwords
+
 
 # Ensure required NLTK data are available
 def ensure_nltk_resources(download: bool = True) -> None:
@@ -127,6 +124,7 @@ def ensure_nltk_resources(download: bool = True) -> None:
     for name in missing:
         nltk.download(name)
 
+
 ensure_nltk_resources(download=True)
 
 # list of expected subreddits
@@ -136,7 +134,23 @@ POSSIBLE_SUBREDDITS = ["conspiracy", "crypto", "politics"]
 STOP_WORDS = set(stopwords.words("english"))
 
 # expected reddit domain strs
-REDDIT_STRS = ["reddit", "redd.it"]
+DOMAIN_STRS = {
+    "i.redd.it": "includes_image",
+    "v.redd.it": "includes_video",
+    "reddit.com": "reddit_domain",
+}
+
+
+def normalize_domain(d):
+    if d.endswith(".reddit.com"):
+        return "reddit.com"
+    if d == "redd.it":
+        return "reddit.com"
+    if d.startswith("i.redd.it"):
+        return "i.redd.it"  # image host
+    if d.startswith("v.redd.it"):
+        return "v.redd.it"  # video host
+    return d
 
 
 def remove_links(text: str):
@@ -196,7 +210,7 @@ def non_stopword_strings(text: str):
 def compute_text_features(text: str):
     words = get_words(text)
     if len(words) == 0:
-        return pd.Series([0, 0, 0, 0, 0, 0])  # Avoid division by zero
+        return pd.Series([0, 0, 0, 0, 0, 0, 0, 0])  # Avoid division by zero
 
     unique_words = set(words)
     stopword_count = sum(1 for word in words if word.lower() in STOP_WORDS)
@@ -206,7 +220,7 @@ def compute_text_features(text: str):
     unique_word_ratio = len(unique_words) / len(words)
 
     stopword_ratio = stopword_count / len(words)
-    
+
     word_tokens = get_word_tokens(text)
     nouns = get_nouns(word_tokens)
     verbs = get_verbs(word_tokens)
@@ -214,10 +228,10 @@ def compute_text_features(text: str):
     noun_ratio = len(nouns) / len(words)
     verb_ratio = len(verbs) / len(words)
 
-    exclamation_ratio = text.count('!')/len(words)
-    question_ratio = text.count('?')/len(words)
+    exclamation_ratio = text.count("!") / len(words)
+    question_ratio = text.count("?") / len(words)
 
-    caps_ratio = sum(c.isupper() for c in text)/sum(c.isalpha() for c in text)
+    caps_ratio = sum(c.isupper() for c in text) / sum(c.isalpha() for c in text)
 
     return pd.Series(
         [
@@ -228,22 +242,20 @@ def compute_text_features(text: str):
             verb_ratio,
             exclamation_ratio,
             question_ratio,
-            caps_ratio
+            caps_ratio,
         ]
     )
 
 
-def classify_domains(domain_str, subreddit_name):
-    domain_str = domain_str.lower()
-    subreddit_name = subreddit_name.lower()
-
-    if any(x in domain_str for x in REDDIT_STRS):
-        if subreddit_name in domain_str:
-            return "Internal"
+def classify_domains(domain_str):
+    domain_str = normalize_domain(domain_str.lower())
+    domain_list = []
+    for red_str in DOMAIN_STRS.keys():
+        if red_str in domain_str:
+            domain_list.append(1)
         else:
-            return "Reddit"
-    else:
-        return "External"
+            domain_list.append(0)
+    return domain_list
 
 
 def main():
@@ -275,7 +287,6 @@ def main():
         )
         exit()
 
-
     # load thread and comment data
     print("[INFO] Loading thread and comment data")
 
@@ -284,22 +295,7 @@ def main():
 
     print("[INFO] Domains")
     # get domain types
-    df_threads["domain_type"] = df_threads.domain.apply(
-        classify_domains, args=(args.subreddit,)
-    )
-
-    print("[INFO] Encoding domains")
-    # encode domain type
-    encoder = OneHotEncoder(
-        sparse_output=False, drop="first"
-    )  # drop='first' avoids redundancy
-    # Fit & transform `domain_type`
-    domain_encoded = encoder.fit_transform(df_threads[["domain_type"]])
-    # Convert to DataFrame
-    domain_encoded_df = pd.DataFrame(
-        domain_encoded, columns=encoder.get_feature_names_out(["domain_type"])
-    )
-    df_threads = pd.concat([df_threads, domain_encoded_df], axis=1)
+    df_threads[list(DOMAIN_STRS.values())] = df_threads.domain.apply(classify_domains)
 
     print("[INFO] Getting basic text features")
     # basic features
@@ -319,7 +315,7 @@ def main():
             "verb_ratio",
             "exclamation_ratio",
             "caps_ratio",
-            "question_ratio"
+            "question_ratio",
         ]
     ] = df_comments.body.apply(compute_text_features)
     print("[INFO][Text features] Threads")
@@ -333,7 +329,7 @@ def main():
             "reading_ease",
             "exclamation_ratio",
             "caps_ratio",
-            "question_ratio"
+            "question_ratio",
         ]
     ] = df_threads.subject.apply(compute_text_features)
 
@@ -404,11 +400,10 @@ def main():
     print(f"[INFO] Dumping enriched dfs to {args.outdir}")
     os.makedirs(args.outdir, exist_ok=True)
 
-    df_comments.to_parquet(f"{args.outdir}/{args.subreddit}_comments_extra_feats.parquet")
+    df_comments.to_parquet(
+        f"{args.outdir}/{args.subreddit}_comments_extra_feats.parquet"
+    )
     df_threads.to_parquet(f"{args.outdir}/{args.subreddit}_threads_extra_feats.parquet")
-
-    print(f"[INFO] Dumping encoder to {args.outdir}")
-    joblib.dump(encoder, os.path.join(args.outdir, f"{args.subreddit}_onehot_encoder.jl"))
 
     print("[INFO] Finished.")
 
