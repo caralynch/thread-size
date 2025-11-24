@@ -1,1 +1,5 @@
 Inputs/*.parquet
+Test_outputs/*
+Outputs/*
+Outputs
+Test_outputs
