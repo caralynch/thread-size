@@ -7,8 +7,8 @@ Stratified K-fold cross-validation and a LightGBM probe model that optimizes Mat
 Inputs (CLI):
     subreddit:        Subreddit identifier (used only in paths/metadata).
     outdir:           Output directory for artifacts.
-    comments:         Path to comments DataFrame (joblib .jl or pickle).
-    threads:          Path to thread-level DataFrame (joblib .jl or pickle).
+    comments:         Path to comments DataFrame (parquet) (produced by 1_construct_features).
+    threads:          Path to thread-level DataFrame (parquet) (produced by 1_construct_features).
     --text-col:       Name of text column in thread DataFrame (default: "clean_text").
     --y-col:          Name of thread target column (default: "thread_size").
     --train-split:    Fraction for chronological split into train/test (default: 0.8).
