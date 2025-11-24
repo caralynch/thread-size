@@ -235,7 +235,7 @@ def main():
     y_dfs = {}
     for i, df in data.items():
         x_dfs[i] = df[cols_to_include]
-        y_dfs[i] = df[[y_col]]
+        y_dfs[i] = df[TARGET_Y_COLS]
         print(f"[INFO] {i} threads: {len(x_dfs[i])}")
 
     print(f"[INFO] Getting highly correlated pairs")
