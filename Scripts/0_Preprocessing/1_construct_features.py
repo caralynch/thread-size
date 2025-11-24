@@ -237,10 +237,11 @@ def compute_text_features(text: str):
     else:
         caps_ratio = sum(c.isupper() for c in text) / sum(c.isalpha() for c in text)
 
-    non_ws_chars = len([c for c in text if not c.isspace()]) # non whitespace characters 
-    exclamation_ratio = 0 if non_ws_chars==0 else text.count("!") / non_ws_chars
-    question_ratio = 0 if non_ws_chars==0 else text.count("?") / non_ws_chars
-
+    non_ws_chars = len(
+        [c for c in text if not c.isspace()]
+    )  # non whitespace characters
+    exclamation_ratio = 0 if non_ws_chars == 0 else text.count("!") / non_ws_chars
+    question_ratio = 0 if non_ws_chars == 0 else text.count("?") / non_ws_chars
 
     return pd.Series(
         [
@@ -308,14 +309,13 @@ def main():
 
     # set types correctly
     for df in [df_comments, df_threads]:
-        for col in (set(TEXT_COLS) & set(df.columns)):
+        for col in set(TEXT_COLS) & set(df.columns):
             df[col] = df[col].astype("string")
-
 
     print("[INFO] Domains")
     # get domain types
     domain_flags = df_threads["domain"].apply(classify_domains).tolist()
-    df_threads[list(DOMAIN_STRS.values())+ ["is_external_domain"]] = domain_flags
+    df_threads[list(DOMAIN_STRS.values()) + ["is_external_domain"]] = domain_flags
 
     print("[INFO] Getting basic text features")
     # basic features
@@ -364,8 +364,8 @@ def main():
 
     reply_sentiments = (
         df_comments.groupby("parent")["body_sentiment_score"]
-            .std()
-            .rename("direct_reply_sentiment_std")
+        .std()
+        .rename("direct_reply_sentiment_std")
     )
     df_comments = df_comments.merge(
         reply_sentiments, left_on="id", right_index=True, how="left"
@@ -376,8 +376,8 @@ def main():
 
     reply_lengths = (
         df_comments.groupby("parent")["body_length"]
-            .mean()
-            .rename("mean_direct_reply_length")
+        .mean()
+        .rename("mean_direct_reply_length")
     )
     df_comments = df_comments.merge(
         reply_lengths, left_on="id", right_index=True, how="left"
