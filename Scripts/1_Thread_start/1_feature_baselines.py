@@ -1,4 +1,67 @@
-# Stage 1.1 - baseline feature scores
+"""
+Stage 1 baseline feature scores for thread-start classification.
+
+This script evaluates how predictive different-sized feature subsets are for
+Stage 1 (thread-start vs stalled) using LightGBM classifiers and stratified
+K-fold cross-validation.
+
+High-level behaviour
+--------------------
+- Input:
+    - `--train_X`: training feature matrix (parquet).
+    - `--train_y`: training target data (parquet) containing `--y-col`.
+    - `--subreddit`: key in LABEL_LOOKUP (e.g. 'conspiracy', 'crypto', 'politics').
+- Target:
+    - `--y-col` (default: 'log_thread_size') is thresholded at `--y_thresh`
+      (default: log(1) == 0) to define a binary label:
+          y = 1  ⇔  log_thread_size > y_thresh  (thread started)
+          y = 0  ⇔  log_thread_size ≤ y_thresh  (thread stalled)
+- Cross-validation:
+    - StratifiedKFold with `--splits` folds (default 5, or 2 in debug mode),
+      shuffling and fixed random seed.
+- Feature ranking:
+    - Fit a LightGBM classifier on each training fold.
+    - Compute split- and gain-based feature importances from the booster.
+    - Min–max scale both, then average them to obtain a combined importance
+      score per feature.
+- Baseline grid:
+    - For each fold, sort features by combined importance.
+    - For n_feats in {1, 2, ..., `--feats`} (default 30, or 10 in debug mode):
+        - train a LightGBM model on the top-n features,
+        - optionally calibrate probabilities with isotonic regression on a
+          held-out calibration set (`--no-cal` disables calibration),
+        - evaluate metrics on the validation set.
+- Metrics and uncertainty:
+    - Metrics include:
+        - AUC (probability-based)
+        - MCC, F1, F-beta (default beta=2)
+        - Balanced accuracy
+        - Class-wise precision/recall for Stalled/Started.
+    - For each (fold, n_feats), metrics are bootstrapped `--n-bs` times
+      (default 1000, or 20 in debug mode) with replacement to obtain 95%
+      percentile confidence intervals.
+- Outputs (in `--outdir`):
+    - `summary_scores.csv`:
+        per-fold, per-n_feats metrics and CIs.
+    - `aggregated_scores.jl`:
+        joblib of aggregated scores by n_feats.
+    - `importance_dfs.jl`:
+        joblib list of per-fold importance DataFrames.
+    - `{subreddit}_1_feature_baselines.xlsx`:
+        model_info, summary_scores, aggregated_scores, and feature importances.
+    - `{subreddit}_baseline_info.jl`:
+        joblib of run configuration and metadata (arguments, runtime, etc.).
+    - `{metric}_vs_n_feats_bootstrap.png`:
+        performance vs number of features with bootstrap CIs.
+
+Reproducibility notes
+---------------------
+- All randomisation (CV splits and bootstrapping) is seeded by `--rs`.
+- All command-line arguments are saved into `model_info`.
+- Default behaviour is conservative; debug mode (`--debug`) reduces splits,
+  features, and bootstrap trials for rapid iteration.
+"""
+
 
 import sys
 import argparse
@@ -17,6 +80,7 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import sklearn
 from sklearn.calibration import CalibratedClassifierCV, calibration_curve
 from sklearn.metrics import (
     confusion_matrix,
@@ -34,15 +98,7 @@ from sklearn.metrics import (
 )
 from functools import partial
 from sklearn.preprocessing import MinMaxScaler
-from sklearn.utils import resample
-import sys
-import seaborn as sns
-import os
-import json
-import shap
-import datetime as dt
 from sklearn.model_selection import StratifiedKFold, train_test_split
-import gc
 
 LABEL_LOOKUP = {
     "crypto": "r/CryptoCurrency",
@@ -76,6 +132,23 @@ for i, class_name in CLASS_NAMES.items():
     )
 
 SCORER_LOOKUP = {"MCC": ["mcc", "m"], "F-beta": ["f", "fbeta", "f-beta", "fb"]}
+
+def ci(arr):
+    """
+    Compute a 95% bootstrap confidence interval for a 1D array-like.
+
+    Parameters
+    ----------
+    arr : array-like
+        Input sample of metric values (e.g. bootstrap scores).
+
+    Returns
+    -------
+    np.ndarray, shape (2,)
+        Lower and upper bounds of the 95%% percentile interval
+        (2.5th and 97.5th percentiles).
+    """
+    return np.percentile(arr, [2.5, 97.5])
 
 def main():
     print(f"{sys.argv[0]}")
@@ -116,7 +189,7 @@ def main():
 
     ap.add_argument(
         "--y_thresh", 
-        default="None",
+        default=None,
         help="Target y threshold to identify started threads. Defaults to log(1)."
     )
 
@@ -187,7 +260,7 @@ def main():
 
     y = pd.read_parquet(args.train_y)[args.y_col]
     # threshold to identify started threads
-    y = (y > args.thresh).astype(int)
+    y = (y > args.y_thresh).astype(int)
 
     print(f"[INFO] Setting up outer cross-validation.")
     outer_cv = StratifiedKFold(n_splits=args.splits, shuffle=True, random_state=args.rs)
@@ -287,12 +360,16 @@ def main():
             # Report metrics
             performance_metrics = {"AUC": roc_auc_score(y_val, y_proba)}
             report = SCORERS["Report"](y_val, y_pred)
-            for key, scorer_func in [(k,v) for k,v in SCORERS.items() if k not in EXCLUDE_SCORES]:
+            for key, scorer_func in [(k, v) for k, v in SCORERS.items() if k not in EXCLUDE_SCORES]:
                 performance_metrics[key] = scorer_func(y_val, y_pred)
 
+            # Store metric names once
+            if "metric_names" not in locals():
+                metric_names = list(performance_metrics.keys())
+            
             print(f"[INFO] [Fold {fold + 1}] [{n_feats} features] Bootstrapping metrics")
             # Bootstrapping main metrics
-            rng = np.random.RandomState(args.rs)  # for reproducibility
+            rng = np.random.RandomState(args.rs + fold * 1000 + n_feats) # for reproducibility
 
             bootstrap_metrics = {}
             for key in performance_metrics:
@@ -310,9 +387,6 @@ def main():
                     if key != "AUC":
                         bootstrap_metrics[key].append(SCORERS[key](y_true_bs, y_pred_bs))
                     
-
-            def ci(arr):
-                return np.percentile(arr, [2.5, 97.5])
 
             conf_intervals = {}
             for key, values in bootstrap_metrics.items():
@@ -357,10 +431,11 @@ def main():
     ci_vals_df = (pd.DataFrame.from_dict(ci_vals, orient="index")).reset_index(
         names="n_feats"
     )
+    joblib.dump(all_fold_dfs, f"{args.outdir}/all_fold_dfs.jl")
     summary_rows = []
     for fold, feats_dict in all_fold_dfs.items():
         for n_feats, data in feats_dict.items():
-            metrics = list(performance_metrics.keys())
+            metrics = metric_names
             row = data["results"].set_index("Metric").loc[metrics]["Score"]
             summary_dict = {
                 "fold": fold,
@@ -435,14 +510,18 @@ def main():
         plt.savefig(f"{args.outdir}/{metric.lower()}_vs_n_feats_bootstrap.png", dpi=300)
         plt.close()
 
-    end = dt.datetime.now()
+     end = dt.datetime.now()
     total_runtime = end - start
     model_info["total_runtime"] = str(total_runtime)
-    print(f"[INFO] Finished at {end}. Runtime: {total_runtime}.")
 
-    with open(f"{args.outdir}/{args.subreddit}_model_features.txt", "w") as f:
-        to_write = ",".join([str(x) for x in range(0, min(25, args.feats))])
-        f.writelines(to_write)
+    # Record library versions for reproducibility
+    model_info["python_version"] = sys.version
+    model_info["pandas_version"] = pd.__version__
+    model_info["numpy_version"] = np.__version__
+    model_info["lightgbm_version"] = lgb.__version__
+    model_info["sklearn_version"] = sklearn.__version__
+
+    print(f"[INFO] Finished at {end}. Runtime: {total_runtime}.")
 
     joblib.dump(model_info, f"{args.outdir}/{args.subreddit}_baseline_info.jl")
 
