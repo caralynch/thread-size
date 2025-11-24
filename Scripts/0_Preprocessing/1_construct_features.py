@@ -12,7 +12,7 @@ Command-line interface
 subreddit   : Subreddit key in {'conspiracy','crypto','politics'}.
 outdir      : Output directory.
 comments    : Path to comments dataframe.
-threads     : Path to threads dataframe..
+threads     : Path to threads dataframe.
 
 Inputs (expected columns)
 -------------------------
@@ -359,47 +359,62 @@ def main():
     )
     df_comments = df_comments.merge(
         reply_counts, left_on="id", right_index=True, how="left"
-    ).fillna(0)
+    )
+    df_comments["direct_reply_count"] = df_comments["direct_reply_count"].fillna(0)
+
     reply_sentiments = (
         df_comments.groupby("parent")["body_sentiment_score"]
-        .std()
-        .rename("direct_reply_sentiment_std")
+            .std()
+            .rename("direct_reply_sentiment_std")
     )
     df_comments = df_comments.merge(
         reply_sentiments, left_on="id", right_index=True, how="left"
-    ).fillna(0)
+    )
+    df_comments["direct_reply_sentiment_std"] = df_comments[
+        "direct_reply_sentiment_std"
+    ].fillna(0)
+
     reply_lengths = (
         df_comments.groupby("parent")["body_length"]
-        .mean()
-        .rename("mean_direct_reply_length")
+            .mean()
+            .rename("mean_direct_reply_length")
     )
     df_comments = df_comments.merge(
         reply_lengths, left_on="id", right_index=True, how="left"
-    ).fillna(0)
+    )
+    df_comments["mean_direct_reply_length"] = df_comments[
+        "mean_direct_reply_length"
+    ].fillna(0)
 
     print("[INFO] Merging with thread data")
     # merge with thread data
     df_threads = df_threads.merge(
         reply_counts, left_on="thread_id", right_index=True, how="left"
-    ).fillna(0)
+    )
+    df_threads["direct_reply_count"] = df_threads["direct_reply_count"].fillna(0)
+
     df_threads = df_threads.merge(
-        reply_sentiments,
-        left_on="thread_id",
-        right_index=True,
-        how="left",
-    ).fillna(0)
+        reply_sentiments, left_on="thread_id", right_index=True, how="left"
+    )
+    df_threads["direct_reply_sentiment_std"] = df_threads[
+        "direct_reply_sentiment_std"
+    ].fillna(0)
+
     df_threads = df_threads.merge(
         reply_lengths, left_on="thread_id", right_index=True, how="left"
-    ).fillna(0)
+    )
+    df_threads["mean_direct_reply_length"] = df_threads[
+        "mean_direct_reply_length"
+    ].fillna(0)
 
     print("[INFO] Getting thread depth")
-    # thread depth
     thread_depth = (
         df_comments.groupby("thread_id")["level"].max().rename("thread_depth")
     )
     df_threads = df_threads.merge(
         thread_depth, left_on="thread_id", right_index=True, how="left"
-    ).fillna(0)
+    )
+    df_threads["thread_depth"] = df_threads["thread_depth"].fillna(0)
 
     print("[INFO] Time-related features")
     # extract hour and day of week
