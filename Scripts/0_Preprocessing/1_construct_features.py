@@ -211,6 +211,8 @@ def non_stopword_strings(text: str):
 
 
 def compute_text_features(text: str):
+    if pd.isna(text):
+        return pd.Series([0, 0, 0, 0, 0, 0, 0, 0])
     words = get_words(text)
     if len(words) == 0:
         return pd.Series([0, 0, 0, 0, 0, 0, 0, 0])  # Avoid division by zero
