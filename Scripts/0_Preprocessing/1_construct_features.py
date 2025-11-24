@@ -140,7 +140,9 @@ DOMAIN_STRS = {
 
 
 def normalize_domain(d):
-
+    if pd.isna(d):
+        return ""
+    d = str(d).lower()
     if d.endswith(".reddit.com"):
         return "reddit.com"
     if d == "redd.it":
@@ -233,9 +235,9 @@ def compute_text_features(text: str):
     else:
         caps_ratio = sum(c.isupper() for c in text) / sum(c.isalpha() for c in text)
 
-    non_ws_char_ = [c for c in text if not c.isspace()]
-    exclamation_ratio = text.count("!") / len(non_ws_chars)
-    question_ratio = text.count("?") / len(words)
+    non_ws_chars = len([c for c in text if not c.isspace()]) # non whitespace characters 
+    exclamation_ratio = 0 if non_ws_chars==0 else text.count("!") / non_ws_chars
+    question_ratio = 0 if non_ws_chars==0 else text.count("?") / non_ws_chars
 
 
     return pd.Series(
@@ -253,14 +255,18 @@ def compute_text_features(text: str):
 
 
 def classify_domains(domain_str):
-    domain_str = normalize_domain(domain_str.lower())
-    domain_list = []
+    domain_norm = normalize_domain(domain_str)
+
+    # flags for image/video/reddit-hosted
+    flags = []
     for red_str in DOMAIN_STRS.keys():
-        if red_str in domain_str:
-            domain_list.append(1)
-        else:
-            domain_list.append(0)
-    return domain_list
+        flags.append(1 if red_str in domain_norm else 0)
+
+    # new flag: external domain
+    is_external = 1 if all(flag == 0 for flag in flags) and domain_norm != "" else 0
+
+    flags.append(is_external)
+    return flags
 
 
 def main():
@@ -300,7 +306,8 @@ def main():
 
     print("[INFO] Domains")
     # get domain types
-    df_threads[list(DOMAIN_STRS.values())] = df_threads.domain.apply(classify_domains)
+    domain_flags = df_threads["domain"].apply(classify_domains).tolist()
+    df_threads[list(DOMAIN_STRS.values())+ ["external_domain"]] = domain_flags
 
     print("[INFO] Getting basic text features")
     # basic features
