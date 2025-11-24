@@ -89,7 +89,7 @@ else
   echo "Check logs in: $OUTDIR/logs/"
   
   # Still copy logs for debugging
-  FINAL_OUTDIR="$RDSS_DIR/reddit_preprocessed/${SUBREDDIT}_FAILED"
+  FINAL_OUTDIR="/home/ucabcpl/Scratch/thread_size/thread-size/Outputs/${SUBREDDIT}"
   mkdir -p "$FINAL_OUTDIR"
   cp -r "$OUTDIR"/logs "$FINAL_OUTDIR/" 2>/dev/null || true
   
