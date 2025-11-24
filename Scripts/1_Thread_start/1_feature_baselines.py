@@ -72,14 +72,14 @@ import warnings
 
 warnings.filterwarnings("ignore", category=UserWarning)
 warnings.filterwarnings("ignore", category=FutureWarning)
+
+import joblib
+
+from functools import partial
 import pandas as pd
 import numpy as np
-import joblib
 import lightgbm as lgb
-import matplotlib
 
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 import sklearn
 from sklearn.calibration import CalibratedClassifierCV, calibration_curve
 from sklearn.metrics import (
@@ -96,9 +96,12 @@ from sklearn.metrics import (
     balanced_accuracy_score,
     fbeta_score,
 )
-from functools import partial
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import StratifiedKFold, train_test_split
+
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
 
 LABEL_LOOKUP = {
     "crypto": "r/CryptoCurrency",
@@ -131,7 +134,6 @@ for i, class_name in CLASS_NAMES.items():
         }
     )
 
-SCORER_LOOKUP = {"MCC": ["mcc", "m"], "F-beta": ["f", "fbeta", "f-beta", "fb"]}
 
 def ci(arr):
     """
@@ -167,18 +169,10 @@ def main():
         "--train_X",
         help="Training X data filepath (parquet).",
     )
-    ap.add_argument(
-        "--test_X",
-        help="Test X data filepath (parquet).",
-    )
 
     ap.add_argument(
         "--train_y",
         help="Training y data filepath (parquet).",
-    )
-    ap.add_argument(
-        "--test_y",
-        help="Test y data filepath (parquet).",
     )
 
     ap.add_argument(
