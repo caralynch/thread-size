@@ -138,6 +138,8 @@ DOMAIN_STRS = {
     "reddit.com": "reddit_domain",
 }
 
+TEXT_COLS = ["subject", "body", "domain", "author", "id", "thread_id", "parent"]
+
 
 def normalize_domain(d):
     if pd.isna(d):
@@ -304,10 +306,16 @@ def main():
     df_comments = pd.read_parquet(args.comments)
     df_threads = pd.read_parquet(args.threads)
 
+    # set types correctly
+    for df in [df_comments, df_threads]:
+        for col in (set(TEXT_COLS) & set(df.columns)):
+            df[col] = df[col].astype("string")
+
+
     print("[INFO] Domains")
     # get domain types
     domain_flags = df_threads["domain"].apply(classify_domains).tolist()
-    df_threads[list(DOMAIN_STRS.values())+ ["external_domain"]] = domain_flags
+    df_threads[list(DOMAIN_STRS.values())+ ["is_external_domain"]] = domain_flags
 
     print("[INFO] Getting basic text features")
     # basic features
