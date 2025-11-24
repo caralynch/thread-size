@@ -18,16 +18,23 @@ echo "Working directory: $(pwd)"
 echo "TMPDIR: $TMPDIR"
 echo "===================================="
 
+
+if [ -z "$1" ]; then
+    echo "ERROR: No subreddit supplied."
+    echo "Usage: qsub 0_run_preprocessing_jobscript.sh <subreddit>"
+    exit 1
+fi
+
 # ===== Setup working directories =====
 mkdir -p "$TMPDIR/work"
 mkdir -p "$TMPDIR/output"
 
 # ===== Activate environment =====
 source ~/.bashrc
-conda activate threadsize # or your specific environment name
+conda activate threadsize 
 
 # ===== Set paths =====
-SUBREDDIT="conspiracy"  # Change as needed: conspiracy, crypto, politics
+SUBREDDIT=$1  # Change as needed: conspiracy, crypto, politics
 SCRIPT_DIR=/home/ucabcpl/Scratch/thread_size/thread-size/Scripts # Adjust to where your scripts are
 DATA_DIR=/home/ucabcpl/Scratch/thread_size/thread-size/Inputs # Adjust to your data location
 
