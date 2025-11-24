@@ -3,14 +3,14 @@ Builds model-ready train/test matrices: merges metadata/features, applies
 author/domain encodings, filters collinearity, and persists X/y splits.
 
 Inputs (CLI):
-    --train:       Path to train DataFrame (parquet).
-    --test:        Path to test DataFrame (parquet).
-    --y-col:            Name of the target column (e.g., "thread_size").
-    --rs:               Random seed for any randomized steps.
-    --corr:             Absolute Pearson correlation threshold for pruning
-                        highly correlated feature pairs (e.g., 0.95).
-    --outdir:           Output directory.
-    --subreddit:        Used for naming outputs.
+    --train:       Path to train DataFrame (parquet) (svd_enriched_train_data).
+    --test:        Path to test DataFrame (parquet) (svd_enriched_test_data).
+    --y-col:       Name of the target column (defaults to "thread_size").
+    --rs:          Random seed for any randomized steps.
+    --corr:        Absolute Pearson correlation threshold for pruning
+                   highly correlated feature pairs (defaults to 0.5).
+    --outdir:      Output directory.
+    --subreddit:   Used for naming outputs.
 
 Processing:
     1) Optionally add log-transformed target `log_{y_col}` when strictly
@@ -91,6 +91,8 @@ PRIORITY_ORDER = [
     "exclamation_ratio",
     "caps_ratio",
     "question_ratio",
+    "is_external_domain",
+    "external_domain",
     "includes_image",
     "includes_video",
     "reddit_domain",
@@ -233,7 +235,7 @@ def main():
     y_dfs = {}
     for i, df in data.items():
         x_dfs[i] = df[cols_to_include]
-        y_dfs[i] = df[y_col]
+        y_dfs[i] = df[[y_col]]
         print(f"[INFO] {i} threads: {len(x_dfs[i])}")
 
     print(f"[INFO] Getting highly correlated pairs")
@@ -286,12 +288,13 @@ def main():
         "script": str(sys.argv[0]),
         "run_start": start,
         "subreddit": args.subreddit,
-        "data_filepath": args.data,
+        "train_data": args.train,
+        "test_data": args.test,
         "y_col": args.y_col,
         "random_state": args.rs,
         "corr_thresh": args.corr,
         "encoders_out": encoders_outfile,
-        "dfs_out": dfs_outfile,
+        "outdir": args.outdir,
     }
 
     # output run data
