@@ -95,7 +95,7 @@ import lightgbm as lgb
 from scipy.optimize import minimize_scalar
 
 import sklearn
-from sklearn.calibration import CalibratedClassifierCV,
+from sklearn.calibration import CalibratedClassifierCV
 from sklearn.metrics import (
     matthews_corrcoef,
     f1_score,
@@ -110,6 +110,7 @@ import optuna
 import optuna.visualization as vis
 
 import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
@@ -142,6 +143,7 @@ CLASS_NAMES = {
     1: "Started",
 }
 
+
 def main():
     print(f"{sys.argv[0]}")
     start = dt.datetime.now()
@@ -172,16 +174,24 @@ def main():
     )
 
     ap.add_argument(
-        "--y_thresh", 
+        "--y_thresh",
         default=None,
-        help="Target y threshold to identify started threads. Defaults to log(1)."
+        help="Target y threshold to identify started threads. Defaults to log(1).",
     )
 
-    ap.add_argument("--debug", action="store_true", help="Run the script in debug mode.")
-    ap.add_argument("-nc", "--no-cal", action="store_true", help="Deactivate model calibration.")
+    ap.add_argument(
+        "--debug", action="store_true", help="Run the script in debug mode."
+    )
+    ap.add_argument(
+        "-nc", "--no-cal", action="store_true", help="Deactivate model calibration."
+    )
 
     ap.add_argument("--rs", default="42", help="Random state, defaults to 42.")
-    ap.add_argument("--scorer", default="MCC", help="Scorer to tune to (F-beta, MCC or F1-score. Defaults to MCC)")
+    ap.add_argument(
+        "--scorer",
+        default="MCC",
+        help="Scorer to tune to (F-beta, MCC or F1-score. Defaults to MCC)",
+    )
 
     ap.add_argument(
         "--beta",
@@ -229,11 +239,12 @@ def main():
             f"Must be one of {list(SCORERS.keys())} or their aliases."
         )
 
-
     if str(args.subreddit).lower() not in LABEL_LOOKUP:
-        print(f"[ERROR] Subreddit entered {args.subreddit} not in list: {LABEL_LOOKUP.keys()}. Exiting.")
+        print(
+            f"[ERROR] Subreddit entered {args.subreddit} not in list: {LABEL_LOOKUP.keys()}. Exiting."
+        )
         raise FileNotFoundError
-    
+
     debug = False
     if args.debug:
         debug = True
@@ -253,12 +264,12 @@ def main():
         args.y_thresh = np.log(1)
     else:
         args.y_thresh = float(args.y_thresh)
-    
+
     if args.trials is None:
         args.trials = 300 if not debug else 10
     else:
         args.trials = int(args.trials)
-    
+
     if args.feats_file is not None:
         if os.path.exists(args.feats_file):
             print(f"[INFO] Getting feature counts from {args.feats_file}")
@@ -273,9 +284,9 @@ def main():
         else:
             args.feats = int(args.feats)
         model_feats = list(range(1, args.feats + 1))
-    
+
     print(f"[INFO] Args: {args}")
-    
+
     os.makedirs(args.outdir, exist_ok=True)
 
     print(f"[INFO] Loading training data.")
@@ -301,7 +312,6 @@ def main():
     model_info["lightgbm_version"] = lgb.__version__
     model_info["sklearn_version"] = sklearn.__version__
 
-
     importance_dfs = []
     foldwise_best_params = {}
     foldwise_best_scores = {}
@@ -317,7 +327,9 @@ def main():
         y_train, y_val = y.iloc[train_idx], y.iloc[val_idx]
 
         if calibrate:
-            print(f"[INFO] [Fold {fold + 1}] Splitting x_val and y_val into calibration and eval sets")
+            print(
+                f"[INFO] [Fold {fold + 1}] Splitting x_val and y_val into calibration and eval sets"
+            )
             # Split X_val and y_val into calibration and evaluation sets
             X_calib, X_val, y_calib, y_val = train_test_split(
                 X_val,
@@ -327,7 +339,9 @@ def main():
                 random_state=args.rs,  # for reproducibility
             )
 
-        print(f"[INFO] [Fold {fold + 1}] Getting feature importances for feature ranking")
+        print(
+            f"[INFO] [Fold {fold + 1}] Getting feature importances for feature ranking"
+        )
         # Get feature importances for ranking
         selector = lgb.LGBMClassifier(
             objective="binary",
@@ -387,9 +401,11 @@ def main():
                         log=True,
                     )
                     suggest_cws = {0: 1.0, 1: cw_ratio}
-                
-                cw_values = compute_class_weight(suggest_cws, classes=np.unique(y_train), y=y_train)
-                
+
+                cw_values = compute_class_weight(
+                    suggest_cws, classes=np.unique(y_train), y=y_train
+                )
+
                 class_weight = {i: w for i, w in enumerate(cw_values)}
 
                 clf = lgb.LGBMClassifier(
@@ -418,7 +434,7 @@ def main():
                     trial.set_user_attr(key, scoring_metrics[key])
 
                 trial.set_user_attr("cw_type", cw_type)
-                #trial.set_user_attr("cw_ratio", cw_ratio)
+                # trial.set_user_attr("cw_ratio", cw_ratio)
                 trial.set_user_attr("cw", class_weight)
                 trial.set_user_attr("n_feats", n_feats)
                 trial.set_user_attr("features", top_feats)
@@ -426,18 +442,25 @@ def main():
                 return scoring_metrics[
                     args.scorer
                 ]  # adjust this to prioritize F1 or MCC if needed
-            print(f"[INFO] [Fold {fold + 1}] [{n_feats} features] Launching Optuna study")
+
+            print(
+                f"[INFO] [Fold {fold + 1}] [{n_feats} features] Launching Optuna study"
+            )
             study = optuna.create_study(
                 direction="maximize", sampler=optuna.samplers.TPESampler(seed=args.rs)
             )
             study.optimize(objective, n_trials=args.trials)
-            print(f"[OK] [Fold {fold + 1}] [{n_feats} features] Finished Optuna optimization")
+            print(
+                f"[OK] [Fold {fold + 1}] [{n_feats} features] Finished Optuna optimization"
+            )
 
             foldwise_best_params[n_feats].append(study.best_params)
             foldwise_best_scores[n_feats].append(study.best_value)
             foldwise_best_cws[n_feats].append(study.best_trial.user_attrs["cw"])
-            
-            print(f"[INFO] [Fold {fold + 1}] [{n_feats} features] Plotting Optuna study")
+
+            print(
+                f"[INFO] [Fold {fold + 1}] [{n_feats} features] Plotting Optuna study"
+            )
             fig = vis.plot_optimization_history(study)
             fig.write_image(
                 f"{args.outdir}/optuna_fold{fold+1}_{n_feats}_feats_convergence.png"
@@ -457,7 +480,6 @@ def main():
             fold_results_df = pd.DataFrame(fold_trials)
             all_folds_df_dict[fold + 1][n_feats] = fold_results_df
             all_configs.append(fold_results_df)
-
 
     # Aggregate hyperparameters across folds
     def aggregate_params(param_list):
@@ -488,7 +510,6 @@ def main():
                 agg[col] = df[col].mean()
         return agg
 
-
     # Get cross-fold feature importance for output
     # Merge feature importances from all folds
     print(f"[INFO] Getting cross-fold feature importance")
@@ -503,16 +524,18 @@ def main():
             for col in importance_merged.columns
             if col.startswith(f"{imp_colname}_fold_")
         ]
-        importance_merged[f"mean_{imp_colname}"] = importance_merged[imp_cols].mean(axis=1)
-        importance_merged[f"std_{imp_colname}"] = importance_merged[imp_cols].std(axis=1)
+        importance_merged[f"mean_{imp_colname}"] = importance_merged[imp_cols].mean(
+            axis=1
+        )
+        importance_merged[f"std_{imp_colname}"] = importance_merged[imp_cols].std(
+            axis=1
+        )
     # Sort by average importance
     importance_merged.sort_values("mean_importance", ascending=False, inplace=True)
-
 
     all_configs_df = pd.concat(all_configs, ignore_index=True)
     all_configs_df["cw_str"] = all_configs_df["cw"].astype(str)
 
-    
     ranked_features = importance_merged["feature"].tolist()
     optuna_params = {}
     class_weights = {}
@@ -526,7 +549,6 @@ def main():
 
     print(f"[INFO] Saving optuna parameters")
     joblib.dump(optuna_params, f"{args.outdir}/optuna_params.jl")
-
 
     def neg_scorer(threshold, y_proba, y_true):
         """
@@ -553,7 +575,6 @@ def main():
         """
         y_pred = (y_proba >= threshold).astype(int)
         return -SCORERS[args.scorer](y_true, y_pred)
-
 
     foldwise_thresholds = {}
     foldwise_score_thresholds = {}
@@ -589,7 +610,9 @@ def main():
             clf.fit(X_train[top_feats], y_train)
 
             if calibrate:
-                calibrated_clf = CalibratedClassifierCV(clf, method="isotonic", cv="prefit")
+                calibrated_clf = CalibratedClassifierCV(
+                    clf, method="isotonic", cv="prefit"
+                )
                 calibrated_clf.fit(X_calib[top_feats], y_calib)
                 proba = calibrated_clf.predict_proba(X_thresh_cal[top_feats])[:, 1]
 
@@ -608,7 +631,9 @@ def main():
                 else clf.predict_proba(X_val[top_feats])[:, 1]
             )
             preds = (proba >= best_thresh).astype(int)
-            foldwise_score_thresholds[n_feats].append(SCORERS[args.scorer](y_val, preds))
+            foldwise_score_thresholds[n_feats].append(
+                SCORERS[args.scorer](y_val, preds)
+            )
 
     params = {}
     for n_feats in model_feats:
@@ -655,7 +680,9 @@ def main():
             writer, sheet_name="params", index=True
         )
 
-        importance_merged.to_excel(writer, sheet_name="feature_importances", index=False)
+        importance_merged.to_excel(
+            writer, sheet_name="feature_importances", index=False
+        )
         pd.DataFrame(flat_params).to_excel(
             writer, sheet_name="flattened_features", index=False
         )

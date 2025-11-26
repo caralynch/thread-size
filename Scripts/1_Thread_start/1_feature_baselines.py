@@ -62,7 +62,6 @@ Reproducibility notes
   features, and bootstrap trials for rapid iteration.
 """
 
-
 import sys
 import argparse
 import os
@@ -100,6 +99,7 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import StratifiedKFold, train_test_split
 
 import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
@@ -152,6 +152,7 @@ def ci(arr):
     """
     return np.percentile(arr, [2.5, 97.5])
 
+
 def main():
     print(f"{sys.argv[0]}")
     start = dt.datetime.now()
@@ -182,13 +183,17 @@ def main():
     )
 
     ap.add_argument(
-        "--y_thresh", 
+        "--y_thresh",
         default=None,
-        help="Target y threshold to identify started threads. Defaults to log(1)."
+        help="Target y threshold to identify started threads. Defaults to log(1).",
     )
 
-    ap.add_argument("--debug", action="store_true", help="Run the script in debug mode.")
-    ap.add_argument("-nc", "--no-cal", action="store_true", help="Deactivate model calibration.")
+    ap.add_argument(
+        "--debug", action="store_true", help="Run the script in debug mode."
+    )
+    ap.add_argument(
+        "-nc", "--no-cal", action="store_true", help="Deactivate model calibration."
+    )
 
     ap.add_argument("--rs", default="42", help="Random state, defaults to 42.")
 
@@ -198,9 +203,21 @@ def main():
         help="Beta for f-beta score. Default 2.",
     )
 
-    ap.add_argument("--splits", default=None, help="Number of CV splits. Defaults to 5, or 2 in debug mode.")
-    ap.add_argument("--feats", default=None, help="Max model features. Defaults to 30, or 10 in debug mode.")
-    ap.add_argument("--n-bs", default=None, help="Number of bootstrap trials. Defaults to 1000, or 20 in debug mode.")
+    ap.add_argument(
+        "--splits",
+        default=None,
+        help="Number of CV splits. Defaults to 5, or 2 in debug mode.",
+    )
+    ap.add_argument(
+        "--feats",
+        default=None,
+        help="Max model features. Defaults to 30, or 10 in debug mode.",
+    )
+    ap.add_argument(
+        "--n-bs",
+        default=None,
+        help="Number of bootstrap trials. Defaults to 1000, or 20 in debug mode.",
+    )
 
     args = ap.parse_args()
     args.rs = int(args.rs)
@@ -209,9 +226,11 @@ def main():
     SCORERS["F-beta"] = partial(fbeta_score, beta=args.beta)
 
     if str(args.subreddit).lower() not in LABEL_LOOKUP:
-        print(f"[ERROR] Subreddit entered {args.subreddit} not in list: {LABEL_LOOKUP.keys()}. Exiting.")
+        print(
+            f"[ERROR] Subreddit entered {args.subreddit} not in list: {LABEL_LOOKUP.keys()}. Exiting."
+        )
         raise FileNotFoundError
-    
+
     debug = False
     if args.debug:
         debug = True
@@ -236,15 +255,15 @@ def main():
         args.y_thresh = np.log(1)
     else:
         args.y_thresh = float(args.y_thresh)
-    
+
     print(f"[INFO] Args: {args}")
-    
+
     os.makedirs(args.outdir, exist_ok=True)
 
     print(f"[INFO] Loading training data.")
     X = pd.read_parquet(args.train_X)
 
-    if args.feats is None: 
+    if args.feats is None:
         args.feats = 30 if not debug else 10
     else:
         if args.feats == "max":
@@ -275,9 +294,11 @@ def main():
         all_fold_dfs[fold + 1] = {}
         X_train, X_val = X.iloc[train_idx], X.iloc[val_idx]
         y_train, y_val = y.iloc[train_idx], y.iloc[val_idx]
-        
+
         if calibrate:
-            print(f"[INFO] [Fold {fold + 1}] Splitting x_val and y_val into calibration and eval sets")
+            print(
+                f"[INFO] [Fold {fold + 1}] Splitting x_val and y_val into calibration and eval sets"
+            )
             # Split X_val and y_val into calibration and evaluation sets
             X_calib, X_val, y_calib, y_val = train_test_split(
                 X_val,
@@ -286,7 +307,9 @@ def main():
                 stratify=y_val,  # preserve class balance
                 random_state=args.rs,  # for reproducibility
             )
-        print(f"[INFO] [Fold {fold + 1}] Getting feature importances for feature ranking")
+        print(
+            f"[INFO] [Fold {fold + 1}] Getting feature importances for feature ranking"
+        )
         # Get feature importances for ranking
         selector = lgb.LGBMClassifier(
             objective="binary",
@@ -324,7 +347,7 @@ def main():
         ranked_features = pd.Series(combined_importance, index=feature_names)
         ranked_features = ranked_features.sort_values(ascending=False).index.tolist()
 
-        for n_feats in range(1, args.feats+1):
+        for n_feats in range(1, args.feats + 1):
             top_feats = ranked_features[:n_feats]
 
             print(f"[INFO] [Fold {fold + 1}] [{n_feats} features] Training model")
@@ -336,8 +359,12 @@ def main():
             )
             clf.fit(X_train[top_feats], y_train)
             if calibrate:
-                print(f"[INFO] [Fold {fold + 1}] [{n_feats} features] Calibrating model")
-                calibrated_clf = CalibratedClassifierCV(clf, method="isotonic", cv="prefit")
+                print(
+                    f"[INFO] [Fold {fold + 1}] [{n_feats} features] Calibrating model"
+                )
+                calibrated_clf = CalibratedClassifierCV(
+                    clf, method="isotonic", cv="prefit"
+                )
                 calibrated_clf.fit(X_calib[top_feats], y_calib)
                 y_proba = calibrated_clf.predict_proba(X_val[top_feats])[:, 1]
                 y_pred = calibrated_clf.predict(X_val[top_feats])
@@ -350,20 +377,28 @@ def main():
                 )
                 continue
 
-            print(f"[INFO] [Fold {fold + 1}] [{n_feats} features] Getting report metrics")
+            print(
+                f"[INFO] [Fold {fold + 1}] [{n_feats} features] Getting report metrics"
+            )
             # Report metrics
             performance_metrics = {"AUC": roc_auc_score(y_val, y_proba)}
             report = SCORERS["Report"](y_val, y_pred)
-            for key, scorer_func in [(k, v) for k, v in SCORERS.items() if k not in EXCLUDE_SCORES]:
+            for key, scorer_func in [
+                (k, v) for k, v in SCORERS.items() if k not in EXCLUDE_SCORES
+            ]:
                 performance_metrics[key] = scorer_func(y_val, y_pred)
 
             # Store metric names once
             if "metric_names" not in locals():
                 metric_names = list(performance_metrics.keys())
-            
-            print(f"[INFO] [Fold {fold + 1}] [{n_feats} features] Bootstrapping metrics")
+
+            print(
+                f"[INFO] [Fold {fold + 1}] [{n_feats} features] Bootstrapping metrics"
+            )
             # Bootstrapping main metrics
-            rng = np.random.RandomState(args.rs + fold * 1000 + n_feats) # for reproducibility
+            rng = np.random.RandomState(
+                args.rs + fold * 1000 + n_feats
+            )  # for reproducibility
 
             bootstrap_metrics = {}
             for key in performance_metrics:
@@ -379,8 +414,9 @@ def main():
 
                 for key in performance_metrics:
                     if key != "AUC":
-                        bootstrap_metrics[key].append(SCORERS[key](y_true_bs, y_pred_bs))
-                    
+                        bootstrap_metrics[key].append(
+                            SCORERS[key](y_true_bs, y_pred_bs)
+                        )
 
             conf_intervals = {}
             for key, values in bootstrap_metrics.items():
@@ -460,7 +496,9 @@ def main():
     importance_df.fillna(0, inplace=True)
     for imp_colname in ["importance", "split", "gain"]:
         imp_cols = [
-            col for col in importance_df.columns if col.startswith(f"{imp_colname}_fold_")
+            col
+            for col in importance_df.columns
+            if col.startswith(f"{imp_colname}_fold_")
         ]
         importance_df[f"mean_{imp_colname}"] = importance_df[imp_cols].mean(axis=1)
         importance_df[f"std_{imp_colname}"] = importance_df[imp_cols].std(axis=1)
@@ -492,12 +530,17 @@ def main():
         else:
             print(f"[Warning] No CI data for {metric}. Plotting point means only.")
             plt.plot(
-                agg_df["n_feats"], agg_df[metric], "-o", label=metric,
+                agg_df["n_feats"],
+                agg_df[metric],
+                "-o",
+                label=metric,
             )
         plt.title(f"{LABEL_LOOKUP[args.subreddit]}", loc="left", fontsize=12)
         plt.xlabel("Number of features", fontsize=10)
         plt.ylabel(metric, fontsize=10)
-        plt.xticks(fontsize=9,)
+        plt.xticks(
+            fontsize=9,
+        )
         plt.yticks(fontsize=9)
         plt.grid(False)
         plt.tight_layout()
@@ -519,7 +562,9 @@ def main():
 
     joblib.dump(model_info, f"{args.outdir}/{args.subreddit}_baseline_info.jl")
 
-    with pd.ExcelWriter(f"{args.outdir}/{args.subreddit}_1_feature_baselines.xlsx") as writer:
+    with pd.ExcelWriter(
+        f"{args.outdir}/{args.subreddit}_1_feature_baselines.xlsx"
+    ) as writer:
         pd.DataFrame.from_dict(model_info, orient="index").to_excel(
             writer, sheet_name="model_info", index=True
         )
