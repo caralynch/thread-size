@@ -15,7 +15,7 @@ for SUB in "${SUBREDDITS[@]}"; do
     echo "Submitting thread size feature baselines job for: $SUB"
 
     # Submit job AND pass subreddit as the first argument
-    qsub -N ${SUB}_1_1 "$JOBSCRIPT" "$SUB"
+    qsub -N ${SUB}_1_1 -o "${SUB}_1_1.out" -e "${SUB}_1_1.err" "$JOBSCRIPT" "$SUB"
 
     echo ""
 done
