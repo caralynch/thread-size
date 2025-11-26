@@ -1,3 +1,78 @@
+"""
+Stage 3 - tree hyperparameter tuning for thread-start classification.
+
+This script takes the tuned configurations from Stage 1.2 (feature subsets,
+class weights, and decision thresholds for predicting whether a thread
+starts) and refines the LightGBM tree hyperparameters using cross-validated
+Optuna optimisation.
+
+High-level behaviour
+--------------------
+Inputs:
+    - --train_X : Training feature matrix (parquet).
+    - --train_y : Training target data (parquet) containing --y-col.
+    - --params  : Joblib file with Stage 1.2 outputs:
+                  {"info": ..., "params": {n_feats: {...}, ...}}.
+      Each entry in "params" is expected to contain:
+          * "features"           : list of feature names,
+          * "final_class_weights": dict for class_weight,
+          * "final_threshold"    : scalar decision threshold.
+
+Target construction:
+    - --y-col (default: "log_thread_size") is thresholded at --y_thresh
+      (default log(1) == 0) to define a binary label:
+          y = 1  ⇔  log_thread_size > y_thresh  (thread started)
+          y = 0  ⇔  log_thread_size ≤ y_thresh  (thread stalled).
+
+Cross-validation:
+    - StratifiedKFold with --splits folds (default 5, or 2 in debug mode),
+      shuffling and fixed random seed (--rs).
+    - For each fold and each feature-count n_feats:
+        * use the Stage 1.2 feature subset and class weights,
+        * split the fold's validation data into calibration and evaluation
+          subsets when calibration is enabled,
+        * run an Optuna study to tune tree hyperparameters.
+
+Tuning:
+    - The Optuna objective maximises a primary scorer (--scorer) such as
+      MCC, F1, or F-beta (with configurable --beta) evaluated on the
+      evaluation subset.
+    - The search space includes typical LightGBM tree and regularisation
+      hyperparameters (num_leaves, max_depth, learning_rate, min_child_samples,
+      subsample, colsample_bytree, reg_alpha, reg_lambda).
+    - Trials that predict only a single class are pruned early.
+
+Aggregation:
+    - For each n_feats, best parameters across folds are aggregated:
+        * integer / categorical parameters use the mode,
+        * floating-point parameters use the mean.
+    - The mean best score across folds for the chosen scorer is recorded.
+
+Outputs
+-------
+Written to --outdir:
+
+    - params_post_hyperparam_tuning.jl
+        A joblib dict with:
+            * "info"   : model_info (arguments, versions, runtime, feature_counts).
+            * "params" : updated per-n_feats configs including:
+                - "best_hyperparams"    : aggregated tree hyperparameters.
+                - f"best_{scorer_name}" : mean cross-fold score.
+
+    - {n_feats}_feats_best_hyperparams_fold_{k}.jl
+        Best hyperparameters for each (n_feats, fold) combination.
+
+    - {n_feats}_feats_best_hyperparams.jl
+        Aggregated best hyperparameters per n_feats.
+
+Reproducibility
+---------------
+- All randomised operations (CV splits, calibration splits, and Optuna sampler)
+  are seeded via --rs.
+- Command-line arguments and library versions (Python, pandas, numpy,
+  LightGBM, scikit-learn) are stored in model_info.
+- Debug mode (--debug) reduces CV splits and Optuna trials for rapid iteration.
+"""
 
 import sys
 import argparse
@@ -6,6 +81,7 @@ import os
 import datetime as dt
 
 import warnings
+
 warnings.filterwarnings("ignore", category=UserWarning)
 warnings.filterwarnings("ignore", category=FutureWarning)
 
@@ -15,32 +91,23 @@ from functools import partial
 import pandas as pd
 import numpy as np
 import lightgbm as lgb
-from scipy.optimize import minimize_scalar
 
 import sklearn
-from sklearn.calibration import CalibratedClassifierCV, calibration_curve
+from sklearn.calibration import CalibratedClassifierCV
 from sklearn.metrics import (
-    confusion_matrix,
-    classification_report,
-    roc_auc_score,
-    roc_curve,
-    precision_recall_curve,
     matthews_corrcoef,
     f1_score,
-    brier_score_loss,
-    precision_score,
-    recall_score,
     balanced_accuracy_score,
     fbeta_score,
 )
-from sklearn.preprocessing import MinMaxScaler
+
 from sklearn.model_selection import StratifiedKFold, train_test_split
-from sklearn.utils import compute_class_weight
 
 import optuna
 import optuna.visualization as vis
 
 import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
@@ -73,6 +140,7 @@ SCORER_MAP = {
     "balanced_accuracy": "Balanced accuracy",
 }
 
+
 # Aggregate hyperparameters across folds
 def aggregate_params(param_list):
     df = pd.DataFrame(param_list)
@@ -85,12 +153,12 @@ def aggregate_params(param_list):
             agg[col] = df[col].mean()
     return agg
 
+
 def main():
     print(f"{sys.argv[0]}")
     start = dt.datetime.now()
     print("[INFO] Hyperparameter tuning.")
     print(f"[INFO] STARTED AT {start}")
-
 
     # CL arguments
     ap = argparse.ArgumentParser()
@@ -118,16 +186,24 @@ def main():
     )
 
     ap.add_argument(
-        "--y_thresh", 
+        "--y_thresh",
         default=None,
-        help="Target y threshold to identify started threads. Defaults to log(1)."
+        help="Target y threshold to identify started threads. Defaults to log(1).",
     )
 
-    ap.add_argument("--debug", action="store_true", help="Run the script in debug mode.")
-    ap.add_argument("-nc", "--no-cal", action="store_true", help="Deactivate model calibration.")
+    ap.add_argument(
+        "--debug", action="store_true", help="Run the script in debug mode."
+    )
+    ap.add_argument(
+        "-nc", "--no-cal", action="store_true", help="Deactivate model calibration."
+    )
 
     ap.add_argument("--rs", default="42", help="Random state, defaults to 42.")
-    ap.add_argument("--scorer", default="MCC", help="Scorer to tune to (F-beta, MCC or F1-score. Defaults to MCC)")
+    ap.add_argument(
+        "--scorer",
+        default="MCC",
+        help="Scorer to tune to (F-beta, MCC or F1-score. Defaults to MCC)",
+    )
 
     ap.add_argument(
         "--beta",
@@ -145,7 +221,6 @@ def main():
         help="Number of CV splits. Defaults to 5, or 2 in debug mode.",
     )
 
-
     args = ap.parse_args()
     args.rs = int(args.rs)
     args.beta = float(args.beta)
@@ -162,11 +237,12 @@ def main():
             f"Must be one of {list(SCORERS.keys())} or their aliases."
         )
 
-
     if str(args.subreddit).lower() not in LABEL_LOOKUP:
-        print(f"[ERROR] Subreddit entered {args.subreddit} not in list: {LABEL_LOOKUP.keys()}. Exiting.")
+        print(
+            f"[ERROR] Subreddit entered {args.subreddit} not in list: {LABEL_LOOKUP.keys()}. Exiting."
+        )
         raise FileNotFoundError
-    
+
     debug = False
     if args.debug:
         debug = True
@@ -186,18 +262,17 @@ def main():
         args.y_thresh = np.log(1)
     else:
         args.y_thresh = float(args.y_thresh)
-    
+
     if args.trials is None:
         args.trials = 300 if not debug else 10
     else:
         args.trials = int(args.trials)
-    
-    
+
     if not os.path.isfile(args.params):
         raise FileNotFoundError(f"[ERROR] Model params file not found: {args.params}")
-    
+
     print(f"[INFO] Args: {args}")
-    
+
     os.makedirs(args.outdir, exist_ok=True)
 
     print(f"[INFO] Loading training data.")
@@ -216,7 +291,7 @@ def main():
         "script": str(sys.argv[0]),
         "run_start": start,
     }
-    
+
     model_info.update(vars(args))
     model_info["python_version"] = sys.version
     model_info["pandas_version"] = pd.__version__
@@ -231,7 +306,6 @@ def main():
 
     print(f"[INFO] Setting up outer cross-validation.")
     outer_cv = StratifiedKFold(n_splits=args.splits, shuffle=True, random_state=args.rs)
-
 
     foldwise_best_params = {}
     foldwise_best_scores = {}
@@ -275,7 +349,9 @@ def main():
                     "random_state": args.rs,
                     "verbosity": -1,
                     "class_weight": cw,  # from STAGE_1_TUNING
-                    "num_leaves": trial.suggest_int("num_leaves", 20, 25 if debug else 150),
+                    "num_leaves": trial.suggest_int(
+                        "num_leaves", 20, 25 if debug else 150
+                    ),
                     "max_depth": trial.suggest_int("max_depth", 3, 6 if debug else 15),
                     "learning_rate": trial.suggest_float(
                         "learning_rate", 0.1 if debug else 1e-3, 0.2, log=True
@@ -284,7 +360,9 @@ def main():
                         "min_child_samples", 5, 10 if debug else 100
                     ),
                     "subsample": trial.suggest_float("subsample", 0.5, 1.0),
-                    "colsample_bytree": trial.suggest_float("colsample_bytree", 0.5, 1.0),
+                    "colsample_bytree": trial.suggest_float(
+                        "colsample_bytree", 0.5, 1.0
+                    ),
                     "reg_alpha": trial.suggest_float("reg_alpha", 0, 5),
                     "reg_lambda": trial.suggest_float("reg_lambda", 0, 5),
                 }
@@ -298,45 +376,48 @@ def main():
                     calibrated_clf.fit(X_calib, y_calib)
                     proba = calibrated_clf.predict_proba(X_eval)[:, 1]
                 else:
-                    proba = clf.predict_proba(X_val)[:, 1]
+                    proba = clf.predict_proba(X_eval)[:, 1]
 
                 preds = (proba >= thresh).astype(int)
-                if not test:
+                if not debug:
                     if len(np.unique(preds)) < 2:
-                        raise optuna.TrialPruned("[WARNING] Only one class predicted, skipping trial.")
+                        raise optuna.TrialPruned(
+                            "[WARNING] Only one class predicted, skipping trial."
+                        )
 
                 score = SCORERS[args.scorer](y_eval, preds)
 
                 return score
 
-        print(f"Starting hyperparameter tuning for {n_feats}")
+            print(f"Starting hyperparameter tuning for {n_feats}")
 
-        sampler = optuna.samplers.TPESampler(seed=args.rs)
-        study = optuna.create_study(direction="maximize", sampler=sampler)
-        study.optimize(objective, n_trials=args.trials)
+            sampler = optuna.samplers.TPESampler(seed=args.rs)
+            study = optuna.create_study(direction="maximize", sampler=sampler)
+            study.optimize(objective, n_trials=args.trials)
 
-        foldwise_best_params[n_feats].append(study.best_params)
-        foldwise_best_scores[n_feats].append(study.best_value)
+            foldwise_best_params[n_feats].append(study.best_params)
+            foldwise_best_scores[n_feats].append(study.best_value)
 
-        print(f"[INFO] Fold {fold+1}: Best {args.scorer} for {n_feats} feats: {study.best_value}")
-        joblib.dump(
-            study.best_params, f"{args.outdir}/{n_feats}_feats_best_hyperparams_fold_{fold+1}.jl"
-        )
-
-
+            print(
+                f"[INFO] Fold {fold+1}: Best {args.scorer} for {n_feats} feats: {study.best_value}"
+            )
+            joblib.dump(
+                study.best_params,
+                f"{args.outdir}/{n_feats}_feats_best_hyperparams_fold_{fold+1}.jl",
+            )
 
     for n_feats in feature_counts:
         config = params[n_feats]
         config["best_hyperparams"] = aggregate_params(foldwise_best_params[n_feats])
         config[f"best_{args.scorer}"] = np.mean(foldwise_best_scores[n_feats])
         joblib.dump(
-            config["best_hyperparams"], f"{outdir}/{n_feats}_feats_best_hyperparams.jl"
+            config["best_hyperparams"],
+            f"{args.outdir}/{n_feats}_feats_best_hyperparams.jl",
         )
         print(
             f"Best hyperparameters for {n_feats} features: {config['best_hyperparams']}, "
             f"Mean {args.scorer}: {config[f'best_{args.scorer}']}"
         )
-
 
     end = dt.datetime.now()
     model_info["hyperparameter_tuning_runtime"] = str(end - start)
