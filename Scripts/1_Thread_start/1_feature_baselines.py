@@ -301,7 +301,7 @@ def main():
         split_importance = booster.feature_importance(importance_type="split")
         gain_importance = booster.feature_importance(importance_type="gain")
         feature_names = booster.feature_name()
-        print("Scaling feature importances")
+        print(f"[INFO] [Fold {fold + 1}] Scaling feature importances")
         # scale the feature importances
         scaler = MinMaxScaler()
         split_scaled = scaler.fit_transform(split_importance.reshape(-1, 1)).flatten()
