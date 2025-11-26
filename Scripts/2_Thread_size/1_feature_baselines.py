@@ -1,5 +1,5 @@
 """
-Stage 2.1 – baseline feature subsets for thread-size classification.
+Stage 1 – baseline feature subsets for thread-size classification.
 
 This script computes baseline performance curves for Stage 2
 (thread-size / bin prediction) by:
@@ -29,9 +29,6 @@ Inputs (CLI arguments)
 --classes
     Number of classes for discretisation. Supported values: 2 (binary),
     3 or 4 (multiclass). Defaults to 4.
---y_thresh
-    Threshold for "started" threads (log scale). Currently used only
-    for constructing cut points; defaults to log(1).
 --debug
     If set, enables a lightweight configuration (fewer CV splits and
     bootstrap iterations).
@@ -98,10 +95,6 @@ Written to --outdir:
     plots/*.png
         Errorbar plots of each metric against the number of features.
 
-    model_features.txt
-        Comma-separated list of n_feats values to consider in later
-        tuning stages (currently 1..10).
-
 Reproducibility
 ~~~~~~~~~~~~~~~
 - All randomised components (CV splits and bootstrap sampling) are
@@ -154,10 +147,6 @@ LABEL_LOOKUP = {
     "conspiracy": "r/Conspiracy",
 }
 
-CLASS_NAMES = {
-    3: ["Stalled", "Small", "Large"],
-    4: ["Stalled", "Small", "Medium", "Large"],
-}
 CLASS_BIN_EDGES = {
     3: [0.5],
     4: [1 / 3, 2 / 3],
@@ -267,10 +256,9 @@ def main():
         mode = "multiclass"
     else:
         raise ValueError(f"[ERROR] Invalid number of classes {args.classes}")
-
+    calib_method = "isotonic" if mode == "binary" else "sigmoid"
     if mode == "multiclass" and args.classes not in CLASS_BIN_EDGES:
         CLASS_BIN_EDGES[args.classes] = [i/(args.classes -1) for i in range(1,args.classes-1)]
-        CLASS_NAMES[args.classes] = ["Stalled"] + [f"Started_{i}" for i in range(1, args.classes)]
 
     if mode == "multiclass":
         SCORERS["F1"] = partial(f1_score, average="macro")
@@ -439,7 +427,7 @@ def main():
             )
             clf.fit(X_train[top_feats], y_train)
             if calibrate:
-                calibrated_clf = CalibratedClassifierCV(clf, method="isotonic", cv="prefit")
+                calibrated_clf = CalibratedClassifierCV(clf, method=calib_method, cv="prefit")
                 calibrated_clf.fit(X_calib[top_feats], y_calib)
                 y_proba = calibrated_clf.predict_proba(X_val[top_feats])
                 y_pred = calibrated_clf.predict(X_val[top_feats])
