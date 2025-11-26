@@ -427,8 +427,8 @@ def main():
     pd.DataFrame.from_dict(model_info, orient="index").to_csv(f"{args.outdir}/tuning_log.csv")
 
     joblib.dump(params, f"{args.outdir}/params_post_hyperparam_tuning.jl")
-    print(f"Saved all outputs to: {args.outdir}")
-    print(f"Finished. Total runtime {end-start}.")
+    print(f"[OK] Saved all outputs to: {args.outdir}")
+    print(f"[OK] Finished. Total runtime {end-start}.")
 
 
 if __name__ == "__main__":
