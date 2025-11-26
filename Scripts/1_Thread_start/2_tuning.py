@@ -87,7 +87,6 @@ warnings.filterwarnings("ignore", category=UserWarning)
 warnings.filterwarnings("ignore", category=FutureWarning)
 
 import joblib
-import gc
 
 from functools import partial
 import pandas as pd
@@ -96,18 +95,10 @@ import lightgbm as lgb
 from scipy.optimize import minimize_scalar
 
 import sklearn
-from sklearn.calibration import CalibratedClassifierCV, calibration_curve
+from sklearn.calibration import CalibratedClassifierCV,
 from sklearn.metrics import (
-    confusion_matrix,
-    classification_report,
-    roc_auc_score,
-    roc_curve,
-    precision_recall_curve,
     matthews_corrcoef,
     f1_score,
-    brier_score_loss,
-    precision_score,
-    recall_score,
     balanced_accuracy_score,
     fbeta_score,
 )
