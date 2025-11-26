@@ -286,7 +286,7 @@ def main():
     y = (y > args.y_thresh).astype(int)
 
     print(f"[INFO] Loading tuning params")
-    params = joblib.load(args.params)["params"]
+    params = joblib.load(args.params)
 
     # run data for outfile
     model_info = {

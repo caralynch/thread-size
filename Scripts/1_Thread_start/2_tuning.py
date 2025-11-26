@@ -652,12 +652,7 @@ def main():
 
     model_info["tuning_runtime"] = str(end - start)
 
-    model_params = {
-        "info": model_info,
-        "params": params,
-    }
-
-    joblib.dump(model_params, f"{args.outdir}/model_param_dict.jl")
+    joblib.dump(params, f"{args.outdir}/tuned_params.jl")
 
     flat_params = []
     for n_feats, model_dict in params.items():
