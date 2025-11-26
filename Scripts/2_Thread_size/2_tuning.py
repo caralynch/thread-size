@@ -14,15 +14,12 @@ from functools import partial, reduce
 import pandas as pd
 import numpy as np
 import lightgbm as lgb
-from scipy.optimize import minimize_scalar
 
 import sklearn
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.metrics import (
     matthews_corrcoef,
     f1_score,
-    balanced_accuracy_score,
-    fbeta_score,
 )
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import StratifiedKFold, train_test_split
@@ -71,6 +68,7 @@ def check_bin_balance(y_bins):
     proportions = counts / counts.sum()
     return proportions
 
+
 def get_preds(thresholds, y_probas):
     preds = []
     for row in y_probas:
@@ -79,6 +77,7 @@ def get_preds(thresholds, y_probas):
         ]
         preds.append(np.argmax(passed) if max(passed) != -1 else np.argmax(row))
     return preds
+
 
 def neg_mcc(thresholds, y_probas, y_true):
     preds = get_preds(thresholds, y_probas)
@@ -229,7 +228,7 @@ def main():
 
     model_info.update(vars(args))
     model_info["cw_range"] = (1, 10) if not debug else (1, 1)
-    model_info["threshold_range"] = (0.1, 0.9) if not debug else (0.4, 0.6),
+    model_info["threshold_range"] = ((0.1, 0.9) if not debug else (0.4, 0.6),)
     model_info["python_version"] = sys.version
     model_info["pandas_version"] = pd.__version__
     model_info["numpy_version"] = np.__version__
@@ -237,14 +236,10 @@ def main():
     model_info["sklearn_version"] = sklearn.__version__
     model_info["optuna_version"] = optuna.__version__
 
-
     bounds = [(0.0, 1.0)] * args.classes
     initial_guess = [0.5] * args.classes
 
-
-
     print("[INFO] Defining bins")
-
 
     bin_edges = [np.log(1) - 1e-3]
     bin_edges.append(np.log(2) - 1e-3)
@@ -252,7 +247,6 @@ def main():
         [y[y > np.log(1)].quantile(x) for x in CLASS_BIN_EDGES[args.classes]]
     )
     bin_edges.append(y.max() + 1e-3)
-
 
     assert (
         len(bin_edges) == args.classes + 1
@@ -288,12 +282,16 @@ def main():
         all_folds_df_dict[fold + 1] = {}
         print(f"[INFO] [{fold + 1}/{args.splits}] Started at {dt.datetime.now()}")
         # get training and validation data for this fold
-        print(f"[INFO] [{fold + 1}/{args.splits}] Getting fold training and validation data")
+        print(
+            f"[INFO] [{fold + 1}/{args.splits}] Getting fold training and validation data"
+        )
         X_train, X_val = X.iloc[train_idx], X.iloc[val_idx]
 
         y_train, y_val = y_bins_for_cv.iloc[train_idx], y_bins_for_cv.iloc[val_idx]
         if calibrate:
-            print(f"[INFO] [{fold + 1}/{args.splits}] Splitting x_val and y_val into calibration and eval sets")
+            print(
+                f"[INFO] [{fold + 1}/{args.splits}] Splitting x_val and y_val into calibration and eval sets"
+            )
             X_calib, X_val, y_calib, y_val = train_test_split(
                 X_val,
                 y_val,
@@ -301,7 +299,9 @@ def main():
                 stratify=y_val,
                 random_state=args.rs,
             )
-        print(f"[INFO] [{fold + 1}/{args.splits}] Precomputing ranked features for candidate bins")
+        print(
+            f"[INFO] [{fold + 1}/{args.splits}] Precomputing ranked features for candidate bins"
+        )
         selector = lgb.LGBMClassifier(
             objective="multiclass",
             num_class=args.classes,
@@ -364,7 +364,9 @@ def main():
                             f"[WARNING][{fold + 1}/{args.splits}][{n_feats} feats] Train bin config too imbalanced"
                         )
                     if any(val_props < 0.10):
-                        raise optuna.exceptions.TrialPruned(f"[WARNING][{fold + 1}/{args.splits}][{n_feats} feats] Val bin config too imbalanced")
+                        raise optuna.exceptions.TrialPruned(
+                            f"[WARNING][{fold + 1}/{args.splits}][{n_feats} feats] Val bin config too imbalanced"
+                        )
 
                 top_feats = ranked_features[:n_feats]
 
@@ -380,10 +382,11 @@ def main():
                             model_info["cw_range"][0],
                             model_info["cw_range"][1],
                         )
-                    
-                
-                cw_values = compute_class_weight(suggest_cws, classes=np.unique(y_train_bins), y=y_train_bins)
-                
+
+                cw_values = compute_class_weight(
+                    suggest_cws, classes=np.unique(y_train_bins), y=y_train_bins
+                )
+
                 class_weight = {i: w for i, w in enumerate(cw_values)}
 
                 # train classifier
@@ -420,7 +423,9 @@ def main():
                 trial.set_user_attr("cw_raw", cw_values)
                 return performance_metrics["MCC"]
 
-            print(f"[INFO][{fold + 1}/{args.splits}][{n_feats} feats] Starting Optuna trials")
+            print(
+                f"[INFO][{fold + 1}/{args.splits}][{n_feats} feats] Starting Optuna trials"
+            )
             study = optuna.create_study(
                 direction="maximize",
                 sampler=optuna.samplers.TPESampler(seed=args.rs),
@@ -434,7 +439,6 @@ def main():
             foldwise_best_params[n_feats].append(study.best_params)
             foldwise_best_mccs[n_feats].append(study.best_value)
             foldwise_best_cws[n_feats].append(study.best_trial.user_attrs["cw"])
-            
 
             fig = vis.plot_optimization_history(study)
             fig.write_image(f"{plot_outdir}/optuna_fold{fold+1}_convergence.png")
@@ -476,8 +480,12 @@ def main():
             for col in importance_merged.columns
             if col.startswith(f"{imp_colname}_fold_")
         ]
-        importance_merged[f"mean_{imp_colname}"] = importance_merged[imp_cols].mean(axis=1)
-        importance_merged[f"std_{imp_colname}"] = importance_merged[imp_cols].std(axis=1)
+        importance_merged[f"mean_{imp_colname}"] = importance_merged[imp_cols].mean(
+            axis=1
+        )
+        importance_merged[f"std_{imp_colname}"] = importance_merged[imp_cols].std(
+            axis=1
+        )
     # sort by average importance
     importance_merged.sort_values(by="mean_importance", ascending=False, inplace=True)
 
@@ -491,7 +499,6 @@ def main():
     all_configs_df = pd.concat(all_configs, ignore_index=True)
     all_configs_df["cw_str"] = all_configs_df["cw"].astype(str)
 
-
     # Aggregate hyperparameters across folds
     def aggregate_params(param_list):
         df = pd.DataFrame(param_list)
@@ -504,7 +511,6 @@ def main():
                 agg[col] = df[col].mean()
         return agg
 
-
     optuna_params = {}
     class_weights = {}
     for n_feats in model_feats:
@@ -514,7 +520,6 @@ def main():
             "best_MCC": np.mean(foldwise_best_mccs[n_feats]),
         }
         class_weights[n_feats] = aggregate_params(foldwise_best_cws[n_feats])
-
 
     joblib.dump(optuna_params, f"{args.outdir}/optuna_params.jl")
 
@@ -555,7 +560,9 @@ def main():
             clf.fit(X_train[top_feats], y_train)
 
             if calibrate:
-                calibrated_clf = CalibratedClassifierCV(clf, method="sigmoid", cv="prefit")
+                calibrated_clf = CalibratedClassifierCV(
+                    clf, method="sigmoid", cv="prefit"
+                )
                 calibrated_clf.fit(X_calib[top_feats], y_calib)
                 proba = calibrated_clf.predict_proba(X_thresh_cal[top_feats])
 
@@ -635,7 +642,9 @@ def main():
         )
 
         all_configs_df.to_excel(writer, sheet_name="all_configs")
-        importance_merged.to_excel(writer, sheet_name="feature_importances", index=False)
+        importance_merged.to_excel(
+            writer, sheet_name="feature_importances", index=False
+        )
         pd.DataFrame(flat_params).to_excel(
             writer, sheet_name="flattened_features", index=False
         )
@@ -643,6 +652,7 @@ def main():
     print(f"[INFO] Saved all outputs to: {args.outdir}")
     final_call = dt.datetime.now()
     print(f"[OK] Finished at {final_call}. Total time taken: {final_call - start}")
+
 
 if __name__ == "__main__":
     main()

@@ -163,6 +163,7 @@ SCORERS = {
 
 EXCLUDE_SCORES = ["Report", "CM"]
 
+
 def ci(arr):
     """
     Compute a 95% bootstrap confidence interval for a 1D array-like.
@@ -179,6 +180,7 @@ def ci(arr):
         (2.5th and 97.5th percentiles).
     """
     return np.percentile(arr, [2.5, 97.5])
+
 
 def main():
     """
@@ -229,7 +231,6 @@ def main():
 
     ap.add_argument("--rs", default="42", help="Random state, defaults to 42.")
 
-
     ap.add_argument(
         "--splits",
         default=None,
@@ -258,13 +259,14 @@ def main():
         raise ValueError(f"[ERROR] Invalid number of classes {args.classes}")
     calib_method = "isotonic" if mode == "binary" else "sigmoid"
     if mode == "multiclass" and args.classes not in CLASS_BIN_EDGES:
-        CLASS_BIN_EDGES[args.classes] = [i/(args.classes -1) for i in range(1,args.classes-1)]
+        CLASS_BIN_EDGES[args.classes] = [
+            i / (args.classes - 1) for i in range(1, args.classes - 1)
+        ]
 
     if mode == "multiclass":
         SCORERS["F1"] = partial(f1_score, average="macro")
     else:
         SCORERS["F1"] = f1_score
-
 
     if str(args.subreddit).lower() not in LABEL_LOOKUP:
         print(
@@ -292,7 +294,6 @@ def main():
     else:
         args.n_bs = int(args.n_bs)
 
-    
     if args.feats is None:
         args.feats = 30 if not debug else 10
     else:
@@ -326,7 +327,9 @@ def main():
     if mode == "multiclass":
         bin_edges = [np.log(1) - 1e-3]
         bin_edges.append(np.log(2) - 1e-3)
-        bin_edges.extend([y[y > np.log(1)].quantile(x) for x in CLASS_BIN_EDGES[args.classes]])
+        bin_edges.extend(
+            [y[y > np.log(1)].quantile(x) for x in CLASS_BIN_EDGES[args.classes]]
+        )
         bin_edges.append(y.max() + 1e-3)
 
         assert (
@@ -334,7 +337,6 @@ def main():
         ), f"bin_edges must have length args.classes+1 ({args.classes+1}), got {len(bin_edges)}."
 
         y_bins = pd.cut(y, bins=bin_edges, labels=False)
-
 
         unique_bins = np.unique(y_bins.dropna())
         assert len(unique_bins) == args.classes, (
@@ -375,16 +377,14 @@ def main():
         print(f"[INFO] [Fold {fold+1}] Precomputing ranked features for candidate bins")
         # Get feature importances for ranking
         selector_params = {
-            'objective': mode,
-            'class_weight': "balanced",
-            'random_state': args.rs,
-            'verbose':-1,
+            "objective": mode,
+            "class_weight": "balanced",
+            "random_state": args.rs,
+            "verbose": -1,
         }
         if mode == "multiclass":
-            selector_params['num_class'] = args.classes
-        selector = lgb.LGBMClassifier(
-            **selector_params
-        )
+            selector_params["num_class"] = args.classes
+        selector = lgb.LGBMClassifier(**selector_params)
 
         selector.fit(X_train, y_train)
 
@@ -416,27 +416,26 @@ def main():
         ranked_features = pd.Series(combined_importance, index=feature_names)
         ranked_features = ranked_features.sort_values(ascending=False).index.tolist()
 
-
-        for n_feats in range(1,args.feats+1):
+        for n_feats in range(1, args.feats + 1):
             top_feats = ranked_features[:n_feats]
 
             print(f"[INFO] [Fold {fold+1}] [{n_feats} feats] Training model")
 
-            clf = lgb.LGBMClassifier(
-                **selector_params
-            )
+            clf = lgb.LGBMClassifier(**selector_params)
             clf.fit(X_train[top_feats], y_train)
             if calibrate:
-                calibrated_clf = CalibratedClassifierCV(clf, method=calib_method, cv="prefit")
+                calibrated_clf = CalibratedClassifierCV(
+                    clf, method=calib_method, cv="prefit"
+                )
                 calibrated_clf.fit(X_calib[top_feats], y_calib)
                 y_proba = calibrated_clf.predict_proba(X_val[top_feats])
                 y_pred = calibrated_clf.predict(X_val[top_feats])
             else:
                 y_proba = clf.predict_proba(X_val[top_feats])
                 y_pred = clf.predict(X_val[top_feats])
-            
+
             if mode == "binary":
-                y_proba = y_proba[:,1]
+                y_proba = y_proba[:, 1]
 
             classes_predicted = len(np.unique(y_pred))
             if not debug:
@@ -459,7 +458,9 @@ def main():
 
             print(f"[INFO] [Fold {fold+1}] [{n_feats} feats] Bootstrapping metrics")
             # Bootstrapping main metrics
-            rng = np.random.RandomState(args.rs + fold * 1000 + n_feats) # for reproducibility
+            rng = np.random.RandomState(
+                args.rs + fold * 1000 + n_feats
+            )  # for reproducibility
 
             bootstrap_metrics = {}
             for k in performance_metrics:
@@ -553,7 +554,9 @@ def main():
     importance_df.fillna(0, inplace=True)
     for imp_colname in ["importance", "split", "gain"]:
         imp_cols = [
-            col for col in importance_df.columns if col.startswith(f"{imp_colname}_fold_")
+            col
+            for col in importance_df.columns
+            if col.startswith(f"{imp_colname}_fold_")
         ]
         importance_df[f"mean_{imp_colname}"] = importance_df[imp_cols].mean(axis=1)
         importance_df[f"std_{imp_colname}"] = importance_df[imp_cols].std(axis=1)
@@ -596,7 +599,6 @@ def main():
         plt.savefig(f"{plot_outdir}/{metric.lower()}_vs_n_feats_bootstrap.png", dpi=300)
         plt.close()
 
-
     with pd.ExcelWriter(f"{args.outdir}/baseline_scores.xlsx") as writer:
         pd.DataFrame.from_dict(model_info, orient="index").to_excel(
             writer, sheet_name="model_info", index=True
@@ -609,6 +611,7 @@ def main():
     end = dt.datetime.now()
     total_runtime = end - start
     print(f"[INFO] Finished at {end}. Runtime: {total_runtime}.")
+
 
 if __name__ == "__main__":
     main()
