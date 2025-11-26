@@ -9,8 +9,6 @@
 # #$ -m be                     # (optional) email at begin/end
 # #$ -M ucabcpl@ucl.ac.uk 
 
-set -euo pipefail
-
 # ===== Job info =====
 echo "===================================="
 echo "Job started: $(date)"
