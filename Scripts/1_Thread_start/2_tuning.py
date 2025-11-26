@@ -1,3 +1,81 @@
+"""
+Stage 2 - hyperparameter and threshold tuning for thread-start classification.
+
+This script tunes LightGBM classifiers that predict whether a thread starts
+(thread_size > 1) using cross-validated Optuna searches over class weights,
+and then tunes a decision threshold per model to maximise a chosen metric.
+
+Inputs
+------
+- --train_X : Training feature matrix (parquet).
+- --train_y : Training target data (parquet) containing --y-col.
+- --subreddit : Key in LABEL_LOOKUP (e.g. 'conspiracy', 'crypto', 'politics').
+
+Target construction
+-------------------
+- --y-col (default: 'log_thread_size') is thresholded at --y_thresh
+  (default: log(1) == 0) to define a binary label:
+      y = 1  ⇔  log_thread_size > y_thresh  (thread started)
+      y = 0  ⇔  log_thread_size ≤ y_thresh  (thread stalled).
+
+Cross-validation & feature ranking
+----------------------------------
+- StratifiedKFold with --splits folds (default 5, or 2 in debug mode), using
+  a fixed random seed (--rs).
+- Within each outer fold, a LightGBM classifier is fitted with class_weight="balanced"
+  to obtain split- and gain-based feature importances; these are min–max scaled
+  and averaged to yield a combined importance score per feature.
+- For each n_feats in the feature grid (from --feats or --feats-file), models
+  are restricted to the top-n_feats ranked features.
+
+Optuna tuning
+-------------
+- For each fold and each n_feats:
+    - An Optuna study maximises the chosen scorer (--scorer: MCC, F-beta, F1,
+      or Balanced accuracy).
+    - The search space includes:
+        * class-weight type: "balanced" vs custom weighted,
+        * positive-class weight ratio cw_ratio within cw_ratio_range.
+    - If calibration is enabled (default), probabilities are calibrated via
+      isotonic regression on a held-out calibration set (50% of the val fold).
+
+Threshold tuning
+----------------
+- After aggregating best parameters and class weights across folds, models
+  are re-trained.
+- Validation data are split into:
+    * threshold-calibration subset, and
+    * evaluation subset.
+- A scalar optimiser (minimize_scalar) finds the threshold in [0, 1] that
+  maximises the primary scorer (via a negative scoring wrapper).
+- Metrics before and after threshold tuning are recorded.
+
+Outputs
+-------
+Written to --outdir:
+
+- stage1_model_param_dict.jl:
+    { "info": model_info, "params": per-n_feats configs }.
+- optuna_params.jl:
+    Cross-fold aggregated best params & scores per n_feats.
+- stage1_tuning_outputs.xlsx:
+    * model_info
+    * params (per n_feats: scores, thresholds, class weights, features)
+    * feature_importances (cross-fold importances)
+    * flattened_features (feature-by-feature)
+    * all_configs (all Optuna trial configurations).
+- optuna_fold*_convergence.png:
+    Convergence plots per fold and n_feats.
+
+Reproducibility
+---------------
+- All randomised operations use the --rs seed (CV, Optuna sampler, splits
+  for calibration/threshold tuning).
+- Command-line arguments and library versions are stored in model_info.
+- Debug mode (--debug) reduces folds, trials, feature counts, and (optionally)
+  search ranges for quick iteration.
+"""
+
 import sys
 import argparse
 import os
@@ -50,18 +128,23 @@ LABEL_LOOKUP = {
     "conspiracy": "r/Conspiracy",
 }
 
-CLASS_NAMES = {
-    0: "Stalled",
-    1: "Started",
-}
-
 SCORERS = {
     "MCC": matthews_corrcoef,
     "F1": f1_score,
     "Balanced accuracy": balanced_accuracy_score,
 }
 
-
+SCORER_MAP = {
+    "mcc": "MCC",
+    "f1": "F1",
+    "f1-score": "F1",
+    "f": "F-beta",
+    "fb": "F-beta",
+    "fbeta": "F-beta",
+    "f-beta": "F-beta",
+    "balanced": "Balanced accuracy",
+    "balanced_accuracy": "Balanced accuracy",
+}
 
 CLASS_NAMES = {
     0: "Stalled",
@@ -71,7 +154,7 @@ CLASS_NAMES = {
 def main():
     print(f"{sys.argv[0]}")
     start = dt.datetime.now()
-    print("[INFO] Feature baselines.")
+    print("[INFO] Class weight and threshold tuning.")
     print(f"[INFO] STARTED AT {start}")
 
     # CL arguments
@@ -117,14 +200,23 @@ def main():
     ap.add_argument("--trials", default=None, help="Number of Optuna trials. Defaults to 300, or 10 in debug mode.")
     ap.add_argument("--splits", default=None, help="Number of CV splits. Defaults to 5, or 2 in debug mode.")
     ap.add_argument("--feats", default=None, help="Max model features. Defaults to 20, or 5 in debug mode, unless model features file specified.")
-    ap.add_argument("--n-bs", default=None, help="Number of bootstrap trials. Defaults to 1000, or 20 in debug mode.")
-    ap.add_argument("--feats-file", default=None, help="Txt file with comma-separated number of features to tune.")
 
     args = ap.parse_args()
     args.rs = int(args.rs)
     args.beta = float(args.beta)
 
     SCORERS["F-beta"] = partial(fbeta_score, beta=args.beta)
+
+    scorer_key = str(args.scorer).lower()
+    if scorer_key in SCORER_MAP:
+        args.scorer = SCORER_MAP[scorer_key]
+
+    if args.scorer not in SCORERS:
+        raise ValueError(
+            f"[ERROR] Invalid scorer '{args.scorer}'. "
+            f"Must be one of {list(SCORERS.keys())} or their aliases."
+        )
+
 
     if str(args.subreddit).lower() not in LABEL_LOOKUP:
         print(f"[ERROR] Subreddit entered {args.subreddit} not in list: {LABEL_LOOKUP.keys()}. Exiting.")
@@ -145,11 +237,6 @@ def main():
     else:
         args.splits = int(args.splits)
 
-    if args.n_bs is None:
-        args.n_bs = 1000 if not debug else 20
-    else:
-        args.n_bs = int(args.n_bs)
-
     if args.y_thresh is None:
         args.y_thresh = np.log(1)
     else:
@@ -163,7 +250,7 @@ def main():
     if args.feats_file is not None:
         if os.path.exists(args.feats_file):
             print(f"[INFO] Getting feature counts from {args.feats_file}")
-            with open(model_feats_file, "r") as f:
+            with open(args.feats_file, "r") as f:
                 model_feats = f.read()
             model_feats = [int(x) for x in model_feats.split(",")]
         else:
@@ -193,7 +280,13 @@ def main():
         "script": str(sys.argv[0]),
         "run_start": start,
     }
+     model_info["cw_ratio_range"] = (0.1, 5.0) if not debug else (1.0, 1.0)
     model_info.update(vars(args))
+    model_info["python_version"] = sys.version
+    model_info["pandas_version"] = pd.__version__
+    model_info["numpy_version"] = np.__version__
+    model_info["lightgbm_version"] = lgb.__version__
+    model_info["sklearn_version"] = sklearn.__version__
 
 
     importance_dfs = []
@@ -206,7 +299,7 @@ def main():
     print("[INFO] Training data on folds")
     for fold, (train_idx, val_idx) in enumerate(outer_cv.split(X, y)):
         all_folds_df_dict[fold + 1] = {}
-        print(f"Outer fold {fold + 1}/{cv_splits}")
+        print(f"[INFO] Outer fold {fold + 1}/{args.splits}")
         X_train, X_val = X.iloc[train_idx], X.iloc[val_idx]
         y_train, y_val = y.iloc[train_idx], y.iloc[val_idx]
 
@@ -221,15 +314,15 @@ def main():
                 random_state=args.rs,  # for reproducibility
             )
 
-########################################### UP TO HERE ###################
-
+        print(f"[INFO] [Fold {fold + 1}] Getting feature importances for feature ranking")
         # Get feature importances for ranking
         selector = lgb.LGBMClassifier(
             objective="binary",
             class_weight="balanced",
-            random_state=RANDOM_STATE,
+            random_state=args.rs,
             verbose=-1,
         )
+
         selector.fit(X_train, y_train)
         # Save feature importance from this fold
         # After fitting
@@ -237,7 +330,7 @@ def main():
         split_importance = booster.feature_importance(importance_type="split")
         gain_importance = booster.feature_importance(importance_type="gain")
         feature_names = booster.feature_name()
-
+        print(f"[INFO] [Fold {fold + 1}] Scaling feature importances")
         # scale the feature importances
         scaler = MinMaxScaler()
         split_scaled = scaler.fit_transform(split_importance.reshape(-1, 1)).flatten()
@@ -256,15 +349,16 @@ def main():
             }
         )
         importance_dfs.append(fold_importance_df)
+        print(f"[INFO] [Fold {fold + 1}] Getting ranked features")
         ranked_features = pd.Series(combined_importance, index=feature_names)
         ranked_features = ranked_features.sort_values(ascending=False).index.tolist()
 
-        for n_feats in feature_counts:
+        for n_feats in model_feats:
             if n_feats not in foldwise_best_params:
                 foldwise_best_params[n_feats] = []
                 foldwise_best_scores[n_feats] = []
                 foldwise_best_cws[n_feats] = []
-            print(f"n_feats: {n_feats}")
+            print(f"[INFO] [Fold {fold + 1}] n_feats: {n_feats}")
             top_feats = ranked_features[:n_feats]
 
             def objective(trial):
@@ -288,12 +382,12 @@ def main():
                 clf = lgb.LGBMClassifier(
                     objective="binary",
                     class_weight=class_weight,
-                    random_state=RANDOM_STATE,
+                    random_state=args.rs,
                     verbose=-1,
                 )
                 clf.fit(X_train[top_feats], y_train)
 
-                if CALIBRATION:
+                if calibrate:
                     calibrated_clf = CalibratedClassifierCV(
                         clf, method="isotonic", cv="prefit"
                     )
@@ -305,11 +399,8 @@ def main():
                     proba = clf.predict_proba(X_val[top_feats])[:, 1]
                     preds = clf.predict(X_val[top_feats])
 
-                #if len(np.unique(preds)) < 2:
-                    #raise optuna.TrialPruned()  # avoids evaluating degenerate models
-
                 scoring_metrics = {}
-                for key, score_func in scorers.items():
+                for key, score_func in SCORERS.items():
                     scoring_metrics[key] = score_func(y_val, preds)
                     trial.set_user_attr(key, scoring_metrics[key])
 
@@ -320,21 +411,23 @@ def main():
                 trial.set_user_attr("features", top_feats)
 
                 return scoring_metrics[
-                    scorer
+                    args.scorer
                 ]  # adjust this to prioritize F1 or MCC if needed
-
+            print(f"[INFO] [Fold {fold + 1}] [{n_feats} features] Launching Optuna study")
             study = optuna.create_study(
-                direction="maximize", sampler=optuna.samplers.TPESampler(seed=RANDOM_STATE)
+                direction="maximize", sampler=optuna.samplers.TPESampler(seed=args.rs)
             )
-            study.optimize(objective, n_trials=n_trials)
+            study.optimize(objective, n_trials=args.trials)
+            print(f"[OK] [Fold {fold + 1}] [{n_feats} features] Finished Optuna optimization")
 
             foldwise_best_params[n_feats].append(study.best_params)
             foldwise_best_scores[n_feats].append(study.best_value)
             foldwise_best_cws[n_feats].append(study.best_trial.user_attrs["cw"])
-
+            
+            print(f"[INFO] [Fold {fold + 1}] [{n_feats} features] Plotting Optuna study")
             fig = vis.plot_optimization_history(study)
             fig.write_image(
-                f"{results_outdir}/optuna_fold{fold+1}_{n_feats}_feats_convergence.png"
+                f"{args.outdir}/optuna_fold{fold+1}_{n_feats}_feats_convergence.png"
             )
 
             fold_trials = []
@@ -355,6 +448,23 @@ def main():
 
     # Aggregate hyperparameters across folds
     def aggregate_params(param_list):
+        """
+        Aggregate a list of per-fold best-parameter dictionaries.
+
+        For each parameter key:
+          - integer / object-like (categorical) parameters use the mode,
+          - floating-point parameters use the mean.
+
+        Parameters
+        ----------
+        param_list : list of dict
+            One dictionary of best params per CV fold.
+
+        Returns
+        -------
+        dict
+            Aggregated parameters representative of cross-fold performance.
+        """
         df = pd.DataFrame(param_list)
         agg = {}
         for col in df.columns:
@@ -368,6 +478,7 @@ def main():
 
     # Get cross-fold feature importance for output
     # Merge feature importances from all folds
+    print(f"[INFO] Getting cross-fold feature importance")
     importance_merged = importance_dfs[0]
     for df in importance_dfs[1:]:
         importance_merged = importance_merged.merge(df, on="feature", how="outer")
@@ -388,11 +499,11 @@ def main():
     all_configs_df = pd.concat(all_configs, ignore_index=True)
     all_configs_df["cw_str"] = all_configs_df["cw"].astype(str)
 
-
+    
     ranked_features = importance_merged["feature"].tolist()
     optuna_params = {}
     class_weights = {}
-    for n_feats in feature_counts:
+    for n_feats in model_feats:
         best_params = aggregate_params(foldwise_best_params[n_feats])
         optuna_params[n_feats] = {
             "best_params": best_params,
@@ -400,23 +511,46 @@ def main():
         }
         class_weights[n_feats] = aggregate_params(foldwise_best_cws[n_feats])
 
-    joblib.dump(optuna_params, f"{results_outdir}/optuna_params.jl")
+    print(f"[INFO] Saving optuna parameters")
+    joblib.dump(optuna_params, f"{args.outdir}/optuna_params.jl")
 
 
     def neg_scorer(threshold, y_proba, y_true):
+        """
+        Negative primary score as a function of decision threshold.
+
+        Used with scipy.optimize.minimize_scalar to find the threshold in [0, 1]
+        that maximises the selected scorer (MCC, F1, F-beta, etc.) on a
+        calibration subset.
+
+        Parameters
+        ----------
+        threshold : float
+            Candidate probability threshold in [0, 1].
+        y_proba : array-like, shape (n_samples,)
+            Predicted positive-class probabilities.
+        y_true : array-like, shape (n_samples,)
+            True binary labels.
+
+        Returns
+        -------
+        float
+            Negative value of the chosen scorer at this threshold (so that
+            minimisation corresponds to maximisation).
+        """
         y_pred = (y_proba >= threshold).astype(int)
-        return -scorers[scorer](y_true, y_pred)
+        return -SCORERS[args.scorer](y_true, y_pred)
 
 
     foldwise_thresholds = {}
     foldwise_score_thresholds = {}
-    print("Training data on folds")
+    print("[INFO] Training data with optimized model")
     for fold, (cal_idx, val_idx) in enumerate(outer_cv.split(X, y)):
-        print(f"Outer fold {fold + 1}/{cv_splits}")
+        print(f"[INFO] [Fold {fold + 1}]")
         X_train, X_val = X.iloc[cal_idx], X.iloc[val_idx]
         y_train, y_val = y.iloc[cal_idx], y.iloc[val_idx]
 
-        if CALIBRATION:
+        if calibrate:
             X_train, X_calib, y_train, y_calib = train_test_split(
                 X_train, y_train, train_size=0.8, stratify=y_train
             )
@@ -425,7 +559,7 @@ def main():
             X_val, y_val, train_size=0.5, stratify=y_val
         )
 
-        for n_feats in feature_counts:
+        for n_feats in model_feats:
             if n_feats not in foldwise_thresholds:
                 foldwise_thresholds[n_feats] = []
                 foldwise_score_thresholds[n_feats] = []
@@ -436,12 +570,12 @@ def main():
             clf = lgb.LGBMClassifier(
                 objective="binary",
                 class_weight=class_weight,
-                random_state=RANDOM_STATE,
+                random_state=args.rs,
                 verbose=-1,
             )
             clf.fit(X_train[top_feats], y_train)
 
-            if CALIBRATION:
+            if calibrate:
                 calibrated_clf = CalibratedClassifierCV(clf, method="isotonic", cv="prefit")
                 calibrated_clf.fit(X_calib[top_feats], y_calib)
                 proba = calibrated_clf.predict_proba(X_thresh_cal[top_feats])[:, 1]
@@ -457,14 +591,14 @@ def main():
 
             proba = (
                 calibrated_clf.predict_proba(X_val[top_feats])[:, 1]
-                if CALIBRATION
+                if calibrate
                 else clf.predict_proba(X_val[top_feats])[:, 1]
             )
             preds = (proba >= best_thresh).astype(int)
-            foldwise_score_thresholds[n_feats].append(scorers[scorer](y_val, preds))
+            foldwise_score_thresholds[n_feats].append(SCORERS[args.scorer](y_val, preds))
 
     params = {}
-    for n_feats in feature_counts:
+    for n_feats in model_feats:
         best_params = optuna_params[n_feats]["best_params"]
         class_weight = class_weights[n_feats]
         params[n_feats] = {
@@ -491,7 +625,7 @@ def main():
         "params": params,
     }
 
-    joblib.dump(model_params, f"{outdir}/stage1_model_param_dict.jl")
+    joblib.dump(model_params, f"{args.outdir}/stage1_model_param_dict.jl")
 
     flat_params = []
     for n_feats, model_dict in params.items():
@@ -506,7 +640,7 @@ def main():
                 }
             )
 
-    with pd.ExcelWriter(f"{results_outdir}/stage1_tuning_outputs.xlsx") as writer:
+    with pd.ExcelWriter(f"{args.outdir}/stage1_tuning_outputs.xlsx") as writer:
         pd.DataFrame.from_dict(model_info, orient="index").to_excel(
             writer, sheet_name="model_info", index=True
         )
@@ -521,5 +655,9 @@ def main():
 
         all_configs_df.to_excel(writer, sheet_name=f"all_configs", index=False)
 
-    print(f"Saved all outputs to: {results_outdir}")
+    print(f"Saved all outputs to: {args.outdir}")
     print(f"Finished. Total runtime {end-start}.")
+
+
+if __name__ == "__main__":
+    main()
