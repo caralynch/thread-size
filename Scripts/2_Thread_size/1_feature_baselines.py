@@ -270,7 +270,7 @@ def main():
 
     if mode == "multiclass" and args.classes not in CLASS_BIN_EDGES:
         CLASS_BIN_EDGES[args.classes] = [i/(args.classes -1) for i in range(1,args.classes-1)]
-        CLASS_BIN_EDGES[args.classes] = ["Stalled"] + [f"Started_{i}" for i in range(1, args.classes)]
+        CLASS_NAMES[args.classes] = ["Stalled"] + [f"Started_{i}" for i in range(1, args.classes)]
 
     if mode == "multiclass":
         SCORERS["F1"] = partial(f1_score, average="macro")
