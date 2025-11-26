@@ -197,9 +197,30 @@ def main():
         default="2",
         help="Beta for f-beta score. Default 2.",
     )
-    ap.add_argument("--trials", default=None, help="Number of Optuna trials. Defaults to 300, or 10 in debug mode.")
-    ap.add_argument("--splits", default=None, help="Number of CV splits. Defaults to 5, or 2 in debug mode.")
-    ap.add_argument("--feats", default=None, help="Max model features. Defaults to 20, or 5 in debug mode, unless model features file specified.")
+    ap.add_argument(
+        "--trials",
+        default=None,
+        help="Number of Optuna trials. Defaults to 300, or 10 in debug mode.",
+    )
+    ap.add_argument(
+        "--splits",
+        default=None,
+        help="Number of CV splits. Defaults to 5, or 2 in debug mode.",
+    )
+    ap.add_argument(
+        "--feats",
+        default=None,
+        help="Max model features. Defaults to 20, or 5 in debug mode, unless model features file specified.",
+    )
+    ap.add_argument(
+        "--feats-file",
+        default=None,
+        help=(
+            "Optional file containing comma-separated feature counts "
+            "(e.g. model_features.txt from Stage 1.1). Overrides --feats "
+            "if provided."
+        ),
+    )
 
     args = ap.parse_args()
     args.rs = int(args.rs)
@@ -280,8 +301,9 @@ def main():
         "script": str(sys.argv[0]),
         "run_start": start,
     }
-     model_info["cw_ratio_range"] = (0.1, 5.0) if not debug else (1.0, 1.0)
+
     model_info.update(vars(args))
+    model_info["cw_ratio_range"] = (0.1, 5.0) if not debug else (1.0, 1.0)
     model_info["python_version"] = sys.version
     model_info["pandas_version"] = pd.__version__
     model_info["numpy_version"] = np.__version__
@@ -507,7 +529,7 @@ def main():
         best_params = aggregate_params(foldwise_best_params[n_feats])
         optuna_params[n_feats] = {
             "best_params": best_params,
-            f"best_{scorer}": np.mean(foldwise_best_scores[n_feats]),
+            f"best_{args.scorer}": np.mean(foldwise_best_scores[n_feats]),
         }
         class_weights[n_feats] = aggregate_params(foldwise_best_cws[n_feats])
 
@@ -552,11 +574,11 @@ def main():
 
         if calibrate:
             X_train, X_calib, y_train, y_calib = train_test_split(
-                X_train, y_train, train_size=0.8, stratify=y_train
+                X_train, y_train, train_size=0.8, stratify=y_train, random_state=args.rs
             )
 
         X_thresh_cal, X_val, y_thresh_cal, y_val = train_test_split(
-            X_val, y_val, train_size=0.5, stratify=y_val
+            X_val, y_val, train_size=0.5, stratify=y_val, random_state=args.rs
         )
 
         for n_feats in model_feats:
@@ -603,9 +625,9 @@ def main():
         class_weight = class_weights[n_feats]
         params[n_feats] = {
             "n_feats": n_feats,
-            f"{scorer}_before_thresh": np.mean(foldwise_best_scores[n_feats]),
+            f"{args.scorer}_before_thresh": np.mean(foldwise_best_scores[n_feats]),
             "final_threshold": np.mean(foldwise_thresholds[n_feats]),
-            f"{scorer}_after_thresh": np.mean(foldwise_score_thresholds[n_feats]),
+            f"{args.scorer}_after_thresh": np.mean(foldwise_score_thresholds[n_feats]),
             "final_class_weights": class_weight,
             "features": ranked_features[:n_feats],
         }
