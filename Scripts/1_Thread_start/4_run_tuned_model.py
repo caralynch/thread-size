@@ -49,7 +49,7 @@ LABEL_LOOKUP = {
     "conspiracy": "r/Conspiracy",
 }
 
-LASS_NAMES = {
+CLASS_NAMES = {
     0: "Stalled",
     1: "Started",
 }
@@ -86,10 +86,16 @@ for i, class_name in CLASS_NAMES.items():
         }
     )
 
+# Compute confidence intervals
+def ci(arr):
+    arr = np.array(arr)
+    arr = arr[~np.isnan(arr)]  # exclude NaNs
+    return np.percentile(arr, [2.5, 97.5])
+
 def main():
     print(f"{sys.argv[0]}")
     start = dt.datetime.now()
-    print("[INFO] Feature baselines.")
+    print("[INFO] Running tuned model(s) and generating evaluation outputs.")
     print(f"[INFO] STARTED AT {start}")
 
     # CL arguments
@@ -237,7 +243,7 @@ def main():
     y_train_data = pd.read_parquet(args.train_y)[args.y_col]
     y_test_data = pd.read_parquet(args.test_y)[args.y_col]
     y_train = (y_train_data > args.y_thresh).astype(int)
-    y_test = (y_test_data > args.y_thresh).astype(int))
+    y_test = (y_test_data > args.y_thresh).astype(int)
 
     print(f"[INFO] Loading tuned model params from {args.params}.")
     params = joblib.load(args.params)
@@ -255,7 +261,7 @@ def main():
     model_info["numpy_version"] = np.__version__
     model_info["lightgbm_version"] = lgb.__version__
     model_info["sklearn_version"] = sklearn.__version__
-    model_info["optuna_version"] = optuna.__version__
+    model_info["shap_version"] = shap.__version__
 
     print("[INFO] Getting feature counts from params...")
     feature_counts = list(params.keys())
@@ -319,8 +325,8 @@ def main():
             config.get("best_hyperparams", {}) if "best_hyperparams" in config else {}
         )
 
-        print(f"Selected features: {x_cols}")
-        print(f"Class weights: {cw}")  # , Threshold: {thresh}")
+        print(f"[INFO] [{n_feats} feats] Selected features: {x_cols}")
+        print(f"[INFO] [{n_feats} feats] Class weights: {cw}")  # , Threshold: {thresh}")
 
         # Start with fixed parameters
         fixed_params = {
@@ -336,10 +342,10 @@ def main():
         oof_probas = np.zeros(len(X_train))
         thresholds = []
 
-        print(f"Creating {args.splits} CV loops for OOF started train")
+        print(f"[INFO] [{n_feats} feats] Creating {args.splits} CV loops for OOF started train")
         i = 1
         for train_idx, val_idx in outer_cv.split(X_train, y_train):
-            print(f"Loop {i}/{args.splits}")
+            print(f"[INFO] [{n_feats} feats] Loop {i}/{args.splits}")
             X_tr, X_val = X_train.iloc[train_idx][x_cols], X_train.iloc[val_idx][x_cols]
             y_tr, y_val = y_train.iloc[train_idx], y_train.iloc[val_idx]
 
@@ -360,11 +366,11 @@ def main():
                     random_state=args.rs,  # for reproducibility
                 )
 
-            print("Training model.")
+            print(f"[INFO] [{n_feats} feats] [{i}/{args.splits}] Training model.")
             clf = lgb.LGBMClassifier(**combined_params)
             clf.fit(X_tr, y_tr)
             if calibrate:
-                print("Calibrating model")
+                print(f"[INFO] [{n_feats} feats] [{i}/{args.splits}] Calibrating model")
                 calibrated_clf = CalibratedClassifierCV(clf, method="isotonic", cv="prefit")
                 calibrated_clf.fit(X_calib, y_calib)
                 proba = calibrated_clf.predict_proba(X_val)[:, 1]
@@ -374,7 +380,7 @@ def main():
                 calib_proba = clf.predict_proba(X_thresh_calib)[:, 1]
 
             oof_probas[val_idx] = proba
-            print("Using minimize_scalar to get threshold")
+            print(f"[INFO] [{n_feats} feats] [{i}/{args.splits}] Using minimize_scalar to get threshold")
             result = minimize_scalar(
                 neg_score,
                 bounds=(0, 1),
@@ -385,27 +391,21 @@ def main():
 
             i += 1
 
-        print("Averaging thresholds over folds")
+        print(f"[INFO] [{n_feats} feats] Averaging thresholds over folds")
         thresh = np.mean(thresholds)
         config["model_threshold"] = thresh
         oof_preds = (oof_probas >= thresh).astype(int)
 
-        # Compute confidence intervals
-        def ci(arr):
-            arr = np.array(arr)
-            arr = arr[~np.isnan(arr)]  # exclude NaNs
-            return np.percentile(arr, [2.5, 97.5])
-
-        print("Training final classifier")
+        print(f"[INFO] [{n_feats} feats] Training final classifier")
         final_clf = lgb.LGBMClassifier(**combined_params)
         final_clf.fit(X_train[x_cols], y_train)
 
         if calibrate:
-            print("Calibrating final classifier")
+            print(f"[INFO] [{n_feats} feats] Calibrating final classifier")
             calibrated_final = CalibratedClassifierCV(
                 final_clf,
                 method="isotonic",
-                cv=StratifiedKFold(n_splits=5, shuffle=True, random_state=random_state),
+                cv=StratifiedKFold(n_splits=5, shuffle=True, random_state=args.rs),
             )
             calibrated_final.fit(X_train[x_cols], y_train)
 
@@ -425,19 +425,21 @@ def main():
         }
 
         current_scores = {}
+        reports = {}
+        cms = {}
         for key, (true_y, preds, probas) in to_measure.items():
 
-            print(f"Getting report metrics for {key} predictions")
+            print(f"[INFO] [{n_feats} feats] Getting report metrics for {key} predictions")
             # Report metrics
             performance_metrics = {"AUC": roc_auc_score(true_y, probas)}
-            cm = SCORERS["CM"](true_y, preds)
-            report = SCORERS["Report"](true_y, preds)
+            cms[key] = SCORERS["CM"](true_y, preds)
+            reports[key] = SCORERS["Report"](true_y, preds)
             for k, score_f in [
                 (k, v) for (k, v) in SCORERS.items() if k not in EXCLUDE_SCORES
             ]:
                 performance_metrics[k] = score_f(true_y, preds)
 
-            print("Plotting ROC and precision-recall curves")
+            print(f"[INFO] [{n_feats} feats] Plotting ROC and precision-recall curves")
             # ROC curve
             auc = performance_metrics["AUC"]
             fpr, tpr, roc_thresholds = roc_curve(true_y, probas)
@@ -470,9 +472,9 @@ def main():
             )
             plt.close()
 
-            print("Bootstrapping metrics")
+            print(f"[INFO] [{n_feats} feats] Bootstrapping metrics")
             # Bootstrapping main metrics
-            rng = np.random.RandomState(random_state)  # for reproducibility
+            rng = np.random.RandomState(args.rs)  # for reproducibility
 
             bootstrap_metrics = {}
             for k in performance_metrics:
@@ -480,7 +482,7 @@ def main():
 
             bootstrap_cms = []
 
-            for i in range(n_bootstrap):
+            for i in range(args.n_bs):
                 indices = rng.choice(len(true_y), size=len(true_y), replace=True)
                 y_true_bs = np.array(true_y)[indices]
                 y_pred_bs = np.array(preds)[indices]
@@ -504,7 +506,7 @@ def main():
                 combined_scores[key][k].append(v)
                 combined_scores[key][f"{k} CI"].append(metric_cis[k])
                 current_scores[key][k] = v
-                for i, bound in enumerate(["upper", "lower"]):
+                for i, bound in enumerate(["lower", "upper"]):
                     current_scores[key][f"{k} CI {bound}"] = metric_cis[k][i]
 
             cm_cis = {}
@@ -521,7 +523,7 @@ def main():
                     cm_cis["std"][i, j] = np.std(values, ddof=1)
 
             cm_cis.update({
-                "CM": cm,
+                "CM": cms[key],
             })
             joblib.dump(
                 cm_cis,
@@ -554,9 +556,9 @@ def main():
             plt.close()
 
             plt.figure(figsize=(6, 5))
-            plt.title(f"{LABEL_LOOKUP[args.subreddit]} Stage 1 {key} {n_feats} Confusion Matrix")
+            plt.title(f"{LABEL_LOOKUP[args.subreddit]} Thread size {key} {n_feats} Confusion Matrix")
             sns.heatmap(
-                cm,
+                cms[key],
                 annot=True,
                 fmt="d",
                 cmap="YlGnBu",
@@ -567,13 +569,13 @@ def main():
             plt.ylabel("True Class")
             plt.tight_layout()
             plt.savefig(
-                f"{model_outdir}/stage1_{n_feats}_{key}_confusion_matrix.png", dpi=300
+                f"{model_outdir}/{key}_confusion_matrix.png", dpi=300
             )
             plt.close()
 
-            joblib.dump(cm, f"{model_outdir}/{n_feats}_{key}_confusion_matrix_plot_data.jl")
+            joblib.dump(cms[key], f"{model_outdir}/{key}_confusion_matrix.jl")
 
-        print("Getting starting thread predictions")
+        print(f"[INFO] [{n_feats} feats] Getting starting thread predictions")
         # Save predicted started threads
         started_dict = {
             "train": pd.DataFrame(
@@ -591,19 +593,22 @@ def main():
                 }
             ),
         }
-        print(f"Saving results to {model_outdir}")
+        print(f"[INFO] [{n_feats} feats] Saving results to {model_outdir}")
+        for key, df in started_dict.items():
+            df.to_parquet(f"{model_outdir}/{key}_started_threads.parquet")
         models_dict = {"classifier": final_clf}
-        if calibration:
+        if calibrate:
             models_dict["calibrated_classifier"] = calibrated_final
         models_dict["X_test"] = X_test[x_cols]
-        models_dict["y_test"] = true_y
-        models_dict["X_train"] = X_tr
-        models_dict["y_train"] = y_tr
-        joblib.dump(started_dict, f"{model_outdir}/{n_feats}_feats_started_threads.jl")
-        joblib.dump(models_dict, f"{model_outdir}/{n_feats}_feats_models.jl")
-        final_clf.booster_.save_model(f"{outdir}/stage1_{n_feats}_feats_final_model.txt")
+        models_dict["y_test"] = y_test
+        models_dict["X_train"] = X_train[x_cols]
+        models_dict["y_train"] = y_train
+        joblib.dump(models_dict, f"{model_outdir}/model.jl")
+        final_clf.booster_.save_model(f"{model_outdir}/final_model.txt")
 
-        report_df = pd.DataFrame(report).transpose()
+        report_dfs = {}
+        for key, report in reports.items():
+            report_dfs[key] = pd.DataFrame(report).transpose()
 
         # SVD cols
         svd_cols = [col for col in x_cols if col.startswith("svd_")]
@@ -619,6 +624,7 @@ def main():
                 top_words + bottom_words, columns=["word", "value"]
             )
 
+        print(f"[INFO] [{n_feats} feats] Getting SHAP values")
         # SHAP visualizations
         explainer = shap.TreeExplainer(final_clf)
         shap_values = explainer.shap_values(X_test[x_cols])
@@ -637,11 +643,11 @@ def main():
             elif len(shap_values) == 2:
                 shap_used = shap_values[1]  # class 1
             else:
-                raise ValueError("Unexpected SHAP value list length.")
+                raise ValueError(f"[ERROR] [{n_feats} feats] Unexpected SHAP value list length.")
         elif isinstance(shap_values, np.ndarray):
             shap_used = shap_values
         else:
-            raise TypeError(f"Unexpected SHAP output type: {type(shap_values)}")
+            raise TypeError(f"[ERROR] [{n_feats} feats] Unexpected SHAP output type: {type(shap_values)}")
 
         shap_importance = np.abs(shap_used).mean(axis=0)
         shap_importance_df = pd.DataFrame(
@@ -650,20 +656,20 @@ def main():
 
         joblib.dump(
             shap_importance_df,
-            f"{model_outdir}/stage1_{n_feats}_feats_shap_importance_df.jl",
+            f"{model_outdir}/shap_importance_df.jl",
         )
-        joblib.dump(shap_used, f"{model_outdir}/stage1_{n_feats}_feats_shap_values.jl")
+        joblib.dump(shap_used, f"{model_outdir}/shap_values.jl")
 
         for plot_type in ["bar", "dot"]:
             plt.figure(figsize=(10, 6))
             shap.summary_plot(shap_used, X_test[x_cols], plot_type=plot_type, show=False)
             plt.tight_layout()
-            plt.savefig(f"{model_outdir}/stage1_{n_feats}_feats_final_shap_{plot_type}.png")
+            plt.savefig(f"{model_outdir}/{n_feats}_feats_final_shap_{plot_type}.png")
             plt.clf()
 
         joblib.dump(
             {"shap_val": shap_used, "feat_name": X_test[x_cols]},
-            f"{model_outdir}/{n_feats}_shap_plot_data.jl",
+            f"{model_outdir}/shap_plot_data.jl",
         )
 
         model_end = dt.datetime.now()
@@ -679,7 +685,7 @@ def main():
             best_hyperparams, orient="index", columns=["Value"]
         )
         with pd.ExcelWriter(
-            f"{model_outdir}/stage1_{n_feats}_feats_test_data_results.xlsx"
+            f"{model_outdir}/test_data_results.xlsx"
         ) as writer:
             pd.DataFrame.from_dict(model_info, orient="index", columns=["Value"]).to_excel(
                 writer, sheet_name="model_info"
@@ -688,18 +694,20 @@ def main():
             current_scores_df.T.to_excel(writer, sheet_name="performance")
             hyperparams_df.to_excel(writer, sheet_name="hyperparams")
 
-            report_df.to_excel(writer, sheet_name="classification_report")
+            for key, df in report_dfs.items():
+                df.to_excel(writer, sheet_name=f"{key}_report")
             shap_importance_df.to_excel(writer, sheet_name="SHAP_Importance", index=False)
 
             for svd_col, df in svd_words.items():
                 df.to_excel(writer, sheet_name=f"{svd_col}_words", index=False)
 
         combined_summary[n_feats] = {
-            "report": report_df,
             "params": config_df,
             "hyperparams": hyperparams_df,
             "shap": shap_importance_df,
         }
+        for key, df in report_dfs.items():
+            combined_summary[n_feats][f"{key}_report"] = df
 
         config["hyperparams"] = best_hyperparams
 
@@ -716,7 +724,7 @@ def main():
         inverted_summary[key] = pd.concat(inverted_summary[key])
 
 
-    print("Plotting ROC and precision-recall curves for all")
+    print(f"[INFO] Plotting ROC and precision-recall curves for all")
     proba_dict = {
         "test": y_probas,
         "oof": oof_proba_list,
@@ -774,23 +782,19 @@ def main():
             )
 
             # Optional: plot 95% CI shaded area
-            lower = [
-                metric_val - ci[0]
-                for metric_val, ci in zip(
-                    results_dict[metric], results_dict[f"{metric} CI"]
-                )
-            ]
-            upper = [
-                ci[1] - metric_val
-                for metric_val, ci in zip(
-                    results_dict[metric], results_dict[f"{metric} CI"]
-                )
-            ]
+            lower_err = []
+            upper_err = []
+            for metric_val, ci_bounds in zip(
+                results_dict[metric], results_dict[f"{metric} CI"]
+            ):
+                lower_err.append(metric_val - ci_bounds[0])
+                upper_err.append(ci_bounds[1] - metric_val)
+
 
             plt.errorbar(
                 results_dict["n_feats"],
                 results_dict[metric],
-                yerr=[lower, upper],
+                yerr=[lower_err, upper_err],
                 fmt="none",
                 capsize=3,
                 color="gray",
@@ -823,8 +827,8 @@ def main():
         "info": model_info,
     }
     joblib.dump(model_params, f"{args.outdir}/thread_size_final_model_params.jl")
-    print(f"Saved all outputs to: {args.outdir}")
-    print(f"Finished. Total runtime {end-start}.")
+    print(f"[OK] Saved all outputs to: {args.outdir}")
+    print(f"[OK] Finished. Total runtime {end-start}.")
 
 
 if __name__ == "__main__":
