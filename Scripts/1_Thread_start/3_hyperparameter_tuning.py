@@ -1,0 +1,351 @@
+
+import sys
+import argparse
+import os
+
+import datetime as dt
+
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning)
+warnings.filterwarnings("ignore", category=FutureWarning)
+
+import joblib
+
+from functools import partial
+import pandas as pd
+import numpy as np
+import lightgbm as lgb
+from scipy.optimize import minimize_scalar
+
+import sklearn
+from sklearn.calibration import CalibratedClassifierCV, calibration_curve
+from sklearn.metrics import (
+    confusion_matrix,
+    classification_report,
+    roc_auc_score,
+    roc_curve,
+    precision_recall_curve,
+    matthews_corrcoef,
+    f1_score,
+    brier_score_loss,
+    precision_score,
+    recall_score,
+    balanced_accuracy_score,
+    fbeta_score,
+)
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.model_selection import StratifiedKFold, train_test_split
+from sklearn.utils import compute_class_weight
+
+import optuna
+import optuna.visualization as vis
+
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+
+LABEL_LOOKUP = {
+    "crypto": "r/CryptoCurrency",
+    "politics": "r/politics",
+    "conspiracy": "r/Conspiracy",
+}
+
+SCORERS = {
+    "MCC": matthews_corrcoef,
+    "F1": f1_score,
+    "Balanced accuracy": balanced_accuracy_score,
+}
+
+CLASS_NAMES = {
+    0: "Stalled",
+    1: "Started",
+}
+
+SCORER_MAP = {
+    "mcc": "MCC",
+    "f1": "F1",
+    "f1-score": "F1",
+    "f": "F-beta",
+    "fb": "F-beta",
+    "fbeta": "F-beta",
+    "f-beta": "F-beta",
+    "balanced": "Balanced accuracy",
+    "balanced_accuracy": "Balanced accuracy",
+}
+
+# Aggregate hyperparameters across folds
+def aggregate_params(param_list):
+    df = pd.DataFrame(param_list)
+    agg = {}
+    for col in df.columns:
+        # For categorical/int values (e.g., num_leaves, max_depth), use mode
+        if df[col].dtype.kind in "iO":
+            agg[col] = df[col].mode().iloc[0]
+        else:
+            agg[col] = df[col].mean()
+    return agg
+
+def main():
+    print(f"{sys.argv[0]}")
+    start = dt.datetime.now()
+    print("[INFO] Hyperparameter tuning.")
+    print(f"[INFO] STARTED AT {start}")
+
+
+    # CL arguments
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--subreddit", help="Subreddit")
+    ap.add_argument(
+        "--outdir",
+        help="Output directory.",
+    )
+    ap.add_argument(
+        "--train_X",
+        help="Training X data filepath (parquet).",
+    )
+
+    ap.add_argument(
+        "--train_y",
+        help="Training y data filepath (parquet).",
+    )
+
+    ap.add_argument("--params", help="Tuned model params file (jl).")
+
+    ap.add_argument(
+        "--y-col",
+        default="log_thread_size",
+        help="Target y column. Defaults to log_thread_size.",
+    )
+
+    ap.add_argument(
+        "--y_thresh", 
+        default=None,
+        help="Target y threshold to identify started threads. Defaults to log(1)."
+    )
+
+    ap.add_argument("--debug", action="store_true", help="Run the script in debug mode.")
+    ap.add_argument("-nc", "--no-cal", action="store_true", help="Deactivate model calibration.")
+
+    ap.add_argument("--rs", default="42", help="Random state, defaults to 42.")
+    ap.add_argument("--scorer", default="MCC", help="Scorer to tune to (F-beta, MCC or F1-score. Defaults to MCC)")
+
+    ap.add_argument(
+        "--beta",
+        default="2",
+        help="Beta for f-beta score. Default 2.",
+    )
+    ap.add_argument(
+        "--trials",
+        default=None,
+        help="Number of Optuna trials. Defaults to 300, or 10 in debug mode.",
+    )
+    ap.add_argument(
+        "--splits",
+        default=None,
+        help="Number of CV splits. Defaults to 5, or 2 in debug mode.",
+    )
+
+
+    args = ap.parse_args()
+    args.rs = int(args.rs)
+    args.beta = float(args.beta)
+
+    SCORERS["F-beta"] = partial(fbeta_score, beta=args.beta)
+
+    scorer_key = str(args.scorer).lower()
+    if scorer_key in SCORER_MAP:
+        args.scorer = SCORER_MAP[scorer_key]
+
+    if args.scorer not in SCORERS:
+        raise ValueError(
+            f"[ERROR] Invalid scorer '{args.scorer}'. "
+            f"Must be one of {list(SCORERS.keys())} or their aliases."
+        )
+
+
+    if str(args.subreddit).lower() not in LABEL_LOOKUP:
+        print(f"[ERROR] Subreddit entered {args.subreddit} not in list: {LABEL_LOOKUP.keys()}. Exiting.")
+        raise FileNotFoundError
+    
+    debug = False
+    if args.debug:
+        debug = True
+        print("[INFO] DEBUG MODE ENGAGED")
+
+    calibrate = True
+    if args.no_cal:
+        calibrate = False
+        print("[INFO] Model calibration disengaged.")
+
+    if args.splits is None:
+        args.splits = 5 if not debug else 2
+    else:
+        args.splits = int(args.splits)
+
+    if args.y_thresh is None:
+        args.y_thresh = np.log(1)
+    else:
+        args.y_thresh = float(args.y_thresh)
+    
+    if args.trials is None:
+        args.trials = 300 if not debug else 10
+    else:
+        args.trials = int(args.trials)
+    
+    
+    if not os.path.isfile(args.params):
+        raise FileNotFoundError(f"[ERROR] Model params file not found: {args.params}")
+    
+    print(f"[INFO] Args: {args}")
+    
+    os.makedirs(args.outdir, exist_ok=True)
+
+    print(f"[INFO] Loading training data.")
+    X = pd.read_parquet(args.train_X)
+    y = pd.read_parquet(args.train_y)[args.y_col]
+    # threshold to identify started threads
+    y = (y > args.y_thresh).astype(int)
+
+    print(f"[INFO] Loading tuning params")
+    model_params = joblib.load(args.params)
+    old_model_info = model_params["info"]
+    params = model_params["params"]
+
+    # run data for outfile
+    model_info = {
+        "script": str(sys.argv[0]),
+        "run_start": start,
+    }
+    
+    model_info.update(vars(args))
+    model_info["python_version"] = sys.version
+    model_info["pandas_version"] = pd.__version__
+    model_info["numpy_version"] = np.__version__
+    model_info["lightgbm_version"] = lgb.__version__
+    model_info["sklearn_version"] = sklearn.__version__
+
+    print("[INFO] Getting feature counts from params...")
+    feature_counts = list(params.keys())
+    model_info["feature_counts"] = feature_counts
+    print(f"[OK] Feature counts: {feature_counts}")
+
+    print(f"[INFO] Setting up outer cross-validation.")
+    outer_cv = StratifiedKFold(n_splits=args.splits, shuffle=True, random_state=args.rs)
+
+
+    foldwise_best_params = {}
+    foldwise_best_scores = {}
+
+    for fold, (train_idx, val_idx) in enumerate(outer_cv.split(X, y)):
+        print(f"[INFO] Outer CV fold {fold + 1}/{args.splits}")
+        for n_feats in feature_counts:
+            if n_feats not in foldwise_best_params:
+                foldwise_best_params[n_feats] = []
+                foldwise_best_scores[n_feats] = []
+            config = params[n_feats]
+            print(f"[INFO] [{n_feats}]")
+            x_cols = config["features"]
+            cw = config["final_class_weights"]
+            thresh = config["final_threshold"]
+
+            print(f"[INFO] [{n_feats}] Selected features: {x_cols}")
+            print(f"[INFO] [{n_feats}] Class weights: {cw}, Threshold: {thresh}")
+
+            # Load training data
+            X_tr, X_val = X[x_cols].iloc[train_idx], X[x_cols].iloc[val_idx]
+            y_tr, y_val = y.loc[train_idx], y.loc[val_idx]
+
+            if calibrate:
+                # Split X_val and y_val into calibration and evaluation sets
+                X_calib, X_eval, y_calib, y_eval = train_test_split(
+                    X_val,
+                    y_val,
+                    test_size=0.5,  # 50% for calibration, 50% for evaluation
+                    stratify=y_val,  # preserve class balance
+                    random_state=args.rs,  # for reproducibility
+                )
+            else:
+                X_eval, y_eval = X_val, y_val
+
+            def objective(trial):
+                param = {
+                    "objective": "binary",
+                    "metric": "binary_logloss",
+                    "boosting_type": "gbdt",
+                    "random_state": args.rs,
+                    "verbosity": -1,
+                    "class_weight": cw,  # from STAGE_1_TUNING
+                    "num_leaves": trial.suggest_int("num_leaves", 20, 25 if debug else 150),
+                    "max_depth": trial.suggest_int("max_depth", 3, 6 if debug else 15),
+                    "learning_rate": trial.suggest_float(
+                        "learning_rate", 0.1 if debug else 1e-3, 0.2, log=True
+                    ),
+                    "min_child_samples": trial.suggest_int(
+                        "min_child_samples", 5, 10 if debug else 100
+                    ),
+                    "subsample": trial.suggest_float("subsample", 0.5, 1.0),
+                    "colsample_bytree": trial.suggest_float("colsample_bytree", 0.5, 1.0),
+                    "reg_alpha": trial.suggest_float("reg_alpha", 0, 5),
+                    "reg_lambda": trial.suggest_float("reg_lambda", 0, 5),
+                }
+
+                clf = lgb.LGBMClassifier(**param)
+                clf.fit(X_tr, y_tr)
+                if calibrate:
+                    calibrated_clf = CalibratedClassifierCV(
+                        clf, method="isotonic", cv="prefit"
+                    )
+                    calibrated_clf.fit(X_calib, y_calib)
+                    proba = calibrated_clf.predict_proba(X_eval)[:, 1]
+                else:
+                    proba = clf.predict_proba(X_val)[:, 1]
+
+                preds = (proba >= thresh).astype(int)
+                if not test:
+                    if len(np.unique(preds)) < 2:
+                        raise optuna.TrialPruned("[WARNING] Only one class predicted, skipping trial.")
+
+                score = SCORERS[args.scorer](y_eval, preds)
+
+                return score
+
+        print(f"Starting hyperparameter tuning for {n_feats}")
+
+        sampler = optuna.samplers.TPESampler(seed=args.rs)
+        study = optuna.create_study(direction="maximize", sampler=sampler)
+        study.optimize(objective, n_trials=args.trials)
+
+        foldwise_best_params[n_feats].append(study.best_params)
+        foldwise_best_scores[n_feats].append(study.best_value)
+
+        print(f"[INFO] Fold {fold+1}: Best {args.scorer} for {n_feats} feats: {study.best_value}")
+        joblib.dump(
+            study.best_params, f"{args.outdir}/{n_feats}_feats_best_hyperparams_fold_{fold+1}.jl"
+        )
+
+
+
+    for n_feats in feature_counts:
+        config = params[n_feats]
+        config["best_hyperparams"] = aggregate_params(foldwise_best_params[n_feats])
+        config[f"best_{args.scorer}"] = np.mean(foldwise_best_scores[n_feats])
+        joblib.dump(
+            config["best_hyperparams"], f"{outdir}/{n_feats}_feats_best_hyperparams.jl"
+        )
+        print(
+            f"Best hyperparameters for {n_feats} features: {config['best_hyperparams']}, "
+            f"Mean {args.scorer}: {config[f'best_{args.scorer}']}"
+        )
+
+
+    end = dt.datetime.now()
+    model_info["hyperparameter_tuning_runtime"] = str(end - start)
+    new_model_params = {"info": model_info, "params": params}
+
+    joblib.dump(new_model_params, f"{args.outdir}/params_post_hyperparam_tuning.jl")
+    print(f"Saved all outputs to: {args.outdir}")
+    print(f"Finished. Total runtime {end-start}.")
+
+
+if __name__ == "__main__":
+    main()
