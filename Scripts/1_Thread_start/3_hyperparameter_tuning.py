@@ -300,6 +300,7 @@ def main():
     model_info["numpy_version"] = np.__version__
     model_info["lightgbm_version"] = lgb.__version__
     model_info["sklearn_version"] = sklearn.__version__
+    model_info["optuna_version"] = optuna.__version__
 
     print("[INFO] Getting feature counts from params...")
     feature_counts = list(params.keys())
