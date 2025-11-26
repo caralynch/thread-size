@@ -115,10 +115,6 @@ from scipy.optimize import minimize
 import optuna
 import optuna.visualization as vis
 
-import matplotlib
-
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 
 LABEL_LOOKUP = {
     "crypto": "r/CryptoCurrency",
@@ -407,9 +403,7 @@ def main():
     )
     outer_cv = StratifiedKFold(n_splits=args.splits, shuffle=True, random_state=args.rs)
 
-    all_outer_results = []
     importance_dfs = {}
-    all_folds_df_dict = {}
     foldwise_best_params = {}
     foldwise_best_mccs = {}
     all_configs = []
@@ -417,7 +411,6 @@ def main():
 
     print("[INFO] Starting fold-wise cross-validation")
     for fold, (train_idx, val_idx) in enumerate(outer_cv.split(X, y_bins_for_cv)):
-        all_folds_df_dict[fold + 1] = {}
         print(f"[INFO] [{fold + 1}/{args.splits}] Started at {dt.datetime.now()}")
         # get training and validation data for this fold
         print(
@@ -593,8 +586,6 @@ def main():
                     fold_trials.append(to_append)
 
             fold_results_df = pd.DataFrame(fold_trials)
-            all_outer_results.append(fold_trials)
-            all_folds_df_dict[fold + 1][n_feats] = fold_results_df
             all_configs.append(fold_results_df)
 
         print(f"[OK][{fold + 1}/{args.splits}] Finished at {dt.datetime.now()}")
