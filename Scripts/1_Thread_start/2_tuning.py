@@ -462,10 +462,12 @@ def main():
             print(
                 f"[INFO] [Fold {fold + 1}] [{n_feats} features] Plotting Optuna study"
             )
-            fig = vis.plot_optimization_history(study)
-            fig.write_image(
-                f"{args.outdir}/optuna_fold{fold+1}_{n_feats}_feats_convergence.png"
-            )
+            try:
+                fig = vis.plot_optimization_history(study)
+                fig.write_image(f"{args.outdir}/optuna_fold{fold+1}_convergence.png")
+            except Exception as e:
+                print(f"[WARNING][{fold + 1}/{args.splits}] Could not save Optuna convergence plot: {e}")
+
 
             fold_trials = []
             for t in study.trials:
