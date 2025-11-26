@@ -11,8 +11,8 @@ High-level behaviour
 Inputs:
     - --train_X : Training feature matrix (parquet).
     - --train_y : Training target data (parquet) containing --y-col.
-    - --params  : Joblib file with Stage 1.2 outputs:
-                  {"info": ..., "params": {n_feats: {...}, ...}}.
+    - --params  : Joblib file with Stage 2 outputs:
+                  {"params": {n_feats: {...}, ...}}.
       Each entry in "params" is expected to contain:
           * "features"           : list of feature names,
           * "final_class_weights": dict for class_weight,
@@ -423,9 +423,9 @@ def main():
 
     end = dt.datetime.now()
     model_info["hyperparameter_tuning_runtime"] = str(end - start)
-    new_model_params = {"info": model_info, "params": params}
+    pd.DataFrame.from_dict(model_info, orient="index").to_csv(f"{args.outdir}/tuning_log.csv")
 
-    joblib.dump(new_model_params, f"{args.outdir}/params_post_hyperparam_tuning.jl")
+    joblib.dump(params, f"{args.outdir}/params_post_hyperparam_tuning.jl")
     print(f"Saved all outputs to: {args.outdir}")
     print(f"Finished. Total runtime {end-start}.")
 
