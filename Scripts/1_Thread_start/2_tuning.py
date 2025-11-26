@@ -632,12 +632,6 @@ def main():
             "features": ranked_features[:n_feats],
         }
 
-
-    for n_feats in params:
-        for key, value in params[n_feats].items():
-            print(f"{n_feats} {key}: {value}")
-
-
     end = dt.datetime.now()
 
     model_info["tuning_runtime"] = str(end - start)
