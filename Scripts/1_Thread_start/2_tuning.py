@@ -667,7 +667,7 @@ def main():
                 }
             )
 
-    with pd.ExcelWriter(f"{args.outdir}/stage1_tuning_outputs.xlsx") as writer:
+    with pd.ExcelWriter(f"{args.outdir}/tuning_outputs.xlsx") as writer:
         pd.DataFrame.from_dict(model_info, orient="index").to_excel(
             writer, sheet_name="model_info", index=True
         )
