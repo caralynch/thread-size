@@ -504,7 +504,7 @@ def main():
         plt.savefig(f"{args.outdir}/{metric.lower()}_vs_n_feats_bootstrap.png", dpi=300)
         plt.close()
 
-     end = dt.datetime.now()
+    end = dt.datetime.now()
     total_runtime = end - start
     model_info["total_runtime"] = str(total_runtime)
 
