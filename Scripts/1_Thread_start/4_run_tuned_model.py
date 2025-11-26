@@ -19,6 +19,7 @@ from scipy.optimize import minimize_scalar
 import shap
 
 import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -33,14 +34,12 @@ from sklearn.metrics import (
     precision_recall_curve,
     matthews_corrcoef,
     f1_score,
-    brier_score_loss,
     precision_score,
     recall_score,
     balanced_accuracy_score,
     fbeta_score,
 )
 from sklearn.model_selection import StratifiedKFold, train_test_split
-from sklearn.utils import resample
 
 
 LABEL_LOOKUP = {
@@ -86,11 +85,13 @@ for i, class_name in CLASS_NAMES.items():
         }
     )
 
+
 # Compute confidence intervals
 def ci(arr):
     arr = np.array(arr)
     arr = arr[~np.isnan(arr)]  # exclude NaNs
     return np.percentile(arr, [2.5, 97.5])
+
 
 def main():
     print(f"{sys.argv[0]}")
@@ -127,14 +128,9 @@ def main():
 
     ap.add_argument("--params", help="Tuned model params file (jl).")
 
-    ap.add_argument(
-        "--tfidf", help="TF-IDF model."
-    )
+    ap.add_argument("--tfidf", help="TF-IDF model.")
 
-    ap.add_argument(
-        "--svd", help="SVD model."
-    )
-
+    ap.add_argument("--svd", help="SVD model.")
 
     ap.add_argument(
         "--y-col",
@@ -173,11 +169,6 @@ def main():
         "--splits",
         default=None,
         help="Number of CV splits. Defaults to 5, or 2 in debug mode.",
-    )
-    ap.add_argument(
-        "--feats",
-        default=None,
-        help="Max model features. Defaults to 30, or 10 in debug mode.",
     )
     ap.add_argument(
         "--n-bs",
@@ -235,6 +226,8 @@ def main():
     print(f"[INFO] Args: {args}")
 
     os.makedirs(args.outdir, exist_ok=True)
+    plot_outdir = f"{args.outdir}/plots"
+    os.makedirs(plot_outdir, exist_ok=True)
 
     print(f"[INFO] Loading X train and test data.")
     X_train = pd.read_parquet(args.train_X)
@@ -247,7 +240,6 @@ def main():
 
     print(f"[INFO] Loading tuned model params from {args.params}.")
     params = joblib.load(args.params)
-
 
     # run data for outfile
     model_info = {
@@ -287,11 +279,9 @@ def main():
         feature_names = tfidf_vectorizer.get_feature_names_out()
         svd_components = svd_model.components_
 
-
     def neg_score(threshold, y_proba, y_true):
         y_pred = (y_proba >= threshold).astype(int)
         return -SCORERS[args.scorer](y_true, y_pred)
-
 
     combined_summary = {}
     y_probas = {}
@@ -316,6 +306,8 @@ def main():
     for n_feats, config in params.items():
         model_outdir = f"{args.outdir}/mod_{n_feats}_outputs"
         os.makedirs(model_outdir, exist_ok=True)
+        model_plot_outdir = f"{model_outdir}/plots"
+        os.makedirs(model_plot_outdir, exist_ok=True)
         model_start = dt.datetime.now()
         print(f"[INFO] [{n_feats} feats]")
         x_cols = config["features"]
@@ -326,7 +318,9 @@ def main():
         )
 
         print(f"[INFO] [{n_feats} feats] Selected features: {x_cols}")
-        print(f"[INFO] [{n_feats} feats] Class weights: {cw}")  # , Threshold: {thresh}")
+        print(
+            f"[INFO] [{n_feats} feats] Class weights: {cw}"
+        )  # , Threshold: {thresh}")
 
         # Start with fixed parameters
         fixed_params = {
@@ -342,7 +336,9 @@ def main():
         oof_probas = np.zeros(len(X_train))
         thresholds = []
 
-        print(f"[INFO] [{n_feats} feats] Creating {args.splits} CV loops for OOF started train")
+        print(
+            f"[INFO] [{n_feats} feats] Creating {args.splits} CV loops for OOF started train"
+        )
         i = 1
         for train_idx, val_idx in outer_cv.split(X_train, y_train):
             print(f"[INFO] [{n_feats} feats] Loop {i}/{args.splits}")
@@ -371,7 +367,9 @@ def main():
             clf.fit(X_tr, y_tr)
             if calibrate:
                 print(f"[INFO] [{n_feats} feats] [{i}/{args.splits}] Calibrating model")
-                calibrated_clf = CalibratedClassifierCV(clf, method="isotonic", cv="prefit")
+                calibrated_clf = CalibratedClassifierCV(
+                    clf, method="isotonic", cv="prefit"
+                )
                 calibrated_clf.fit(X_calib, y_calib)
                 proba = calibrated_clf.predict_proba(X_val)[:, 1]
                 calib_proba = calibrated_clf.predict_proba(X_thresh_calib)[:, 1]
@@ -380,7 +378,9 @@ def main():
                 calib_proba = clf.predict_proba(X_thresh_calib)[:, 1]
 
             oof_probas[val_idx] = proba
-            print(f"[INFO] [{n_feats} feats] [{i}/{args.splits}] Using minimize_scalar to get threshold")
+            print(
+                f"[INFO] [{n_feats} feats] [{i}/{args.splits}] Using minimize_scalar to get threshold"
+            )
             result = minimize_scalar(
                 neg_score,
                 bounds=(0, 1),
@@ -429,7 +429,9 @@ def main():
         cms = {}
         for key, (true_y, preds, probas) in to_measure.items():
 
-            print(f"[INFO] [{n_feats} feats] Getting report metrics for {key} predictions")
+            print(
+                f"[INFO] [{n_feats} feats] Getting report metrics for {key} predictions"
+            )
             # Report metrics
             performance_metrics = {"AUC": roc_auc_score(true_y, probas)}
             cms[key] = SCORERS["CM"](true_y, preds)
@@ -448,10 +450,12 @@ def main():
             plt.plot([0, 1], [0, 1], linestyle="--", color="gray")
             plt.xlabel("False Positive Rate")
             plt.ylabel("True Positive Rate")
-            plt.title(f"{LABEL_LOOKUP[args.subreddit]} Stage 1 {n_feats} feats {key} ROC Curve")
+            plt.title(
+                f"{LABEL_LOOKUP[args.subreddit]} Stage 1 {n_feats} feats {key} ROC Curve"
+            )
             plt.legend()
             plt.tight_layout()
-            plt.savefig(f"{model_outdir}/roc_curve_{key}_{n_feats}_feats.png", dpi=300)
+            plt.savefig(f"{model_plot_outdir}/roc_curve_{key}.png", dpi=300)
             plt.close()
 
             # Precision-recall curve
@@ -467,7 +471,7 @@ def main():
             plt.legend()
             plt.tight_layout()
             plt.savefig(
-                f"{model_outdir}/stage1_{n_feats}_feats_precision_recall_curve_{key}.png",
+                f"{model_plot_outdir}/precision_recall_curve_{key}.png",
                 dpi=300,
             )
             plt.close()
@@ -493,7 +497,9 @@ def main():
 
                 for k in bootstrap_metrics:
                     if k == "AUC":
-                        bootstrap_metrics[k].append(roc_auc_score(y_true_bs, y_proba_bs))
+                        bootstrap_metrics[k].append(
+                            roc_auc_score(y_true_bs, y_proba_bs)
+                        )
                     else:
                         bootstrap_metrics[k].append(SCORERS[k](y_true_bs, y_pred_bs))
 
@@ -522,9 +528,11 @@ def main():
                     cm_cis["upper"][i, j] = np.percentile(values, 97.5)
                     cm_cis["std"][i, j] = np.std(values, ddof=1)
 
-            cm_cis.update({
-                "CM": cms[key],
-            })
+            cm_cis.update(
+                {
+                    "CM": cms[key],
+                }
+            )
             joblib.dump(
                 cm_cis,
                 f"{model_outdir}/{key}_{n_feats}_confusion_matrix_data.jl",
@@ -540,7 +548,11 @@ def main():
             plt.figure()
             plt.plot(prob_pred, prob_true, marker="o", label="Model")
             plt.plot(
-                [0, 1], [0, 1], linestyle="--", color="gray", label="Perfectly calibrated"
+                [0, 1],
+                [0, 1],
+                linestyle="--",
+                color="gray",
+                label="Perfectly calibrated",
             )
             plt.xlabel("Mean predicted probability")
             plt.ylabel("Fraction of positives")
@@ -550,13 +562,15 @@ def main():
             plt.legend()
             plt.tight_layout()
             plt.savefig(
-                f"{model_outdir}/stage1_{n_feats}_{key}_feats_calibration_curve.png",
+                f"{model_plot_outdir}/calibration_curve.png",
                 dpi=300,
             )
             plt.close()
 
             plt.figure(figsize=(6, 5))
-            plt.title(f"{LABEL_LOOKUP[args.subreddit]} Thread size {key} {n_feats} Confusion Matrix")
+            plt.title(
+                f"{LABEL_LOOKUP[args.subreddit]} Thread size {key} {n_feats} Confusion Matrix"
+            )
             sns.heatmap(
                 cms[key],
                 annot=True,
@@ -568,9 +582,7 @@ def main():
             plt.xlabel("Predicted Class")
             plt.ylabel("True Class")
             plt.tight_layout()
-            plt.savefig(
-                f"{model_outdir}/{key}_confusion_matrix.png", dpi=300
-            )
+            plt.savefig(f"{model_plot_outdir}/{key}_confusion_matrix.png", dpi=300)
             plt.close()
 
             joblib.dump(cms[key], f"{model_outdir}/{key}_confusion_matrix.jl")
@@ -632,7 +644,7 @@ def main():
         shap_explainer_output = {
             "explainer": explainer,
             "shap_values": shap_values,
-            "X_test": X_test[x_cols]
+            "X_test": X_test[x_cols],
         }
         joblib.dump(shap_explainer_output, f"{model_outdir}/shap_explainer.jl")
 
@@ -643,11 +655,15 @@ def main():
             elif len(shap_values) == 2:
                 shap_used = shap_values[1]  # class 1
             else:
-                raise ValueError(f"[ERROR] [{n_feats} feats] Unexpected SHAP value list length.")
+                raise ValueError(
+                    f"[ERROR] [{n_feats} feats] Unexpected SHAP value list length."
+                )
         elif isinstance(shap_values, np.ndarray):
             shap_used = shap_values
         else:
-            raise TypeError(f"[ERROR] [{n_feats} feats] Unexpected SHAP output type: {type(shap_values)}")
+            raise TypeError(
+                f"[ERROR] [{n_feats} feats] Unexpected SHAP output type: {type(shap_values)}"
+            )
 
         shap_importance = np.abs(shap_used).mean(axis=0)
         shap_importance_df = pd.DataFrame(
@@ -662,9 +678,11 @@ def main():
 
         for plot_type in ["bar", "dot"]:
             plt.figure(figsize=(10, 6))
-            shap.summary_plot(shap_used, X_test[x_cols], plot_type=plot_type, show=False)
+            shap.summary_plot(
+                shap_used, X_test[x_cols], plot_type=plot_type, show=False
+            )
             plt.tight_layout()
-            plt.savefig(f"{model_outdir}/{n_feats}_feats_final_shap_{plot_type}.png")
+            plt.savefig(f"{model_plot_outdir}/final_shap_{plot_type}.png")
             plt.clf()
 
         joblib.dump(
@@ -684,19 +702,19 @@ def main():
         hyperparams_df = pd.DataFrame.from_dict(
             best_hyperparams, orient="index", columns=["Value"]
         )
-        with pd.ExcelWriter(
-            f"{model_outdir}/test_data_results.xlsx"
-        ) as writer:
-            pd.DataFrame.from_dict(model_info, orient="index", columns=["Value"]).to_excel(
-                writer, sheet_name="model_info"
-            )
+        with pd.ExcelWriter(f"{model_outdir}/test_data_results.xlsx") as writer:
+            pd.DataFrame.from_dict(
+                model_info, orient="index", columns=["Value"]
+            ).to_excel(writer, sheet_name="model_info")
             config_df.to_excel(writer, sheet_name="model_params")
             current_scores_df.T.to_excel(writer, sheet_name="performance")
             hyperparams_df.to_excel(writer, sheet_name="hyperparams")
 
             for key, df in report_dfs.items():
                 df.to_excel(writer, sheet_name=f"{key}_report")
-            shap_importance_df.to_excel(writer, sheet_name="SHAP_Importance", index=False)
+            shap_importance_df.to_excel(
+                writer, sheet_name="SHAP_Importance", index=False
+            )
 
             for svd_col, df in svd_words.items():
                 df.to_excel(writer, sheet_name=f"{svd_col}_words", index=False)
@@ -722,7 +740,6 @@ def main():
 
     for key in inverted_summary:
         inverted_summary[key] = pd.concat(inverted_summary[key])
-
 
     print(f"[INFO] Plotting ROC and precision-recall curves for all")
     proba_dict = {
@@ -753,7 +770,7 @@ def main():
         plt.title(f"{LABEL_LOOKUP[args.subreddit]} Stage 1 ROC Curve")
         plt.legend(title="Features")
         plt.tight_layout()
-        plt.savefig(f"{args.outdir}/roc_curve_{key}_all_feats.png", dpi=300)
+        plt.savefig(f"{plot_outdir}/{key}_roc_curve.png", dpi=300)
         plt.close()
 
         plt.figure()
@@ -766,7 +783,7 @@ def main():
         plt.title(f"{LABEL_LOOKUP[args.subreddit]} Stage 1 Precision-Recall Curve")
         plt.legend()
         plt.tight_layout()
-        plt.savefig(f"{args.outdir}/all_feats_precision_recall_curve_{key}.png", dpi=300)
+        plt.savefig(f"{plot_outdir}/{key}_precision_recall_curve.png", dpi=300)
         plt.close()
 
     metrics = [m for m in SCORERS.keys() if m not in EXCLUDE_SCORES]
@@ -790,7 +807,6 @@ def main():
                 lower_err.append(metric_val - ci_bounds[0])
                 upper_err.append(ci_bounds[1] - metric_val)
 
-
             plt.errorbar(
                 results_dict["n_feats"],
                 results_dict[metric],
@@ -800,15 +816,16 @@ def main():
                 color="gray",
             )
 
-            plt.title(f"{LABEL_LOOKUP[args.subreddit]} - {key} {metric} vs number of features")
+            plt.title(
+                f"{LABEL_LOOKUP[args.subreddit]} - {key} {metric} vs number of features"
+            )
             plt.xlabel("Number of features")
             plt.ylabel(metric.upper())
             plt.xticks(fontsize=10)
             plt.yticks(fontsize=10)
             plt.tight_layout()
-            plt.savefig(f"{args.outdir}/{key}_{metric}_vs_n_feats.png", dpi=300)
+            plt.savefig(f"{plot_outdir}/{key}_{metric}_vs_n_feats.png", dpi=300)
             plt.close()
-
 
     end = dt.datetime.now()
     total_runtime = end - start
@@ -818,7 +835,9 @@ def main():
             writer, sheet_name="model_info"
         )
         for key, out_dict in combined_scores.items():
-            pd.DataFrame.from_dict(out_dict).to_excel(writer, sheet_name=f"{key}_metrics")
+            pd.DataFrame.from_dict(out_dict).to_excel(
+                writer, sheet_name=f"{key}_metrics"
+            )
         for key, output_df in inverted_summary.items():
             output_df.to_excel(writer, sheet_name=f"all_{key}")
 
@@ -833,4 +852,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
