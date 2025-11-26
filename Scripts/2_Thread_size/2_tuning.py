@@ -1,6 +1,7 @@
 import sys
 import argparse
 import os
+import gc
 
 import datetime as dt
 import warnings
@@ -384,7 +385,7 @@ def main():
                         )
 
                 cw_values = compute_class_weight(
-                    suggest_cws, classes=np.unique(y_train_bins), y=y_train_bins
+                    suggest_cws, classes=np.unique(y_train), y=y_train
                 )
 
                 class_weight = {i: w for i, w in enumerate(cw_values)}
