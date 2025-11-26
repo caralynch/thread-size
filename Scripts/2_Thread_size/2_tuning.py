@@ -555,7 +555,7 @@ def main():
                 trial.set_user_attr("cw_type", cw_type)
                 trial.set_user_attr("cw", class_weight)
                 trial.set_user_attr("cw_raw", cw_values)
-                return performance_metrics["MCC"]
+                return performance_metrics[args.scorer]
 
             print(
                 f"[INFO][{fold + 1}/{args.splits}][{n_feats} feats] Starting Optuna trials"
