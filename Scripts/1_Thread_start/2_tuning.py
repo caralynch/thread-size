@@ -632,7 +632,7 @@ def main():
         "params": params,
     }
 
-    joblib.dump(model_params, f"{args.outdir}/stage1_model_param_dict.jl")
+    joblib.dump(model_params, f"{args.outdir}/model_param_dict.jl")
 
     flat_params = []
     for n_feats, model_dict in params.items():
