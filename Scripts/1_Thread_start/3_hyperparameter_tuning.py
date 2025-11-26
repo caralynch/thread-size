@@ -104,12 +104,6 @@ from sklearn.metrics import (
 from sklearn.model_selection import StratifiedKFold, train_test_split
 
 import optuna
-import optuna.visualization as vis
-
-import matplotlib
-
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 
 LABEL_LOOKUP = {
     "crypto": "r/CryptoCurrency",
@@ -121,11 +115,6 @@ SCORERS = {
     "MCC": matthews_corrcoef,
     "F1": f1_score,
     "Balanced accuracy": balanced_accuracy_score,
-}
-
-CLASS_NAMES = {
-    0: "Stalled",
-    1: "Started",
 }
 
 SCORER_MAP = {
@@ -140,9 +129,24 @@ SCORER_MAP = {
     "balanced_accuracy": "Balanced accuracy",
 }
 
-
-# Aggregate hyperparameters across folds
 def aggregate_params(param_list):
+    """
+    Aggregate a list of per-fold best-parameter dictionaries.
+
+    For each parameter key:
+      - integer / object-like (categorical) parameters use the mode,
+      - floating-point parameters use the mean.
+
+    Parameters
+    ----------
+    param_list : list of dict
+        One dictionary of best params per CV fold.
+
+    Returns
+    -------
+    dict
+        Aggregated parameters representative of cross-fold performance.
+    """
     df = pd.DataFrame(param_list)
     agg = {}
     for col in df.columns:
@@ -282,9 +286,7 @@ def main():
     y = (y > args.y_thresh).astype(int)
 
     print(f"[INFO] Loading tuning params")
-    model_params = joblib.load(args.params)
-    old_model_info = model_params["info"]
-    params = model_params["params"]
+    params = joblib.load(args.params)["params"]
 
     # run data for outfile
     model_info = {
