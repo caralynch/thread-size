@@ -1,3 +1,72 @@
+"""
+4_run_tuned_model.py
+
+Stage 2 – final evaluation of tuned thread-size classifier.
+
+This script evaluates multiclass LightGBM models for predicting discretised
+thread size (e.g. stalled, small, medium, large) using tuned hyperparameters
+and bin definitions from the Stage 2 tuning pipeline. For each feature subset
+size (n_feats), it:
+
+    * Loads training and test feature matrices and continuous log thread size
+      targets, then discretises them into K ordinal classes using fixed bin
+      edges supplied in the params file.
+
+    * Runs an outer StratifiedKFold cross-validation loop on the training data
+      to obtain out-of-fold (OOF) predicted probabilities. Within each fold:
+        - Splits the fold training set into model-training and threshold-
+          calibration subsets, and optionally a separate calibration subset for
+          probability calibration.
+        - Fits a multiclass LightGBM classifier with fixed class weights and
+          tuned tree hyperparameters.
+        - Optionally calibrates the model probabilities using isotonic
+          regression (CalibratedClassifierCV).
+        - Optimises a vector of per-class probability thresholds using
+          scipy.optimize.minimize to maximise a chosen scorer (MCC, macro F1,
+          balanced accuracy, etc.) on the threshold-calibration subset.
+
+    * Aggregates the per-fold optimal thresholds by averaging across folds to
+      obtain a single set of class-wise thresholds per n_feats, and uses these
+      to:
+        - derive OOF hard class predictions from OOF probabilities, and
+        - derive test-set hard predictions from a final model trained on the
+          full training data (with optional recalibration).
+
+    * Computes a rich set of performance metrics on both OOF and test
+      predictions, including:
+        - global metrics (MCC, macro F1, balanced accuracy, macro precision,
+          macro recall),
+        - per-class precision and recall,
+        - bootstrap 95% confidence intervals for all metrics, and
+        - bootstrap summary statistics for each cell of the confusion matrix.
+
+    * Produces per-model artefacts:
+        - joblib dumps of the fitted model and optional calibrated wrapper,
+        - parquet files with X/y splits and predictions (test and OOF),
+        - SHAP values and explainer objects, plus SHAP summary plots,
+        - confusion-matrix plots and bootstrap-based summaries, and
+        - Excel workbooks with run info, model parameters, hyperparameters,
+          classification reports, performance metrics, class sizes, SHAP
+          summaries, and (if applicable) words associated with SVD components.
+
+    * Aggregates results across feature subset sizes into:
+        - combined_scores.jl (metrics vs n_feats with CIs for test and OOF),
+        - metric-vs-n_feats plots, and
+        - a global evaluation.xlsx with combined tables.
+
+This script does not perform hyperparameter tuning itself; it assumes that the
+params joblib contains, for each n_feats:
+    - a feature list (`features`),
+    - bin edges for discretising log(thread_size) (`bins`),
+    - tuned tree hyperparameters (`best_hyperparams`), and
+    - final class weights (`final_class_weights`).
+
+Reproducibility
+---------------
+All stochastic components (StratifiedKFold splits, train/test splits, LightGBM
+fit, bootstrap sampling) are controlled by the `--rs` random seed. Library
+versions and all CLI arguments are recorded in the output metadata.
+"""
 
 import sys
 import argparse
@@ -72,15 +141,53 @@ REPORTS = {
 }
 
 def class_precision(y_true, y_pred, class_idx):
+    """
+    Compute precision for a single target class in a multiclass setting.
+
+    Parameters
+    ----------
+    y_true : array-like
+        True class labels.
+    y_pred : array-like
+        Predicted class labels.
+    class_idx : int
+        Index of the class for which precision is computed.
+
+    Returns
+    -------
+    float
+        Precision for the specified class. If the class is absent in the
+        predictions, returns 0 (zero_division=0).
+    """
     return precision_score(
         y_true, y_pred, zero_division=0, labels=[class_idx], average=None
     )[0]
 
 
+
 def class_recall(y_true, y_pred, class_idx):
+    """
+    Compute recall for a single target class in a multiclass setting.
+
+    Parameters
+    ----------
+    y_true : array-like
+        True class labels.
+    y_pred : array-like
+        Predicted class labels.
+    class_idx : int
+        Index of the class for which recall is computed.
+
+    Returns
+    -------
+    float
+        Recall for the specified class. If the class is absent in the
+        true labels, returns 0 (zero_division=0).
+    """
     return recall_score(
         y_true, y_pred, zero_division=0, labels=[class_idx], average=None
     )[0]
+
 
 
 def ci(arr):
@@ -103,6 +210,27 @@ def ci(arr):
     return np.percentile(arr, [2.5, 97.5])
 
 def get_preds(thresholds, y_probas):
+    """
+    Convert per-class predicted probabilities into hard class labels using
+    class-specific probability thresholds.
+
+    For each sample, probabilities below the corresponding class threshold are
+    masked out (set to -1). If at least one class passes its threshold, the
+    predicted class is the argmax among the passing classes; otherwise, the
+    argmax over the original probability vector is used.
+
+    Parameters
+    ----------
+    thresholds : array-like of shape (n_classes,)
+        Per-class probability thresholds in [0, 1].
+    y_probas : array-like of shape (n_samples, n_classes)
+        Predicted class probabilities.
+
+    Returns
+    -------
+    list of int
+        Predicted class indices for each sample.
+    """
     preds = []
     for row in y_probas:
         passed = [
@@ -110,6 +238,7 @@ def get_preds(thresholds, y_probas):
         ]
         preds.append(np.argmax(passed) if max(passed) != -1 else np.argmax(row))
     return preds
+
 
 
 def main():
@@ -336,15 +465,15 @@ def main():
         model_data_outdir = f"{model_outdir}/model_data"
         os.makedirs(model_data_outdir, exist_ok=True)
 
-        print(f"[INFO][{n_feats} feats]")
-
         current_scores = {}
 
         x_cols = config["features"]
         cw = config["final_class_weights"]
         initial_guess = config["final_threshold"]
         if isinstance(initial_guess, dict):
-            initial_guess = list(initial_guess.keys())
+            initial_guess = list(initial_guess.values())
+        if len(initial_guess) != args.classes:
+            raise ValueError(f"[ERROR][{n_feats} feats] Initial guess is wrong length: {initial_guess}. Expected {args.classes} values.")
         bounds = [(0.0, 1.0)] * args.classes
         config["final_n_features"] = n_feats
         bins = config["bins"]
@@ -388,34 +517,35 @@ def main():
         )
 
         print(f"[INFO][{n_feats} feats] Getting OOF predictions")
-        i = 1
-
+        fold_idx = 1
 
         oof_probas = np.zeros((len(X_tr), args.classes))
         thresholds = []
         for train_idx, val_idx in outer_cv.split(X_tr, y_tr):
-            print(f"[INFO] [{n_feats} feats] Loop {i}/{args.splits}")
+            print(f"[INFO][{n_feats} feats] Fold {fold_idx}/{args.splits}")
             X_fold_tr, X_fold_val = X_tr.iloc[train_idx], X_tr.iloc[val_idx]
             y_fold_tr, y_fold_val = y_tr.iloc[train_idx], y_tr.iloc[val_idx]
 
-            # for proba threshold calibration
-            X_fold_tr, X_thresh_calib, y_tr, y_thresh_calib = train_test_split(
+            # Split fold training into model-training and threshold-calibration sets
+            X_fold_tr, X_thresh_calib, y_fold_tr, y_thresh_calib = train_test_split(
                 X_fold_tr,
                 y_fold_tr,
                 train_size=0.8,
-                stratify=y_tr,  # preserve class balance
-                random_state=args.rs,  # for reproducibility
+                stratify=y_fold_tr,  # preserve class balance within the fold
+                random_state=args.rs,
             )
+
+            # Optionally split further for probability calibration
             if calibrate:
                 X_fold_tr, X_calib, y_fold_tr, y_calib = train_test_split(
                     X_fold_tr,
                     y_fold_tr,
-                    train_size=0.6, # change to 0.8?
+                    train_size=0.6,
                     stratify=y_fold_tr,
                     random_state=args.rs,
                 )
 
-            print(f"[INFO][{n_feats} feats][{i}/{args.splits}] Training model.")
+            print(f"[INFO][{n_feats} feats][{fold_idx}/{args.splits}] Training model.")
 
             model = lgb.LGBMClassifier(
                 objective="multiclass",
@@ -426,6 +556,7 @@ def main():
                 **hyperparams,
             )
             model.fit(X_fold_tr, y_fold_tr)
+
             if calibrate:
                 calibrated_clf = CalibratedClassifierCV(
                     model,
@@ -441,7 +572,8 @@ def main():
 
             oof_probas[val_idx] = proba
             print(
-                f"[INFO] [{n_feats} feats] [{i}/{args.splits}] Using minimize_scalar to get threshold"
+                f"[INFO][{n_feats} feats][{fold_idx}/{args.splits}] "
+                "Optimising per-class thresholds with L-BFGS-B"
             )
             result = minimize(
                 neg_score,
@@ -451,7 +583,8 @@ def main():
                 method="L-BFGS-B",
             )
             thresholds.append(result.x)
-            i += 1
+            fold_idx += 1
+
         
         print(f"[INFO][{n_feats} feats] Averaging thresholds over folds")
 
@@ -519,7 +652,7 @@ def main():
             for k, report_f in REPORTS.items():
                 report_metrics[k] = report_f(true_y, preds)
 
-            print("Bootstrapping metrics")
+            print(f"[INFO][{n_feats} feats] Bootstrapping metrics for {key} predictions")
             # Bootstrapping main metrics
             rng = np.random.RandomState(args.rs)  # for reproducibility
 
@@ -571,7 +704,7 @@ def main():
             }
             confusion_matrix_data.update(cm_cis)
 
-            print(f"Creating plots")
+            print(f"[INFO][{n_feats} feats] Creating plots for {key} predictions")
             joblib.dump(
                 confusion_matrix_data,
                 f"{model_data_outdir}/{key}_confusion_matrix_data.jl",
@@ -722,9 +855,16 @@ def main():
         output_dfs[key] = pd.concat(df_list, ignore_index=True)
 
     excel_path = f"{args.outdir}/evaluation.xlsx"
-    print(f"Saving results to {excel_path}")
+    print(f"[INFO] Saving combined evaluation to {excel_path}")
     with pd.ExcelWriter(excel_path) as writer:
         for key, df in output_dfs.items():
             df.to_excel(writer, sheet_name=key, index=False)
         for key, out_dict in combined_scores.items():
             pd.DataFrame.from_dict(out_dict).to_excel(writer, sheet_name=f"{key}_metrics")
+
+    print(f"[OK] Saved all outputs to: {args.outdir}")
+    print(f"[OK] Finished. Total runtime {end-start}.")
+
+
+if __name__ == "__main__":
+    main()
