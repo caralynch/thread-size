@@ -122,9 +122,21 @@ for i, class_name in CLASS_NAMES.items():
         }
     )
 
-
-# Compute confidence intervals
 def ci(arr):
+    """
+    Compute a 95% bootstrap confidence interval for a 1D array-like.
+
+    Parameters
+    ----------
+    arr : array-like
+        Input sample of metric values (e.g. bootstrap scores).
+
+    Returns
+    -------
+    np.ndarray, shape (2,)
+        Lower and upper bounds of the 95%% percentile interval
+        (2.5th and 97.5th percentiles).
+    """
     arr = np.array(arr)
     arr = arr[~np.isnan(arr)]  # exclude NaNs
     return np.percentile(arr, [2.5, 97.5])
@@ -228,6 +240,10 @@ def main():
             f"[ERROR] Invalid scorer '{args.scorer}'. "
             f"Must be one of {list(SCORERS.keys())} or their aliases."
         )
+    
+    def neg_score(threshold, y_proba, y_true):
+        y_pred = (y_proba >= threshold).astype(int)
+        return -SCORERS[args.scorer](y_true, y_pred)
 
     if str(args.subreddit).lower() not in LABEL_LOOKUP:
         print(
@@ -316,10 +332,6 @@ def main():
         feature_names = tfidf_vectorizer.get_feature_names_out()
         svd_components = svd_model.components_
 
-    def neg_score(threshold, y_proba, y_true):
-        y_pred = (y_proba >= threshold).astype(int)
-        return -SCORERS[args.scorer](y_true, y_pred)
-
     combined_summary = {}
     y_probas = {}
     y_preds = {}
@@ -341,11 +353,10 @@ def main():
     print(f"[INFO] Setting up outer cross-validation.")
     outer_cv = StratifiedKFold(n_splits=args.splits, shuffle=True, random_state=args.rs)
     for n_feats, config in params.items():
-        model_outdir = f"{args.outdir}/mod_{n_feats}_outputs"
+        model_outdir = f"{args.outdir}/model_{n_feats}"
         os.makedirs(model_outdir, exist_ok=True)
         model_plot_outdir = f"{model_outdir}/plots"
         os.makedirs(model_plot_outdir, exist_ok=True)
-        model_start = dt.datetime.now()
         print(f"[INFO] [{n_feats} feats]")
         x_cols = config["features"]
         cw = config["final_class_weights"]
@@ -399,11 +410,11 @@ def main():
                     random_state=args.rs,  # for reproducibility
                 )
 
-            print(f"[INFO] [{n_feats} feats] [{i}/{args.splits}] Training model.")
+            print(f"[INFO][{n_feats} feats][{i}/{args.splits}] Training model.")
             clf = lgb.LGBMClassifier(**combined_params)
             clf.fit(X_tr, y_tr)
             if calibrate:
-                print(f"[INFO] [{n_feats} feats] [{i}/{args.splits}] Calibrating model")
+                print(f"[INFO][{n_feats} feats][{i}/{args.splits}] Calibrating model")
                 calibrated_clf = CalibratedClassifierCV(
                     clf, method="isotonic", cv="prefit"
                 )
@@ -416,7 +427,7 @@ def main():
 
             oof_probas[val_idx] = proba
             print(
-                f"[INFO] [{n_feats} feats] [{i}/{args.splits}] Using minimize_scalar to get threshold"
+                f"[INFO][{n_feats} feats][{i}/{args.splits}] Using minimize_scalar to get threshold"
             )
             result = minimize_scalar(
                 neg_score,
@@ -428,7 +439,7 @@ def main():
 
             i += 1
 
-        print(f"[INFO] [{n_feats} feats] Averaging thresholds over folds")
+        print(f"[INFO][{n_feats} feats] Averaging thresholds over folds")
         thresh = np.mean(thresholds)
         config["model_threshold"] = thresh
         oof_preds = (oof_probas >= thresh).astype(int)
@@ -438,7 +449,7 @@ def main():
         final_clf.fit(X_train[x_cols], y_train)
 
         if calibrate:
-            print(f"[INFO] [{n_feats} feats] Calibrating final classifier")
+            print(f"[INFO][{n_feats} feats] Calibrating final classifier")
             calibrated_final = CalibratedClassifierCV(
                 final_clf,
                 method="isotonic",
@@ -727,9 +738,6 @@ def main():
             f"{model_outdir}/shap_plot_data.jl",
         )
 
-        model_end = dt.datetime.now()
-        model_runtime = model_end - model_start
-        model_info[f"{n_feats}_runtime"] = model_runtime
         if "best_hyperparams" in config:
             config.pop("best_hyperparams")
         config_df = pd.DataFrame([{"Key": k, "Value": v} for k, v in config.items()])
