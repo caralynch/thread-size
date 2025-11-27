@@ -3,7 +3,7 @@
 # List of subreddits to process
 SUBREDDITS=("conspiracy" "crypto" "politics")
 
-JOBSCRIPT="/home/ucabcpl/Scratch/thread_size/thread-size/Scripts/1_1_get_feat_baselines_jobscript.sh"
+JOBSCRIPT="2_4_model_jobscript.sh"
 
 # Make sure the jobscript exists
 if [ ! -f "$JOBSCRIPT" ]; then
@@ -15,7 +15,7 @@ for SUB in "${SUBREDDITS[@]}"; do
     echo "Submitting thread size feature baselines job for: $SUB"
 
     # Submit job AND pass subreddit as the first argument
-    qsub -N ${SUB}_1_1 -o "${SUB}_1_1.out" -e "${SUB}_1_1.err" "$JOBSCRIPT" "$SUB"
+    qsub -N ${SUB}_2_4 -o "${SUB}_2_4.out" -e "${SUB}_2_4.err" "$JOBSCRIPT" "$SUB"
 
     echo ""
 done

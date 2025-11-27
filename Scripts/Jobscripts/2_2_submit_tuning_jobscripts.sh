@@ -3,7 +3,7 @@
 # List of subreddits to process
 SUBREDDITS=("conspiracy" "crypto" "politics")
 
-JOBSCRIPT="/home/ucabcpl/Scratch/thread_size/thread-size/Scripts/2_2_tuning_jobscript.sh"
+JOBSCRIPT="2_2_tuning_jobscript.sh"
 
 # Make sure the jobscript exists
 if [ ! -f "$JOBSCRIPT" ]; then
