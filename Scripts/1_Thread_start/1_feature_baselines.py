@@ -160,17 +160,14 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--subreddit", help="Subreddit")
     ap.add_argument(
-        "--outdir",
-        help="Output directory.",
+        "--outdir", help="Output directory.",
     )
     ap.add_argument(
-        "--train_X",
-        help="Training X data filepath (parquet).",
+        "--train_X", help="Training X data filepath (parquet).",
     )
 
     ap.add_argument(
-        "--train_y",
-        help="Training y data filepath (parquet).",
+        "--train_y", help="Training y data filepath (parquet).",
     )
 
     ap.add_argument(
@@ -195,9 +192,7 @@ def main():
     ap.add_argument("--rs", default="42", help="Random state, defaults to 42.")
 
     ap.add_argument(
-        "--beta",
-        default="2",
-        help="Beta for f-beta score. Default 2.",
+        "--beta", default="2", help="Beta for f-beta score. Default 2.",
     )
 
     ap.add_argument(
@@ -527,17 +522,12 @@ def main():
         else:
             print(f"[Warning] No CI data for {metric}. Plotting point means only.")
             plt.plot(
-                agg_df["n_feats"],
-                agg_df[metric],
-                "-o",
-                label=metric,
+                agg_df["n_feats"], agg_df[metric], "-o", label=metric,
             )
         plt.title(f"{LABEL_LOOKUP[args.subreddit]}", loc="left", fontsize=12)
         plt.xlabel("Number of features", fontsize=10)
         plt.ylabel(metric, fontsize=10)
-        plt.xticks(
-            fontsize=9,
-        )
+        plt.xticks(fontsize=9,)
         plt.yticks(fontsize=9)
         plt.grid(False)
         plt.tight_layout()

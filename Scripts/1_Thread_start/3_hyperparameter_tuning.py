@@ -129,6 +129,7 @@ SCORER_MAP = {
     "balanced_accuracy": "Balanced accuracy",
 }
 
+
 def aggregate_params(param_list):
     """
     Aggregate a list of per-fold best-parameter dictionaries.
@@ -168,17 +169,14 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--subreddit", help="Subreddit")
     ap.add_argument(
-        "--outdir",
-        help="Output directory.",
+        "--outdir", help="Output directory.",
     )
     ap.add_argument(
-        "--train_X",
-        help="Training X data filepath (parquet).",
+        "--train_X", help="Training X data filepath (parquet).",
     )
 
     ap.add_argument(
-        "--train_y",
-        help="Training y data filepath (parquet).",
+        "--train_y", help="Training y data filepath (parquet).",
     )
 
     ap.add_argument("--params", help="Tuned model params file (jl).")
@@ -210,9 +208,7 @@ def main():
     )
 
     ap.add_argument(
-        "--beta",
-        default="2",
-        help="Beta for f-beta score. Default 2.",
+        "--beta", default="2", help="Beta for f-beta score. Default 2.",
     )
     ap.add_argument(
         "--trials",
@@ -404,7 +400,9 @@ def main():
 
                 return score
 
-            print(f"[INFO][{fold + 1}/{args.splits}][{n_feats} feats] Starting hyperparameter tuning for {n_feats}")
+            print(
+                f"[INFO][{fold + 1}/{args.splits}][{n_feats} feats] Starting hyperparameter tuning for {n_feats}"
+            )
 
             sampler = optuna.samplers.TPESampler(seed=args.rs)
             study = optuna.create_study(direction="maximize", sampler=sampler)
@@ -425,11 +423,7 @@ def main():
     for n_feats in feature_counts:
         for fold_idx, score in enumerate(foldwise_best_scores[n_feats], start=1):
             rows.append(
-                {
-                    "n_feats": n_feats,
-                    "fold": fold_idx,
-                    args.scorer: score,
-                }
+                {"n_feats": n_feats, "fold": fold_idx, args.scorer: score,}
             )
 
     fold_scores_df = pd.DataFrame(rows)
@@ -452,7 +446,9 @@ def main():
 
     end = dt.datetime.now()
     model_info["hyperparameter_tuning_runtime"] = str(end - start)
-    pd.DataFrame.from_dict(model_info, orient="index").to_csv(f"{args.outdir}/tuning_log.csv")
+    pd.DataFrame.from_dict(model_info, orient="index").to_csv(
+        f"{args.outdir}/tuning_log.csv"
+    )
 
     joblib.dump(params, f"{args.outdir}/params_post_hyperparam_tuning.jl")
     print(f"[OK] Saved all outputs to: {args.outdir}")

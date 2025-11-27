@@ -154,17 +154,14 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--subreddit", help="Subreddit")
     ap.add_argument(
-        "--outdir",
-        help="Output directory.",
+        "--outdir", help="Output directory.",
     )
     ap.add_argument(
-        "--train_X",
-        help="Training X data filepath (parquet).",
+        "--train_X", help="Training X data filepath (parquet).",
     )
 
     ap.add_argument(
-        "--train_y",
-        help="Training y data filepath (parquet).",
+        "--train_y", help="Training y data filepath (parquet).",
     )
 
     ap.add_argument(
@@ -194,9 +191,7 @@ def main():
     )
 
     ap.add_argument(
-        "--beta",
-        default="2",
-        help="Beta for f-beta score. Default 2.",
+        "--beta", default="2", help="Beta for f-beta score. Default 2.",
     )
     ap.add_argument(
         "--trials",
@@ -466,8 +461,9 @@ def main():
                 fig = vis.plot_optimization_history(study)
                 fig.write_image(f"{args.outdir}/optuna_fold{fold+1}_convergence.png")
             except Exception as e:
-                print(f"[WARNING][{fold + 1}/{args.splits}] Could not save Optuna convergence plot: {e}")
-
+                print(
+                    f"[WARNING][{fold + 1}/{args.splits}] Could not save Optuna convergence plot: {e}"
+                )
 
             fold_trials = []
             for t in study.trials:
@@ -671,10 +667,12 @@ def main():
             )
 
     with pd.ExcelWriter(f"{args.outdir}/tuning_outputs.xlsx") as writer:
-        model_info_df = pd.DataFrame.from_dict(model_info, orient="index").reset_index(names="param").rename(columns={0:"value"})
-        model_info_df.to_excel(
-            writer, sheet_name="model_info", index=False
+        model_info_df = (
+            pd.DataFrame.from_dict(model_info, orient="index")
+            .reset_index(names="param")
+            .rename(columns={0: "value"})
         )
+        model_info_df.to_excel(writer, sheet_name="model_info", index=False)
         pd.DataFrame.from_dict(params, orient="index").to_excel(
             writer, sheet_name="params", index=False
         )
