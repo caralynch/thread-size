@@ -760,7 +760,11 @@ def main():
             flat_params.append(to_append)
 
     with pd.ExcelWriter(f"{args.outdir}/tuning_outputs.xlsx") as writer:
-        model_info_df = pd.DataFrame.from_dict(model_info, orient="index").reset_index(names="param").rename(columns={0:"value"})
+        model_info_df = (
+            pd.DataFrame.from_dict(model_info, orient="index")
+            .reset_index(names="param")
+            .rename(columns={0: "value"})
+        )
         pd.DataFrame.from_dict(model_info_df, orient="index").to_excel(
             writer, sheet_name="model_info", index=False
         )
