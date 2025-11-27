@@ -73,7 +73,7 @@ echo "[INFO] Running Stage 2.1 feature baselines for subreddit: ${SUBREDDIT}"
 echo "[INFO] Output directory: ${OUTDIR}"
 
 run_step "${SUBREDDIT}_3_h_tuning" \
-  "${SCRIPT_DIR}/3_hyperparamet_tuning.py" \
+  "${SCRIPT_DIR}/3_hyperparameter_tuning.py" \
   --subreddit "${SUBREDDIT}" \
   --outdir "${OUTDIR}" \
   --train_X "${TRAIN_X}" \
