@@ -44,6 +44,8 @@ Inputs (CLI arguments)
 --n-bs
     Number of bootstrap resamples per (fold, n_feats) configuration.
     Defaults to 1000 (or 20 in debug).
+--cal
+    Calibration method: "sigmoid" or "isotonic" (default "sigmoid").
 
 Discretisation
 ~~~~~~~~~~~~~~

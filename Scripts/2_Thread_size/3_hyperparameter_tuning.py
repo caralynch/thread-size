@@ -58,6 +58,7 @@ Command-line interface
 --params      : Path to precomputed Stage 2 tuning params (joblib).
 --debug       : If set, run in lightweight debug mode.
 --no-cal / -nc: If set, disables probability calibration.
+--cal         : "sigmoid" or "isotonic" (default "sigmoid").
 
 Reproducibility
 ---------------
