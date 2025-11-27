@@ -760,14 +760,15 @@ def main():
             flat_params.append(to_append)
 
     with pd.ExcelWriter(f"{args.outdir}/tuning_outputs.xlsx") as writer:
-        pd.DataFrame.from_dict(model_info, orient="index").to_excel(
-            writer, sheet_name="model_info", index=True
+        model_info_df = pd.DataFrame.from_dict(model_info, orient="index").reset_index(names="param").rename(columns={0:"value"})
+        pd.DataFrame.from_dict(model_info_df, orient="index").to_excel(
+            writer, sheet_name="model_info", index=False
         )
         pd.DataFrame.from_dict(params, orient="index").to_excel(
-            writer, sheet_name="params", index=True
+            writer, sheet_name="params", index=False
         )
 
-        all_configs_df.to_excel(writer, sheet_name="all_configs")
+        all_configs_df.to_excel(writer, sheet_name="all_configs", index=False)
         importance_merged.to_excel(
             writer, sheet_name="feature_importances", index=False
         )
