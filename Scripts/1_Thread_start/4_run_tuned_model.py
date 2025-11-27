@@ -122,6 +122,7 @@ for i, class_name in CLASS_NAMES.items():
         }
     )
 
+
 def ci(arr):
     """
     Compute a 95% bootstrap confidence interval for a 1D array-like.
@@ -152,27 +153,22 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--subreddit", help="Subreddit")
     ap.add_argument(
-        "--outdir",
-        help="Output directory.",
+        "--outdir", help="Output directory.",
     )
     ap.add_argument(
-        "--train_X",
-        help="Training X data filepath (parquet).",
+        "--train_X", help="Training X data filepath (parquet).",
     )
 
     ap.add_argument(
-        "--test_X",
-        help="Test X data filepath (parquet).",
+        "--test_X", help="Test X data filepath (parquet).",
     )
 
     ap.add_argument(
-        "--train_y",
-        help="Training y data filepath (parquet).",
+        "--train_y", help="Training y data filepath (parquet).",
     )
 
     ap.add_argument(
-        "--test_y",
-        help="Test y data filepath (parquet).",
+        "--test_y", help="Test y data filepath (parquet).",
     )
 
     ap.add_argument("--params", help="Tuned model params file (jl).")
@@ -209,9 +205,7 @@ def main():
     )
 
     ap.add_argument(
-        "--beta",
-        default="2",
-        help="Beta for f-beta score. Default 2.",
+        "--beta", default="2", help="Beta for f-beta score. Default 2.",
     )
 
     ap.add_argument(
@@ -240,7 +234,7 @@ def main():
             f"[ERROR] Invalid scorer '{args.scorer}'. "
             f"Must be one of {list(SCORERS.keys())} or their aliases."
         )
-    
+
     def neg_score(threshold, y_proba, y_true):
         y_pred = (y_proba >= threshold).astype(int)
         return -SCORERS[args.scorer](y_true, y_pred)
@@ -405,7 +399,7 @@ def main():
                 X_tr, X_calib, y_tr, y_calib = train_test_split(
                     X_tr,
                     y_tr,
-                    train_size=0.6,  # 60% for train, 40% for calib
+                    train_size=0.9,  # p0% for train, 10% for calib
                     stratify=y_tr,  # preserve class balance
                     random_state=args.rs,  # for reproducibility
                 )
@@ -519,8 +513,7 @@ def main():
             plt.legend()
             plt.tight_layout()
             plt.savefig(
-                f"{model_plot_outdir}/precision_recall_curve_{key}.png",
-                dpi=300,
+                f"{model_plot_outdir}/precision_recall_curve_{key}.png", dpi=300,
             )
             plt.close()
 
@@ -577,13 +570,10 @@ def main():
                     cm_cis["std"][i, j] = np.std(values, ddof=1)
 
             cm_cis.update(
-                {
-                    "CM": cms[key],
-                }
+                {"CM": cms[key],}
             )
             joblib.dump(
-                cm_cis,
-                f"{model_outdir}/{key}_{n_feats}_confusion_matrix_data.jl",
+                cm_cis, f"{model_outdir}/{key}_{n_feats}_confusion_matrix_data.jl",
             )
             prob_true, prob_pred = calibration_curve(
                 true_y, probas, n_bins=10, strategy="quantile"
@@ -610,8 +600,7 @@ def main():
             plt.legend()
             plt.tight_layout()
             plt.savefig(
-                f"{model_plot_outdir}/calibration_curve.png",
-                dpi=300,
+                f"{model_plot_outdir}/calibration_curve.png", dpi=300,
             )
             plt.close()
 
@@ -639,18 +628,10 @@ def main():
         # Save predicted started threads
         started_dict = {
             "train": pd.DataFrame(
-                {
-                    "index": X_train.index,
-                    "proba": oof_probas,
-                    "predicted": oof_preds,
-                }
+                {"index": X_train.index, "proba": oof_probas, "predicted": oof_preds,}
             ),
             "test": pd.DataFrame(
-                {
-                    "index": X_test.index,
-                    "proba": test_proba,
-                    "predicted": test_pred,
-                }
+                {"index": X_test.index, "proba": test_proba, "predicted": test_pred,}
             ),
         }
         print(f"[INFO] [{n_feats} feats] Saving results to {model_outdir}")
@@ -719,8 +700,7 @@ def main():
         ).sort_values(by="MeanAbsoluteSHAP", ascending=False)
 
         joblib.dump(
-            shap_importance_df,
-            f"{model_outdir}/shap_importance_df.jl",
+            shap_importance_df, f"{model_outdir}/shap_importance_df.jl",
         )
         joblib.dump(shap_used, f"{model_outdir}/shap_values.jl")
 
@@ -830,7 +810,6 @@ def main():
         plt.tight_layout()
         plt.savefig(f"{plot_outdir}/{key}_precision_recall_curve.png", dpi=300)
         plt.close()
-
 
     metrics = [m for m in SCORERS.keys() if m not in EXCLUDE_SCORES]
 
