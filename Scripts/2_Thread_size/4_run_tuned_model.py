@@ -898,6 +898,7 @@ def main():
                 writer, sheet_name=f"{key}_metrics"
             )
 
+    end = dt.datetime.now()
     print(f"[OK] Saved all outputs to: {args.outdir}")
     print(f"[OK] Finished. Total runtime {end-start}.")
 
