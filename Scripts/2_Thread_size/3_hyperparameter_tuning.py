@@ -1,3 +1,71 @@
+"""
+3_hyperparameter_tuning.py
+
+Multiclass hyperparameter tuning for thread-size classification.
+
+This script refines LightGBM hyperparameters for the multiclass
+thread-size model, conditional on:
+
+    * a fixed discretisation of log(thread_size) into K ordinal bins, and
+    * a fixed set of class weights and per-class decision thresholds, and
+    * a set of feature subsets (indexed by n_feats).
+
+Given a precomputed parameter dictionary (from the tuning script)
+containing, for each n_feats:
+
+    - `features`           : list of feature names to use,
+    - `bins`               : bin edges for discretising log_thread_size,
+    - `final_class_weights`: LightGBM class_weight mapping,
+    - `final_threshold`    : per-class probability thresholds,
+
+this script:
+
+    1. Loads X (features) and y (continuous log_thread_size).
+    2. Discretises y into ordinal class labels using the bin edges from the
+       first configuration, and uses these labels for Stratified K-fold CV.
+    3. For each outer CV fold and each n_feats:
+         a. Restricts X to the selected feature subset.
+         b. Optionally splits the validation fold into calibration and
+            evaluation halves, and fits a CalibratedClassifierCV wrapper.
+         c. Runs an Optuna/TPE search over LightGBM tree hyperparameters
+            (num_leaves, max_depth, learning_rate, etc.), maximising a chosen
+            scorer (MCC or macro F1) computed on the evaluation split, using
+            fixed class weights and per-class thresholds.
+    4. Aggregates per-fold best hyperparameters across folds (mode for integer
+       / categorical params, mean for continuous params) to obtain a single
+       configuration per n_feats.
+    5. Writes out:
+         - per-fold best hyperparameters (joblib),
+         - aggregated best hyperparameters per n_feats (joblib),
+         - a tuning log with runtime, arguments, and library versions (CSV).
+
+This script does *not* report final model performance; it is intended as an
+internal hyperparameter refinement step. Final evaluation and uncertainty
+estimation are handled in the Stage 2 model-evaluation script.
+
+Command-line interface
+----------------------
+--subreddit   : Subreddit key in {'crypto','politics','conspiracy'}.
+--outdir      : Output directory for tuning artefacts.
+--train_X     : Path to training feature matrix (parquet).
+--train_y     : Path to training target DataFrame (parquet).
+--y-col       : Name of the continuous target column (default 'log_thread_size').
+--classes     : Number of ordinal classes (3 or 4 currently supported).
+--scorer      : 'MCC' or 'F1'/'F1-score' (default 'MCC').
+--rs          : Random seed (default 42).
+--trials      : Number of Optuna trials (default 300, or 10 in debug mode).
+--splits      : Number of StratifiedKFold splits (default 5, or 2 in debug).
+--params      : Path to precomputed Stage 2 tuning params (joblib).
+--debug       : If set, run in lightweight debug mode.
+--no-cal / -nc: If set, disables probability calibration.
+
+Reproducibility
+---------------
+All stochastic components (Optuna sampler, CV splits, LightGBM) are seeded by
+`--rs`. Library versions and all CLI arguments are logged in the tuning log.
+
+"""
+
 import sys
 import argparse
 import os
@@ -40,10 +108,6 @@ LABEL_LOOKUP = {
 CLASS_NAMES = {
     3: ["Stalled", "Small", "Large"],
     4: ["Stalled", "Small", "Medium", "Large"],
-}
-CLASS_BIN_EDGES = {
-    3: [0.5],
-    4: [1 / 3, 2 / 3],
 }
 
 SCORERS = {
@@ -97,14 +161,17 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--subreddit", help="Subreddit")
     ap.add_argument(
-        "--outdir", help="Output directory.",
+        "--outdir",
+        help="Output directory.",
     )
     ap.add_argument(
-        "--train_X", help="Training X data filepath (parquet).",
+        "--train_X",
+        help="Training X data filepath (parquet).",
     )
 
     ap.add_argument(
-        "--train_y", help="Training y data filepath (parquet).",
+        "--train_y",
+        help="Training y data filepath (parquet).",
     )
 
     ap.add_argument(
@@ -145,12 +212,6 @@ def main():
     args = ap.parse_args()
     args.rs = int(args.rs)
     args.classes = int(args.classes)
-
-    if args.classes not in CLASS_BIN_EDGES:
-        raise ValueError(
-            f"[ERROR] args.classes={args.classes} not supported. "
-            f"Supported values: {list(CLASS_BIN_EDGES.keys())}."
-        )
 
     scorer_key = str(args.scorer).lower()
     if scorer_key in SCORER_MAP:
@@ -212,8 +273,6 @@ def main():
     }
 
     model_info.update(vars(args))
-    model_info["cw_range"] = (1, 10) if not debug else (1, 1)
-    model_info["threshold_range"] = (0.1, 0.9) if not debug else (0.4, 0.6)
     model_info["python_version"] = sys.version
     model_info["pandas_version"] = pd.__version__
     model_info["numpy_version"] = np.__version__
@@ -228,9 +287,6 @@ def main():
 
     print(f"[INFO] Setting up outer cross-validation.")
     outer_cv = StratifiedKFold(n_splits=args.splits, shuffle=True, random_state=args.rs)
-
-    foldwise_best_params = {}
-    foldwise_best_scores = {}
 
     first_bins = params[feature_counts[0]]["bins"]
     y_bins = pd.cut(y, bins=first_bins, labels=False, include_lowest=True)
@@ -249,6 +305,19 @@ def main():
             thresh = config["final_threshold"]
             config["final_n_features"] = n_feats
             bins = config["bins"]
+
+            # Sanity checks: bins and threshold length must match args.classes
+            if len(bins) - 1 != args.classes:
+                raise ValueError(
+                    f"[ERROR] For n_feats={n_feats}, len(bins)-1={len(bins)-1} "
+                    f"but args.classes={args.classes}"
+                )
+            if len(thresh) != args.classes:
+                raise ValueError(
+                    f"[ERROR] For n_feats={n_feats}, len(final_threshold)={len(thresh)} "
+                    f"but args.classes={args.classes}"
+                )
+
             print(
                 f"[INFO][{fold + 1}/{args.splits}][{n_feats} feats] Selected features: {x_cols}"
             )
@@ -258,9 +327,7 @@ def main():
 
             # Load training data
             X_tr, X_val = X[x_cols].iloc[train_idx], X[x_cols].iloc[val_idx]
-            y_tr, y_val = y_bins.loc[train_idx], y_bins.loc[val_idx]
-
-            tuned_params = {}
+            y_tr, y_val = y_bins.iloc[train_idx], y_bins.iloc[val_idx]
 
             if calibrate:
                 # Split X_val and y_val into calibration and evaluation sets
@@ -348,6 +415,20 @@ def main():
                 study.best_params,
                 f"{args.outdir}/{n_feats}_feats_best_hyperparams_fold_{fold+1}.jl",
             )
+
+    rows = []
+    for n_feats in feature_counts:
+        for fold_idx, score in enumerate(foldwise_best_scores[n_feats], start=1):
+            rows.append(
+                {
+                    "n_feats": n_feats,
+                    "fold": fold_idx,
+                    args.scorer: score,
+                }
+            )
+
+    fold_scores_df = pd.DataFrame(rows)
+    fold_scores_df.to_csv(f"{args.outdir}/foldwise_best_scores.csv", index=False)
 
     for n_feats in feature_counts:
         config = params[n_feats]

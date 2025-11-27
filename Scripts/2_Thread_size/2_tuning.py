@@ -225,14 +225,17 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--subreddit", help="Subreddit")
     ap.add_argument(
-        "--outdir", help="Output directory.",
+        "--outdir",
+        help="Output directory.",
     )
     ap.add_argument(
-        "--train_X", help="Training X data filepath (parquet).",
+        "--train_X",
+        help="Training X data filepath (parquet).",
     )
 
     ap.add_argument(
-        "--train_y", help="Training y data filepath (parquet).",
+        "--train_y",
+        help="Training y data filepath (parquet).",
     )
 
     ap.add_argument(
@@ -424,7 +427,11 @@ def main():
                 f"[INFO] [{fold + 1}/{args.splits}] Splitting x_val and y_val into calibration and eval sets"
             )
             X_calib, X_val, y_calib, y_val = train_test_split(
-                X_val, y_val, test_size=0.5, stratify=y_val, random_state=args.rs,
+                X_val,
+                y_val,
+                test_size=0.5,
+                stratify=y_val,
+                random_state=args.rs,
             )
         print(
             f"[INFO] [{fold + 1}/{args.splits}] Precomputing ranked features for candidate bins"
@@ -554,7 +561,8 @@ def main():
                 f"[INFO][{fold + 1}/{args.splits}][{n_feats} feats] Starting Optuna trials"
             )
             study = optuna.create_study(
-                direction="maximize", sampler=optuna.samplers.TPESampler(seed=args.rs),
+                direction="maximize",
+                sampler=optuna.samplers.TPESampler(seed=args.rs),
             )
             study.optimize(
                 lambda trial: objective(trial, ranked_features),

@@ -201,14 +201,17 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--subreddit", help="Subreddit")
     ap.add_argument(
-        "--outdir", help="Output directory.",
+        "--outdir",
+        help="Output directory.",
     )
     ap.add_argument(
-        "--train_X", help="Training X data filepath (parquet).",
+        "--train_X",
+        help="Training X data filepath (parquet).",
     )
 
     ap.add_argument(
-        "--train_y", help="Training y data filepath (parquet).",
+        "--train_y",
+        help="Training y data filepath (parquet).",
     )
 
     ap.add_argument(
@@ -364,7 +367,11 @@ def main():
         y_train, y_val = y_bins.iloc[train_idx], y_bins.iloc[val_idx]
         if calibrate:
             X_calib, X_val, y_calib, y_val = train_test_split(
-                X_val, y_val, test_size=0.5, stratify=y_val, random_state=args.rs,
+                X_val,
+                y_val,
+                test_size=0.5,
+                stratify=y_val,
+                random_state=args.rs,
             )
 
         print(f"[INFO] [Fold {fold+1}] Precomputing ranked features for candidate bins")
@@ -577,7 +584,10 @@ def main():
         else:
             print(f"Warning: No CI data for {metric}. Plotting point means only.")
             plt.plot(
-                agg_df["n_feats"], agg_df[metric], "-o", label=metric,
+                agg_df["n_feats"],
+                agg_df[metric],
+                "-o",
+                label=metric,
             )
         plt.title(f"{LABEL_LOOKUP[args.subreddit]}", loc="left", fontsize=12)
         plt.xlabel("Number of features", fontsize=11)
