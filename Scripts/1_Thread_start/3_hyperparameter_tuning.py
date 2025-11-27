@@ -320,13 +320,13 @@ def main():
                 foldwise_best_params[n_feats] = []
                 foldwise_best_scores[n_feats] = []
             config = params[n_feats]
-            print(f"[INFO] [{n_feats}]")
+            print(f"[INFO][{fold + 1}/{args.splits}][{n_feats} feats]")
             x_cols = config["features"]
             cw = config["final_class_weights"]
             thresh = config["final_threshold"]
 
-            print(f"[INFO] [{n_feats}] Selected features: {x_cols}")
-            print(f"[INFO] [{n_feats}] Class weights: {cw}, Threshold: {thresh}")
+            print(f"[INFO][{fold + 1}/{args.splits}][{n_feats} feats] Selected features: {x_cols}")
+            print(f"[INFO][{fold + 1}/{args.splits}][{n_feats} feats] Class weights: {cw}, Threshold: {thresh}")
 
             # Load training data
             X_tr, X_val = X[x_cols].iloc[train_idx], X[x_cols].iloc[val_idx]
@@ -385,14 +385,14 @@ def main():
                 if not debug:
                     if len(np.unique(preds)) < 2:
                         raise optuna.TrialPruned(
-                            "[WARNING] Only one class predicted, skipping trial."
+                            f"[WARNING][{fold + 1}/{args.splits}][{n_feats} feats] Only one class predicted, skipping trial."
                         )
 
                 score = SCORERS[args.scorer](y_eval, preds)
 
                 return score
 
-            print(f"Starting hyperparameter tuning for {n_feats}")
+            print(f"[INFO][{fold + 1}/{args.splits}][{n_feats} feats] Starting hyperparameter tuning for {n_feats}")
 
             sampler = optuna.samplers.TPESampler(seed=args.rs)
             study = optuna.create_study(direction="maximize", sampler=sampler)
@@ -418,8 +418,8 @@ def main():
             f"{args.outdir}/{n_feats}_feats_best_hyperparams.jl",
         )
         print(
-            f"Best hyperparameters for {n_feats} features: {config['best_hyperparams']}, "
-            f"Mean {args.scorer}: {config[f'best_{args.scorer}']}"
+            f"[INFO][{n_feats}] Best hyperparameters: {config['best_hyperparams']}, "
+            f"[INFO][{n_feats}] Mean {args.scorer}: {config[f'best_{args.scorer}']}"
         )
 
     end = dt.datetime.now()
