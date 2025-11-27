@@ -89,8 +89,6 @@ from sklearn.calibration import CalibratedClassifierCV
 from sklearn.metrics import (
     matthews_corrcoef,
     f1_score,
-    balanced_accuracy_score,
-    fbeta_score,
 )
 
 from sklearn.model_selection import StratifiedKFold, train_test_split
