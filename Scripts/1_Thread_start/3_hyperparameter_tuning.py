@@ -11,8 +11,8 @@ High-level behaviour
 Inputs:
     - --train_X : Training feature matrix (parquet).
     - --train_y : Training target data (parquet) containing --y-col.
-    - --params  : Joblib file with Stage 2 outputs:
-                  {"params": {n_feats: {...}, ...}}.
+    - --params  : Joblib file with 2_tuning outputs:
+              {n_feats: {...}, ...}
       Each entry in "params" is expected to contain:
           * "features"           : list of feature names,
           * "final_class_weights": dict for class_weight,
@@ -325,12 +325,24 @@ def main():
             cw = config["final_class_weights"]
             thresh = config["final_threshold"]
 
-            print(f"[INFO][{fold + 1}/{args.splits}][{n_feats} feats] Selected features: {x_cols}")
-            print(f"[INFO][{fold + 1}/{args.splits}][{n_feats} feats] Class weights: {cw}, Threshold: {thresh}")
+            # Sanity check on threshold from Stage 1.2
+            if not (0.0 <= float(thresh) <= 1.0):
+                raise ValueError(
+                    f"[ERROR] For n_feats={n_feats}, final_threshold={thresh} "
+                    "is outside [0, 1]."
+                )
+
+            print(
+                f"[INFO][{fold + 1}/{args.splits}][{n_feats} feats] Selected features: {x_cols}"
+            )
+            print(
+                f"[INFO][{fold + 1}/{args.splits}][{n_feats} feats] "
+                f"Class weights: {cw}, Threshold: {thresh}"
+            )
 
             # Load training data
             X_tr, X_val = X[x_cols].iloc[train_idx], X[x_cols].iloc[val_idx]
-            y_tr, y_val = y.loc[train_idx], y.loc[val_idx]
+            y_tr, y_val = y.iloc[train_idx], y.iloc[val_idx]
 
             if calibrate:
                 # Split X_val and y_val into calibration and evaluation sets
@@ -408,6 +420,22 @@ def main():
                 study.best_params,
                 f"{args.outdir}/{n_feats}_feats_best_hyperparams_fold_{fold+1}.jl",
             )
+        # Save foldwise best scores for diagnostics / publication
+    rows = []
+    for n_feats in feature_counts:
+        for fold_idx, score in enumerate(foldwise_best_scores[n_feats], start=1):
+            rows.append(
+                {
+                    "n_feats": n_feats,
+                    "fold": fold_idx,
+                    args.scorer: score,
+                }
+            )
+
+    fold_scores_df = pd.DataFrame(rows)
+    fold_scores_path = f"{args.outdir}/foldwise_best_scores.csv"
+    fold_scores_df.to_csv(fold_scores_path, index=False)
+    print(f"[INFO] Saved foldwise best {args.scorer} scores to {fold_scores_path}")
 
     for n_feats in feature_counts:
         config = params[n_feats]
