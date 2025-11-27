@@ -1,3 +1,40 @@
+"""
+4_run_tuned_model.py
+
+Stage 1 – final evaluation of tuned thread-start classifier.
+
+This script:
+
+    * Loads tuned LightGBM hyperparameters and class weights per feature subset
+      (n_feats) from the Stage 1 tuning pipeline.
+    * Loads train/test feature matrices (X_train, X_test) and log thread size
+      targets, then binarises them to "Stalled" vs "Started" based on a log-size
+      threshold.
+    * For each n_feats:
+        - Trains a model under StratifiedKFold CV to obtain out-of-fold (OOF)
+          predicted probabilities.
+        - Within each fold, splits off a holdout subset to optimise a single
+          decision threshold on the chosen scorer (MCC, F-beta, etc.).
+        - Optionally calibrates probabilities via isotonic regression.
+        - Trains a final classifier on the full training set and evaluates on
+          the held-out test set.
+        - Computes ROC and precision–recall curves, bootstrap confidence
+          intervals for key metrics, confusion matrices, calibration curves,
+          SVD component word lists (if present), and SHAP-based feature
+          importance summaries.
+    * Aggregates results across n_feats into combined score tables and plots
+      (metrics vs number of features) and writes:
+        - per-model Excel workbooks (config, metrics, hyperparams, SHAP),
+        - a run-level Excel summary,
+        - joblib artefacts with combined scores, OOF/test probabilities, and
+          SHAP data.
+
+This script is intended as the final evaluation and figure-artefact generator
+for Stage 1. Higher-level “paper-ready” plots and tables that span multiple
+subreddits are produced by separate make_outputs scripts.
+
+"""
+
 import sys
 import argparse
 import os
@@ -569,7 +606,7 @@ def main():
 
             plt.figure(figsize=(6, 5))
             plt.title(
-                f"{LABEL_LOOKUP[args.subreddit]} Thread size {key} {n_feats} Confusion Matrix"
+                f"{LABEL_LOOKUP[args.subreddit]} Thread start {key} {n_feats} Confusion Matrix"
             )
             sns.heatmap(
                 cms[key],
@@ -763,7 +800,7 @@ def main():
         for n_feats, y_proba in y_prob_dict.items():
             # ROC curve
             fpr, tpr, roc_thresholds = roc_curve(y_true, y_proba)
-            plt.plot(fpr, tpr, label={n_feats})
+            plt.plot(fpr, tpr, label=str(n_feats))
         plt.plot([0, 1], [0, 1], linestyle="--", color="gray")
         plt.xlabel("False Positive Rate")
         plt.ylabel("True Positive Rate")
@@ -777,7 +814,7 @@ def main():
         for n_feats, y_proba in y_prob_dict.items():
             # Precision-recall curves
             precision, recall, pr_thresholds = precision_recall_curve(y_true, y_proba)
-            plt.plot(recall, precision, label={n_feats})
+            plt.plot(recall, precision, label=str(n_feats))
         plt.xlabel("Recall")
         plt.ylabel("Precision")
         plt.title(f"{LABEL_LOOKUP[args.subreddit]} Stage 1 Precision-Recall Curve")
@@ -785,6 +822,7 @@ def main():
         plt.tight_layout()
         plt.savefig(f"{plot_outdir}/{key}_precision_recall_curve.png", dpi=300)
         plt.close()
+
 
     metrics = [m for m in SCORERS.keys() if m not in EXCLUDE_SCORES]
 
@@ -845,7 +883,7 @@ def main():
         "params": params,
         "info": model_info,
     }
-    joblib.dump(model_params, f"{args.outdir}/thread_size_final_model_params.jl")
+    joblib.dump(model_params, f"{args.outdir}/thread_start_final_model_params.jl")
     print(f"[OK] Saved all outputs to: {args.outdir}")
     print(f"[OK] Finished. Total runtime {end-start}.")
 
