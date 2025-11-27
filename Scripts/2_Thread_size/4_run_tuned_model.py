@@ -635,10 +635,11 @@ def main():
         y_te.to_frame(name="y_test").to_parquet(f"{model_data_outdir}/y_test.parquet")
 
         # Predicted labels (test and OOF)
-        pd.Series(y_pred, index=X_te.index, name="y_pred").to_parquet(
+        pd.DataFrame({"y_pred": y_pred}, index=X_te.index).to_parquet(
             f"{model_data_outdir}/y_pred.parquet"
         )
-        pd.Series(oof_preds, index=X_tr.index, name="oof_pred").to_parquet(
+
+        pd.DataFrame({"oof_preds": oof_preds}, index=X_tr.index).to_parquet(
             f"{model_data_outdir}/oof_pred.parquet"
         )
 
