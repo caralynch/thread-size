@@ -328,7 +328,7 @@ def main():
     args.cal = str(args.cal).lower()
     if args.cal not in CAL_METHODS:
         raise ValueError(
-            f"[ERROR] {args.cal} not a valid number of classes. Choose from {CAL_METHODS}"
+            f"[ERROR] {args.cal} not a valid calibration method. Choose from {CAL_METHODS}"
         )
 
     if args.splits is None:
