@@ -19,7 +19,7 @@ size (n_feats), it:
           probability calibration.
         - Fits a multiclass LightGBM classifier with fixed class weights and
           tuned tree hyperparameters.
-        - Optionally calibrates the model probabilities using isotonic
+        - Optionally calibrates the model probabilities using sigmoid
           regression (CalibratedClassifierCV).
         - Optimises a vector of per-class probability thresholds using
           scipy.optimize.minimize to maximise a chosen scorer (MCC, macro F1,
@@ -102,6 +102,7 @@ from scipy.optimize import minimize
 import shap
 
 import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -140,6 +141,9 @@ REPORTS = {
     "CM": confusion_matrix,
 }
 
+CAL_METHODS = ["sigmoid", "isotonic"]
+
+
 def class_precision(y_true, y_pred, class_idx):
     """
     Compute precision for a single target class in a multiclass setting.
@@ -162,7 +166,6 @@ def class_precision(y_true, y_pred, class_idx):
     return precision_score(
         y_true, y_pred, zero_division=0, labels=[class_idx], average=None
     )[0]
-
 
 
 def class_recall(y_true, y_pred, class_idx):
@@ -189,7 +192,6 @@ def class_recall(y_true, y_pred, class_idx):
     )[0]
 
 
-
 def ci(arr):
     """
     Compute a 95% bootstrap confidence interval for a 1D array-like.
@@ -208,6 +210,7 @@ def ci(arr):
     arr = np.array(arr)
     arr = arr[~np.isnan(arr)]  # exclude NaNs
     return np.percentile(arr, [2.5, 97.5])
+
 
 def get_preds(thresholds, y_probas):
     """
@@ -240,7 +243,6 @@ def get_preds(thresholds, y_probas):
     return preds
 
 
-
 def main():
     print(f"{sys.argv[0]}")
     start = dt.datetime.now()
@@ -251,29 +253,24 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--subreddit", help="Subreddit")
     ap.add_argument(
-        "--outdir",
-        help="Output directory.",
+        "--outdir", help="Output directory.",
     )
     ap.add_argument(
-        "--train_X",
-        help="Training X data filepath (parquet).",
+        "--train_X", help="Training X data filepath (parquet).",
     )
 
     ap.add_argument("--classes", default="4", help="Number of classes.")
 
     ap.add_argument(
-        "--test_X",
-        help="Test X data filepath (parquet).",
+        "--test_X", help="Test X data filepath (parquet).",
     )
 
     ap.add_argument(
-        "--train_y",
-        help="Training y data filepath (parquet).",
+        "--train_y", help="Training y data filepath (parquet).",
     )
 
     ap.add_argument(
-        "--test_y",
-        help="Test y data filepath (parquet).",
+        "--test_y", help="Test y data filepath (parquet).",
     )
 
     ap.add_argument("--params", help="Tuned model params file (jl).")
@@ -293,6 +290,12 @@ def main():
     )
     ap.add_argument(
         "-nc", "--no-cal", action="store_true", help="Deactivate model calibration."
+    )
+
+    ap.add_argument(
+        "--cal",
+        default="sigmoid",
+        help="Calibration method (sigmoid or isotonic). Defaults to sigmoid.",
     )
 
     ap.add_argument("--rs", default="42", help="Random state, defaults to 42.")
@@ -319,10 +322,18 @@ def main():
     args.classes = int(args.classes)
 
     if args.classes not in CLASS_NAMES:
-        raise ValueError(f"[ERROR] {args.classes} not a valid number of classes. Choose from {list(CLASS_NAMES.keys())}")
+        raise ValueError(
+            f"[ERROR] {args.classes} not a valid number of classes. Choose from {list(CLASS_NAMES.keys())}"
+        )
     for i, class_name in enumerate(CLASS_NAMES[args.classes]):
         SCORERS[f"{class_name} precision"] = partial(class_precision, class_idx=i)
         SCORERS[f"{class_name} recall"] = partial(class_recall, class_idx=i)
+
+    args.cal = str(args.cal).lower()
+    if args.cal not in CAL_METHODS:
+        raise ValueError(
+            f"[ERROR] {args.cal} not a valid number of classes. Choose from {CAL_METHODS}"
+        )
 
     scorer_key = str(args.scorer).lower()
     if scorer_key in SCORER_MAP:
@@ -333,11 +344,10 @@ def main():
             f"[ERROR] Invalid scorer '{args.scorer}'. "
             f"Must be one of {list(SCORERS.keys())} or their aliases."
         )
+
     def neg_score(thresholds, y_probas, y_true):
         preds = get_preds(thresholds, y_probas)
         return -SCORERS[args.scorer](y_true, preds)
-    
-    
 
     if str(args.subreddit).lower() not in LABEL_LOOKUP:
         print(
@@ -368,7 +378,6 @@ def main():
     if not os.path.isfile(args.params):
         raise FileNotFoundError(f"[ERROR] Model params file not found: {args.params}")
 
-
     print(f"[INFO] Args: {args}")
 
     os.makedirs(args.outdir, exist_ok=True)
@@ -385,7 +394,7 @@ def main():
     print(f"[INFO] Loading tuned model params from {args.params}.")
     params = joblib.load(args.params)
 
-     # run data for outfile
+    # run data for outfile
     model_info = {
         "script": str(sys.argv[0]),
         "run_start": start,
@@ -435,7 +444,6 @@ def main():
                 )
             return svd_words
 
-
     combined_summary = {
         "model_params": [],
         "hyperparams": [],
@@ -455,7 +463,7 @@ def main():
     y_pred_dict = {}
     print(f"[INFO] Setting up outer cross-validation.")
     outer_cv = StratifiedKFold(n_splits=args.splits, shuffle=True, random_state=args.rs)
-    
+
     print("[INFO] Starting loop through n_feats")
     for n_feats, config in params.items():
         model_outdir = f"{args.outdir}/model_{n_feats}"
@@ -473,22 +481,21 @@ def main():
         if isinstance(initial_guess, dict):
             initial_guess = list(initial_guess.values())
         if len(initial_guess) != args.classes:
-            raise ValueError(f"[ERROR][{n_feats} feats] Initial guess is wrong length: {initial_guess}. Expected {args.classes} values.")
+            raise ValueError(
+                f"[ERROR][{n_feats} feats] Initial guess is wrong length: {initial_guess}. Expected {args.classes} values."
+            )
         bounds = [(0.0, 1.0)] * args.classes
         config["final_n_features"] = n_feats
         bins = config["bins"]
         hyperparams = config["best_hyperparams"] if "best_hyperparams" in config else {}
 
         print(f"[INFO][{n_feats} feats] Selected features: {x_cols}")
-        print(
-            f"[INFO][{n_feats} feats] Class weights: {cw}"
-        )  # , Threshold: {thresh}")
+        print(f"[INFO][{n_feats} feats] Class weights: {cw}")  # , Threshold: {thresh}")
 
         assert (
             len(bins) == args.classes + 1
         ), f"[ERROR][{n_feats} feats] bin_edges must have length args.classes+1 ({args.classes+1}), got {len(bins)}."
         print(f"[INFO][{n_feats} feats] Getting started train and test data")
-
 
         X_tr = X_train[x_cols]
         X_te = X_test[x_cols]
@@ -540,7 +547,7 @@ def main():
                 X_fold_tr, X_calib, y_fold_tr, y_calib = train_test_split(
                     X_fold_tr,
                     y_fold_tr,
-                    train_size=0.6,
+                    train_size=0.9,
                     stratify=y_fold_tr,
                     random_state=args.rs,
                 )
@@ -559,9 +566,7 @@ def main():
 
             if calibrate:
                 calibrated_clf = CalibratedClassifierCV(
-                    model,
-                    method="isotonic",
-                    cv="prefit",
+                    model, method=args.cal, cv="prefit",
                 )
                 calibrated_clf.fit(X_calib, y_calib)
                 proba = calibrated_clf.predict_proba(X_fold_val)
@@ -585,7 +590,6 @@ def main():
             thresholds.append(result.x)
             fold_idx += 1
 
-        
         print(f"[INFO][{n_feats} feats] Averaging thresholds over folds")
 
         thresholds_final = []
@@ -610,7 +614,7 @@ def main():
             print(f"[INFO][{n_feats} feats] Calibrating classifier")
             calibrated = CalibratedClassifierCV(
                 model,
-                method="isotonic",
+                method=args.cal,
                 cv=StratifiedKFold(n_splits=5, shuffle=True, random_state=args.rs),
             )
             calibrated.fit(X_tr, y_tr)
@@ -623,27 +627,50 @@ def main():
         y_pred = get_preds(thresholds_final, y_proba)
 
         y_pred_dict[n_feats] = {"test": y_pred, "oof": oof_preds}
-        dfs_to_output = {
-            "X_train": X_tr,
-            "X_test": X_te,
-            "y_train": y_tr,
-            "y_test": y_te,
-            "y_pred": y_pred,
-            "y_proba": y_proba,
-            "oof_pred": oof_preds
-        }
-        for k, df in dfs_to_output.items():
-            df.to_parquet(f"{model_data_outdir}/{k}.parquet")
+
+        # Save core model data as parquet
+        X_tr.to_parquet(f"{model_data_outdir}/X_train.parquet")
+        X_te.to_parquet(f"{model_data_outdir}/X_test.parquet")
+        y_tr.to_frame(name="y_train").to_parquet(f"{model_data_outdir}/y_train.parquet")
+        y_te.to_frame(name="y_test").to_parquet(f"{model_data_outdir}/y_test.parquet")
+
+        # Predicted labels (test and OOF)
+        pd.Series(y_pred, index=X_te.index, name="y_pred").to_parquet(
+            f"{model_data_outdir}/y_pred.parquet"
+        )
+        pd.Series(oof_preds, index=X_tr.index, name="oof_pred").to_parquet(
+            f"{model_data_outdir}/oof_pred.parquet"
+        )
+
+        # Predicted probabilities (test and OOF)
+        y_proba_df = pd.DataFrame(
+            y_proba,
+            index=X_te.index,
+            columns=[f"proba_class_{i}" for i in range(args.classes)],
+        )
+        y_proba_df.to_parquet(f"{model_data_outdir}/y_proba.parquet")
+
+        oof_proba_df = pd.DataFrame(
+            oof_probas,
+            index=X_tr.index,
+            columns=[f"proba_class_{i}" for i in range(args.classes)],
+        )
+        oof_proba_df.to_parquet(f"{model_data_outdir}/oof_proba.parquet")
+
         joblib.dump(model, f"{model_data_outdir}/model.jl")
         if calibrate:
             joblib.dump(calibrated, f"{model_data_outdir}/calibrated_model.jl")
 
         to_measure = {"test": (y_te, y_pred), "oof": (y_tr, oof_preds)}
-        print(f"[INFO][{n_feats} feats] Calculating classification report and performance scoring metrics")
+        print(
+            f"[INFO][{n_feats} feats] Calculating classification report and performance scoring metrics"
+        )
 
         for key, (true_y, preds) in to_measure.items():
 
-            print(f"[INFO][{n_feats} feats] Getting report metrics for {key} predictions")
+            print(
+                f"[INFO][{n_feats} feats] Getting report metrics for {key} predictions"
+            )
             # Report metrics
             performance_metrics = {}
             report_metrics = {}
@@ -652,7 +679,9 @@ def main():
             for k, report_f in REPORTS.items():
                 report_metrics[k] = report_f(true_y, preds)
 
-            print(f"[INFO][{n_feats} feats] Bootstrapping metrics for {key} predictions")
+            print(
+                f"[INFO][{n_feats} feats] Bootstrapping metrics for {key} predictions"
+            )
             # Bootstrapping main metrics
             rng = np.random.RandomState(args.rs)  # for reproducibility
 
@@ -669,7 +698,9 @@ def main():
                 for k, score_f in SCORERS.items():
                     bootstrap_metrics[k].append(score_f(y_true_bs, y_pred_bs))
                 bootstrap_cms.append(
-                    confusion_matrix(y_true_bs, y_pred_bs, labels=list(range(0, args.classes)))
+                    confusion_matrix(
+                        y_true_bs, y_pred_bs, labels=list(range(0, args.classes))
+                    )
                 )
 
             metric_cis = {}
@@ -725,8 +756,7 @@ def main():
             )
             plt.tight_layout()
             plt.savefig(
-                f"{plot_outdir}/{key}_{n_feats}_feats_confusion_matrix.png",
-                dpi=300,
+                f"{plot_outdir}/{key}_{n_feats}_feats_confusion_matrix.png", dpi=300,
             )
             plt.close()
 
@@ -739,7 +769,9 @@ def main():
         if isinstance(shap_values, np.ndarray):
             if shap_values.shape[2] == args.classes:  # (samples, features, classes)
                 # Transpose to (classes, samples, features)
-                shap_values = [shap_values[:, :, i] for i in range(shap_values.shape[2])]
+                shap_values = [
+                    shap_values[:, :, i] for i in range(shap_values.shape[2])
+                ]
         for class_idx, label in enumerate(CLASS_NAMES[args.classes]):
 
             plt.figure()
@@ -762,9 +794,7 @@ def main():
             pred_dict["test"][f"proba_class_{i}"] = y_proba[:, i]
 
         for key, df in pred_dict.items():
-            pd.DataFrame(df).to_csv(
-                f"{model_outdir}/{key}_preds.csv", index=False
-            )
+            pd.DataFrame(df).to_csv(f"{model_outdir}/{key}_preds.csv", index=False)
 
         # SVD words
         svd_cols = [col for col in x_cols if col.startswith("svd_")]
@@ -772,7 +802,9 @@ def main():
 
         # Save to Excel
         report_df = (
-            pd.DataFrame(report_metrics["Report"]).transpose().reset_index(names=["Class"])
+            pd.DataFrame(report_metrics["Report"])
+            .transpose()
+            .reset_index(names=["Class"])
         )
         # Average absolute SHAP values across all classes
         # Stack into a 3D array: (args.classes, n_samples, n_features)
@@ -802,8 +834,7 @@ def main():
         combined_summary["class_sizes"].append(bin_count_df)
         with pd.ExcelWriter(excel_path) as writer:
             pd.DataFrame.from_dict(model_info, orient="index").to_excel(
-                writer,
-                sheet_name="info",
+                writer, sheet_name="info",
             )
             bin_count_df.to_excel(writer, sheet_name="class_sizes")
             params_df.to_excel(writer, sheet_name="model_params", index=False)
@@ -837,7 +868,9 @@ def main():
                 ecolor="gray",
             )
 
-            plt.title(f"{LABEL_LOOKUP[args.subreddit]} - {metric.upper()} vs number of features")
+            plt.title(
+                f"{LABEL_LOOKUP[args.subreddit]} - {metric.upper()} vs number of features"
+            )
             plt.xlabel("Number of features")
             plt.ylabel(metric.upper())
             plt.xticks(fontsize=10)
@@ -860,7 +893,9 @@ def main():
         for key, df in output_dfs.items():
             df.to_excel(writer, sheet_name=key, index=False)
         for key, out_dict in combined_scores.items():
-            pd.DataFrame.from_dict(out_dict).to_excel(writer, sheet_name=f"{key}_metrics")
+            pd.DataFrame.from_dict(out_dict).to_excel(
+                writer, sheet_name=f"{key}_metrics"
+            )
 
     print(f"[OK] Saved all outputs to: {args.outdir}")
     print(f"[OK] Finished. Total runtime {end-start}.")

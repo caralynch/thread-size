@@ -163,6 +163,8 @@ SCORERS = {
 
 EXCLUDE_SCORES = ["Report", "CM"]
 
+CAL_METHODS = ["sigmoid", "isotonic"]
+
 
 def ci(arr):
     """
@@ -201,17 +203,14 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--subreddit", help="Subreddit")
     ap.add_argument(
-        "--outdir",
-        help="Output directory.",
+        "--outdir", help="Output directory.",
     )
     ap.add_argument(
-        "--train_X",
-        help="Training X data filepath (parquet).",
+        "--train_X", help="Training X data filepath (parquet).",
     )
 
     ap.add_argument(
-        "--train_y",
-        help="Training y data filepath (parquet).",
+        "--train_y", help="Training y data filepath (parquet).",
     )
 
     ap.add_argument(
@@ -227,6 +226,12 @@ def main():
     )
     ap.add_argument(
         "-nc", "--no-cal", action="store_true", help="Deactivate model calibration."
+    )
+
+    ap.add_argument(
+        "--cal",
+        default="sigmoid",
+        help="Calibration method (sigmoid or isotonic). Defaults to sigmoid.",
     )
 
     ap.add_argument("--rs", default="42", help="Random state, defaults to 42.")
@@ -257,7 +262,6 @@ def main():
         mode = "multiclass"
     else:
         raise ValueError(f"[ERROR] Invalid number of classes {args.classes}")
-    calib_method = "isotonic" if mode == "binary" else "sigmoid"
     if mode == "multiclass" and args.classes not in CLASS_BIN_EDGES:
         CLASS_BIN_EDGES[args.classes] = [
             i / (args.classes - 1) for i in range(1, args.classes - 1)
@@ -283,6 +287,12 @@ def main():
     if args.no_cal:
         calibrate = False
         print("[INFO] Model calibration disengaged.")
+
+    args.cal = str(args.cal).lower()
+    if args.cal not in CAL_METHODS:
+        raise ValueError(
+            f"[ERROR] {args.cal} not a valid number of classes. Choose from {CAL_METHODS}"
+        )
 
     if args.splits is None:
         args.splits = 5 if not debug else 2
@@ -367,11 +377,7 @@ def main():
         y_train, y_val = y_bins.iloc[train_idx], y_bins.iloc[val_idx]
         if calibrate:
             X_calib, X_val, y_calib, y_val = train_test_split(
-                X_val,
-                y_val,
-                test_size=0.5,
-                stratify=y_val,
-                random_state=args.rs,
+                X_val, y_val, test_size=0.5, stratify=y_val, random_state=args.rs,
             )
 
         print(f"[INFO] [Fold {fold+1}] Precomputing ranked features for candidate bins")
@@ -425,7 +431,7 @@ def main():
             clf.fit(X_train[top_feats], y_train)
             if calibrate:
                 calibrated_clf = CalibratedClassifierCV(
-                    clf, method=calib_method, cv="prefit"
+                    clf, method=args.cal, cv="prefit"
                 )
                 calibrated_clf.fit(X_calib[top_feats], y_calib)
                 y_proba = calibrated_clf.predict_proba(X_val[top_feats])
@@ -584,10 +590,7 @@ def main():
         else:
             print(f"Warning: No CI data for {metric}. Plotting point means only.")
             plt.plot(
-                agg_df["n_feats"],
-                agg_df[metric],
-                "-o",
-                label=metric,
+                agg_df["n_feats"], agg_df[metric], "-o", label=metric,
             )
         plt.title(f"{LABEL_LOOKUP[args.subreddit]}", loc="left", fontsize=12)
         plt.xlabel("Number of features", fontsize=11)

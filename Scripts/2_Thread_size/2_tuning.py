@@ -143,6 +143,8 @@ SCORER_MAP = {
     "f1-score": "F1",
 }
 
+CAL_METHODS = ["sigmoid", "isotonic"]
+
 
 def check_bin_balance(y_bins):
     """
@@ -225,17 +227,14 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--subreddit", help="Subreddit")
     ap.add_argument(
-        "--outdir",
-        help="Output directory.",
+        "--outdir", help="Output directory.",
     )
     ap.add_argument(
-        "--train_X",
-        help="Training X data filepath (parquet).",
+        "--train_X", help="Training X data filepath (parquet).",
     )
 
     ap.add_argument(
-        "--train_y",
-        help="Training y data filepath (parquet).",
+        "--train_y", help="Training y data filepath (parquet).",
     )
 
     ap.add_argument(
@@ -251,6 +250,11 @@ def main():
     )
     ap.add_argument(
         "-nc", "--no-cal", action="store_true", help="Deactivate model calibration."
+    )
+    ap.add_argument(
+        "--cal",
+        default="sigmoid",
+        help="Calibration method (sigmoid or isotonic). Defaults to sigmoid.",
     )
 
     ap.add_argument("--rs", default="42", help="Random state, defaults to 42.")
@@ -320,6 +324,12 @@ def main():
     if args.no_cal:
         calibrate = False
         print("[INFO] Model calibration disengaged.")
+
+    args.cal = str(args.cal).lower()
+    if args.cal not in CAL_METHODS:
+        raise ValueError(
+            f"[ERROR] {args.cal} not a valid number of classes. Choose from {CAL_METHODS}"
+        )
 
     if args.splits is None:
         args.splits = 5 if not debug else 2
@@ -427,11 +437,7 @@ def main():
                 f"[INFO] [{fold + 1}/{args.splits}] Splitting x_val and y_val into calibration and eval sets"
             )
             X_calib, X_val, y_calib, y_val = train_test_split(
-                X_val,
-                y_val,
-                test_size=0.5,
-                stratify=y_val,
-                random_state=args.rs,
+                X_val, y_val, test_size=0.5, stratify=y_val, random_state=args.rs,
             )
         print(
             f"[INFO] [{fold + 1}/{args.splits}] Precomputing ranked features for candidate bins"
@@ -534,7 +540,7 @@ def main():
                 clf.fit(X_train[top_feats], y_train)
                 if calibrate:
                     calibrated_clf = CalibratedClassifierCV(
-                        clf, method="sigmoid", cv="prefit"
+                        clf, method=args.cal, cv="prefit"
                     )
                     calibrated_clf.fit(X_calib[top_feats], y_calib)
 
@@ -561,8 +567,7 @@ def main():
                 f"[INFO][{fold + 1}/{args.splits}][{n_feats} feats] Starting Optuna trials"
             )
             study = optuna.create_study(
-                direction="maximize",
-                sampler=optuna.samplers.TPESampler(seed=args.rs),
+                direction="maximize", sampler=optuna.samplers.TPESampler(seed=args.rs),
             )
             study.optimize(
                 lambda trial: objective(trial, ranked_features),
@@ -695,7 +700,7 @@ def main():
 
             if calibrate:
                 calibrated_clf = CalibratedClassifierCV(
-                    clf, method="sigmoid", cv="prefit"
+                    clf, method=args.cal, cv="prefit"
                 )
                 calibrated_clf.fit(X_calib[top_feats], y_calib)
                 proba = calibrated_clf.predict_proba(X_thresh_cal[top_feats])

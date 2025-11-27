@@ -108,6 +108,8 @@ CLASS_NAMES = {
     4: ["Stalled", "Small", "Medium", "Large"],
 }
 
+CAL_METHODS = ["sigmoid", "isotonic"]
+
 SCORERS = {
     "MCC": matthews_corrcoef,
     "F1": partial(f1_score, average="macro"),
@@ -159,17 +161,14 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--subreddit", help="Subreddit")
     ap.add_argument(
-        "--outdir",
-        help="Output directory.",
+        "--outdir", help="Output directory.",
     )
     ap.add_argument(
-        "--train_X",
-        help="Training X data filepath (parquet).",
+        "--train_X", help="Training X data filepath (parquet).",
     )
 
     ap.add_argument(
-        "--train_y",
-        help="Training y data filepath (parquet).",
+        "--train_y", help="Training y data filepath (parquet).",
     )
 
     ap.add_argument(
@@ -207,6 +206,12 @@ def main():
 
     ap.add_argument("--params", help="Tuned model params file (jl).")
 
+    ap.add_argument(
+        "--cal",
+        default="sigmoid",
+        help="Calibration method (sigmoid or isotonic). Defaults to sigmoid.",
+    )
+
     args = ap.parse_args()
     args.rs = int(args.rs)
     args.classes = int(args.classes)
@@ -236,6 +241,12 @@ def main():
     if args.no_cal:
         calibrate = False
         print("[INFO] Model calibration disengaged.")
+
+    args.cal = str(args.cal).lower()
+    if args.cal not in CAL_METHODS:
+        raise ValueError(
+            f"[ERROR] {args.cal} not a valid number of classes. Choose from {CAL_METHODS}"
+        )
 
     if args.splits is None:
         args.splits = 5 if not debug else 2
@@ -376,7 +387,7 @@ def main():
                 clf.fit(X_tr, y_tr)
                 if calibrate:
                     calibrated_clf = CalibratedClassifierCV(
-                        clf, method="sigmoid", cv="prefit"
+                        clf, method=args.cal, cv="prefit"
                     )
                     calibrated_clf.fit(X_calib, y_calib)
                     proba = calibrated_clf.predict_proba(X_eval)
@@ -418,11 +429,7 @@ def main():
     for n_feats in feature_counts:
         for fold_idx, score in enumerate(foldwise_best_scores[n_feats], start=1):
             rows.append(
-                {
-                    "n_feats": n_feats,
-                    "fold": fold_idx,
-                    args.scorer: score,
-                }
+                {"n_feats": n_feats, "fold": fold_idx, args.scorer: score,}
             )
 
     fold_scores_df = pd.DataFrame(rows)
