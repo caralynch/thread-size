@@ -352,6 +352,7 @@ def main():
         model_plot_outdir = f"{model_outdir}/plots"
         os.makedirs(model_plot_outdir, exist_ok=True)
         model_data_outdir = f"{model_outdir}/model_data"
+        os.makedirs(model_data_outdir, exist_ok=True)
         print(f"[INFO] [{n_feats} feats]")
         x_cols = config["features"]
         cw = config["final_class_weights"]
