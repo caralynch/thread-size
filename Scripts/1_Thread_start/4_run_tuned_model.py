@@ -573,14 +573,14 @@ def main():
                 {"CM": cms[key],}
             )
             joblib.dump(
-                cm_cis, f"{model_outdir}/{key}_{n_feats}_confusion_matrix_data.jl",
+                cm_cis, f"{model_outdir}/{key}_confusion_matrix_data.jl",
             )
             prob_true, prob_pred = calibration_curve(
                 true_y, probas, n_bins=10, strategy="quantile"
             )
             joblib.dump(
                 {"prob_true": prob_true, "prob_pred": prob_pred},
-                f"{model_outdir}/{n_feats}_calibration_curve_inputs_{key}.jl",
+                f"{model_outdir}/{key}_calibration_curve_inputs.jl",
             )
 
             plt.figure()
