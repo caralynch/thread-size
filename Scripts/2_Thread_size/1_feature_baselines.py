@@ -348,7 +348,7 @@ def main():
             len(bin_edges) == args.classes + 1
         ), f"bin_edges must have length args.classes+1 ({args.classes+1}), got {len(bin_edges)}."
 
-        y_bins = pd.cut(y, bins=bin_edges, labels=False)
+        y_bins = pd.cut(y, bins=bin_edges, labels=False, include_lowest=True)
 
         unique_bins = np.unique(y_bins.dropna())
         assert len(unique_bins) == args.classes, (
@@ -359,7 +359,7 @@ def main():
         model_info["thread_size_bins"] = [round(np.exp(x)) for x in bin_edges]
     else:
         y_bins = (y > np.log(1)).astype(int)
-    class_counts = y_bins.value_counts(sort=False)
+    class_counts = y_bins.value_counts().sort_index()
     for class_num in class_counts.index:
         model_info[f"class_{class_num}_count"] = class_counts[class_num]
 
