@@ -3,7 +3,7 @@
 # List of subreddits to process
 SUBREDDITS=("conspiracy" "crypto" "politics")
 
-JOBSCRIPT="/home/ucabcpl/Scratch/thread_size/thread-size/Scripts/Jobscripts/1_run_thread_start_jobscript.sh"
+JOBSCRIPT="/home/ucabcpl/Scratch/thread_size/thread-size/Scripts/Jobscripts/2_thread_size_jobscript.sh"
 
 # Make sure the jobscript exists
 if [ ! -f "$JOBSCRIPT" ]; then
@@ -12,10 +12,10 @@ if [ ! -f "$JOBSCRIPT" ]; then
 fi
 
 for SUB in "${SUBREDDITS[@]}"; do
-    echo "Submitting thread start job for: $SUB"
+    echo "Submitting thread size job for: $SUB"
 
     # Submit job AND pass subreddit as the first argument
-    qsub -N ${SUB}_1 -o "${SUB}_1.out" -e "${SUB}_1.err" "$JOBSCRIPT" "$SUB"
+    qsub -N ${SUB}_2 -o "${SUB}_2.out" -e "${SUB}_2.err" "$JOBSCRIPT" "$SUB"
 
     echo ""
 done
