@@ -778,7 +778,7 @@ def main():
             .reset_index(names="param")
             .rename(columns={0: "value"})
         )
-        pd.DataFrame.from_dict(model_info_df, orient="index").to_excel(
+        model_info_df.to_excel(
             writer, sheet_name="model_info", index=False
         )
         pd.DataFrame.from_dict(params, orient="index").to_excel(
