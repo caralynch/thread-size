@@ -485,6 +485,9 @@ def main():
                 f"[ERROR][{n_feats} feats] Initial guess is wrong length: {initial_guess}. Expected {args.classes} values."
             )
         bounds = [(0.0, 1.0)] * args.classes
+        if y_test_data.max() > y_train_data.max():
+            # have final bin edge be adjusted if test data has larger bin size
+            config["bins"][-1] = y_test_data.max() + 1e-3
         config["final_n_features"] = n_feats
         bins = config["bins"]
         hyperparams = config["best_hyperparams"] if "best_hyperparams" in config else {}
@@ -499,6 +502,7 @@ def main():
 
         X_tr = X_train[x_cols]
         X_te = X_test[x_cols]
+
         y_tr = pd.cut(y_train_data, bins=bins, labels=False, include_lowest=True)
         y_te = pd.cut(y_test_data, bins=bins, labels=False, include_lowest=True)
 
@@ -513,8 +517,8 @@ def main():
         y_te_bin_counts.index.name = "Class"
         thread_size_bins = [round(np.exp(x)) for x in bins]
         bin_ranges = [[thread_size_bins[0], thread_size_bins[0]]]
-        for i in range(1, len(thread_size_bins)-1):
-            to_append = [bin_ranges[i-1][1]+1, thread_size_bins[i+1]]
+        for i in range(1, len(thread_size_bins) - 1):
+            to_append = [bin_ranges[i - 1][1] + 1, thread_size_bins[i + 1]]
             bin_ranges.append(to_append)
         bin_count_df = pd.DataFrame(
             {"Range": bin_ranges, "Train": y_tr_bin_counts, "Test": y_te_bin_counts}
