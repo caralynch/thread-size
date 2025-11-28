@@ -512,8 +512,7 @@ def main():
         y_te_bin_counts = y_te.value_counts(sort=False).sort_index()
         y_te_bin_counts.index.name = "Class"
         thread_size_bins = [round(np.exp(x)) for x in bins]
-        i = 0
-        bin_ranges = [[thread_size_bins[i], thread_size_bins[i]]]
+        bin_ranges = [[thread_size_bins[0], thread_size_bins[0]]]
         for i in range(1, len(thread_size_bins)-1):
             to_append = [bin_ranges[i-1][1]+1, thread_size_bins[i+1]]
             bin_ranges.append(to_append)
