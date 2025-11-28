@@ -351,6 +351,7 @@ def main():
         os.makedirs(model_outdir, exist_ok=True)
         model_plot_outdir = f"{model_outdir}/plots"
         os.makedirs(model_plot_outdir, exist_ok=True)
+        model_data_outdir = f"{model_outdir}/model_data"
         print(f"[INFO] [{n_feats} feats]")
         x_cols = config["features"]
         cw = config["final_class_weights"]
@@ -573,14 +574,14 @@ def main():
                 {"CM": cms[key],}
             )
             joblib.dump(
-                cm_cis, f"{model_outdir}/{key}_confusion_matrix_data.jl",
+                cm_cis, f"{model_data_outdir}/{key}_confusion_matrix_data.jl",
             )
             prob_true, prob_pred = calibration_curve(
                 true_y, probas, n_bins=10, strategy="quantile"
             )
             joblib.dump(
                 {"prob_true": prob_true, "prob_pred": prob_pred},
-                f"{model_outdir}/{key}_calibration_curve_inputs.jl",
+                f"{model_data_outdir}/{key}_calibration_curve_inputs.jl",
             )
 
             plt.figure()
@@ -622,7 +623,7 @@ def main():
             plt.savefig(f"{model_plot_outdir}/{key}_confusion_matrix.png", dpi=300)
             plt.close()
 
-            joblib.dump(cms[key], f"{model_outdir}/{key}_confusion_matrix.jl")
+            joblib.dump(cms[key], f"{model_data_outdir}/{key}_confusion_matrix.jl")
 
         print(f"[INFO] [{n_feats} feats] Getting starting thread predictions")
         # Save predicted started threads
@@ -644,8 +645,8 @@ def main():
         models_dict["y_test"] = y_test
         models_dict["X_train"] = X_train[x_cols]
         models_dict["y_train"] = y_train
-        joblib.dump(models_dict, f"{model_outdir}/model.jl")
-        final_clf.booster_.save_model(f"{model_outdir}/final_model.txt")
+        joblib.dump(models_dict, f"{model_data_outdir}/model.jl")
+        final_clf.booster_.save_model(f"{model_data_outdir}/final_model.txt")
 
         report_dfs = {}
         for key, report in reports.items():
@@ -675,7 +676,7 @@ def main():
             "shap_values": shap_values,
             "X_test": X_test[x_cols],
         }
-        joblib.dump(shap_explainer_output, f"{model_outdir}/shap_explainer.jl")
+        joblib.dump(shap_explainer_output, f"{model_data_outdir}/shap_explainer.jl")
 
         # Handle binary classification (LightGBM returns list of 2 arrays)
         if isinstance(shap_values, list):
@@ -700,9 +701,9 @@ def main():
         ).sort_values(by="MeanAbsoluteSHAP", ascending=False)
 
         joblib.dump(
-            shap_importance_df, f"{model_outdir}/shap_importance_df.jl",
+            shap_importance_df, f"{model_data_outdir}/shap_importance_df.jl",
         )
-        joblib.dump(shap_used, f"{model_outdir}/shap_values.jl")
+        joblib.dump(shap_used, f"{model_data_outdir}/shap_values.jl")
 
         for plot_type in ["bar", "dot"]:
             plt.figure(figsize=(10, 6))
@@ -715,7 +716,7 @@ def main():
 
         joblib.dump(
             {"shap_val": shap_used, "feat_name": X_test[x_cols]},
-            f"{model_outdir}/shap_plot_data.jl",
+            f"{model_data_outdir}/shap_plot_data.jl",
         )
 
         if "best_hyperparams" in config:
