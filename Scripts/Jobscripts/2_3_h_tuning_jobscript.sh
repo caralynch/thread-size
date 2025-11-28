@@ -36,7 +36,7 @@ DATA_DIR="/home/ucabcpl/Scratch/thread_size/thread-size/Outputs/Preprocessing/${
 # Input files
 TRAIN_X="${DATA_DIR}/${SUBREDDIT}_train_X.parquet"
 TRAIN_Y="${DATA_DIR}/${SUBREDDIT}_train_Y.parquet"
-TUNING_PARAMS="/home/ucabcpl/Scratch/thread_size/thread-size/Outputs/Thread_Size/${SUBREDDIT}/2_tuning/tuning_params.jl"
+TUNING_PARAMS="/home/ucabcpl/Scratch/thread_size/thread-size/Outputs/Thread_Size/${SUBREDDIT}/2_tuning/tuned_params.jl"
 
 # Output directory
 OUTDIR="/home/ucabcpl/Scratch/thread_size/thread-size/Outputs/Thread_Size/${SUBREDDIT}/3_hyperparameter_tuning"

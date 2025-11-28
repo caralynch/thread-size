@@ -750,7 +750,7 @@ def main():
         }
 
     # Save joblib
-    joblib.dump(params, f"{args.outdir}/tuning_params.jl")
+    joblib.dump(params, f"{args.outdir}/tuned_params.jl")
     all_configs_df.to_csv(f"{args.outdir}/all_configs_df.csv", index=False)
 
     joblib.dump(all_configs_df, f"{args.outdir}/all_configs_df.jl")
