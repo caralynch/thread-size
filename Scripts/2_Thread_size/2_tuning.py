@@ -401,14 +401,14 @@ def main():
 
     model_info["fixed_bins"] = bin_edges
     model_info["bin_counts"] = dict(
-        pd.cut(y, bins=bin_edges, labels=CLASS_NAMES[args.classes]).value_counts()
+        pd.cut(y, bins=bin_edges, labels=CLASS_NAMES[args.classes]).value_counts().sort_index()
     )
 
     model_info["model_feats"] = model_feats
     print(f"[INFO] Feature counts: {model_feats}")
 
     print(f"[INFO] Setting up outer cross-validation.")
-    y_bins_for_cv = pd.cut(y, bins=bin_edges, labels=False)
+    y_bins_for_cv = pd.cut(y, bins=bin_edges, labels=False, include_lowest=True)
     unique_bins = np.unique(y_bins_for_cv.dropna())
     assert len(unique_bins) == args.classes, (
         f"[WARNING] pd.cut produced {len(unique_bins)} classes, expected {args.classes}. "
