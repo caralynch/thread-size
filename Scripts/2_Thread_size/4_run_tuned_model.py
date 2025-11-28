@@ -507,18 +507,16 @@ def main():
             f"[ERROR][{n_feats} feats] pd.cut produced {len(unique_bins)} classes, expected {args.classes}. "
             f"Unique bins found: {unique_bins}"
         )
-        y_tr_bin_counts = y_tr.value_counts(sort=False)
+        y_tr_bin_counts = y_tr.value_counts(sort=False).sort_index()
         y_tr_bin_counts.index.name = "Class"
-        y_te_bin_counts = y_te.value_counts(sort=False)
+        y_te_bin_counts = y_te.value_counts(sort=False).sort_index()
         y_te_bin_counts.index.name = "Class"
         thread_size_bins = [round(np.exp(x)) for x in bins]
-        bin_ranges = [
-            [
-                thread_size_bins[i] if i == 0 else thread_size_bins[i] + 1,
-                thread_size_bins[i + 1],
-            ]
-            for i in range(0, len(thread_size_bins) - 1)
-        ]
+        i = 0
+        bin_ranges = [[thread_size_bins[i], thread_size_bins[i]]]
+        for i in range(1, len(thread_size_bins)-1):
+            to_append = [bin_ranges[i-1][1]+1, thread_size_bins[i+1]]
+            bin_ranges.append(to_append)
         bin_count_df = pd.DataFrame(
             {"Range": bin_ranges, "Train": y_tr_bin_counts, "Test": y_te_bin_counts}
         )
