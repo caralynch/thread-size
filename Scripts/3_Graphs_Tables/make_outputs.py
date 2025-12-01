@@ -1,7 +1,10 @@
+import sys
 import argparse
 from pathlib import Path
 import os
 from typing import Dict, Iterable, List, Mapping, Tuple
+
+import datetime as dt
 
 import joblib
 import numpy as np
@@ -59,7 +62,8 @@ def format_label(text, max_word_length=20):
     
     for i,word in enumerate(words):
         if word.lower() == "avg":
-            word += "."
+            word = "avg."
+        
         if word.lower() == "pagerank":
             formatted_words.append("PageRank")
         elif (word.lower() == "reddit") or (i == 0):
@@ -381,7 +385,7 @@ def format_df_for_pretty_output(df):
         formatted_df = make_n_index(formatted_df)
 
     # have all float cols have 4 digits after 0
-    formatted_df = formatted_df.applymap(
+    formatted_df = formatted_df.map(
         lambda x: f"{x:.4f}" if isinstance(x, (float)) and pd.notnull(x) else x
     )
 
@@ -559,7 +563,7 @@ def main() -> None:
     selected_model_dirs = {}
     for sub, i in selected_models.items():
         model_dirs[sub] = f"{args.root}/{sub}/4_model"
-        selected_model_dirs[sub] = f"{model_dirs}/model_{i}/model_data"
+        selected_model_dirs[sub] = f"{model_dirs[sub]}/model_{i}/model_data"
     
     # handle confusion matrices
     confusion_matrixes(selected_model_dirs, args.outdir, plot_outdir, class_names)
