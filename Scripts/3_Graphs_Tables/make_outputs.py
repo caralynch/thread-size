@@ -52,49 +52,51 @@ S2_METRICS = ["MCC", "Balanced accuracy", "F1"]
 
 INDEX_COL = "n_feats"
 
+
 def format_label(text, max_word_length=20):
     # Replace underscores with spaces
-    text = text.replace('_', ' ')
-    
+    text = text.replace("_", " ")
+
     # Capitalize first letter of each word
     words = text.split()
     formatted_words = []
-    
-    for i,word in enumerate(words):
+
+    for i, word in enumerate(words):
         if word.lower() == "avg":
             word = "avg."
-        
+
         if word.lower() == "pagerank":
             formatted_words.append("PageRank")
         elif (word.lower() == "reddit") or (i == 0):
             formatted_words.append(word.capitalize())
         # Keep known acronyms uppercase, otherwise title case
-        elif word.upper() in ['PR', 'URL', 'ID']:
+        elif word.upper() in ["PR", "URL", "ID"]:
             formatted_words.append(word.upper())
         else:
             formatted_words.append(word.lower())
-    
+
     # Greedily pack words into lines
     if len(formatted_words) <= 1:
-        return ' '.join(formatted_words)
-    
+        return " ".join(formatted_words)
+
     lines = []
     current_line = [formatted_words[0]]
-    
+
     for word in formatted_words[1:]:
         # Check if adding this word would exceed max length
-        test_line = ' '.join(current_line + [word])
+        test_line = " ".join(current_line + [word])
         if len(test_line) <= max_word_length:
             current_line.append(word)
         else:
             # Start a new line
-            lines.append(' '.join(current_line))
+            lines.append(" ".join(current_line))
             current_line = [word]
-    
+
     # Add the last line
-    lines.append(' '.join(current_line))
-    
-    return '\n'.join(lines)
+    lines.append(" ".join(current_line))
+
+    return "\n".join(lines)
+
 
 def load_selected_models(path: Path) -> Dict[str, int]:
     """
@@ -155,36 +157,29 @@ def plot_cm(cm, class_names, ax):
         cbar_kws={"shrink": 0.9},
     )
 
+
 def make_cm_fig(cm_dicts, outfile, class_names):
     i = 0
-    fig, axes = plt.subplots(2,2, figsize=(12,10))
+    fig, axes = plt.subplots(2, 2, figsize=(12, 10))
     axes = axes.flatten()
     for subreddit, cm_dict in cm_dicts.items():
         plot_cm(cm_dict["CM"], class_names, axes[i])
         axes[i].set_title(
-            f"{SUBREDDIT_LABELS[subreddit]}",
-            loc="left",
-            fontsize=12,
-            weight="bold",
+            f"{SUBREDDIT_LABELS[subreddit]}", loc="left", fontsize=12, weight="bold",
         )
         axes[i].set_xlabel("Predicted Class", fontsize=11)
         axes[i].set_ylabel("True Class", fontsize=11)
-        i+=1
+        i += 1
     fig.delaxes(axes[-1])
     plt.tight_layout()
     plt.savefig(
-        f"{outfile}.eps",
-        dpi=350,
-        format="eps",
-        bbox_inches="tight",
+        f"{outfile}.eps", dpi=350, format="eps", bbox_inches="tight",
     )
     plt.savefig(
-        f"{outfile}.png",
-        dpi=400,
-        format="png",
-        bbox_inches="tight",
+        f"{outfile}.png", dpi=400, format="png", bbox_inches="tight",
     )
     plt.close()
+
 
 def confusion_matrixes(selected_model_dirs, outdir, plot_outdir, class_names):
     cms = {}
@@ -198,7 +193,7 @@ def confusion_matrixes(selected_model_dirs, outdir, plot_outdir, class_names):
             with pd.ExcelWriter(f"{plot_outdir}/{sub}_{k}_cm_data.xlsx") as writer:
                 for j, cm in cms[k][sub].items():
                     df_cm = pd.DataFrame(cm, index=class_names, columns=class_names)
-                    df_cm.index.name="true_class"
+                    df_cm.index.name = "true_class"
                     df_cm.to_excel(writer, sheet_name=j)
 
 
@@ -212,7 +207,7 @@ def performance_metrics(mod_dirs, outdir, metrics, plot_outdir):
 
         # don't want to try to graph metrics that aren't in the data
         metrics = list(set(metrics) & set(sub_scores["test"].keys()))
-    
+
     print(f"[INFO] Plotting performance metrics.")
     for metric in metrics:
         plot_metric(metric, combined_scores, f"{outdir}/{metric}")
@@ -231,7 +226,7 @@ def performance_metrics(mod_dirs, outdir, metrics, plot_outdir):
             for sub, df in sub_dict.items():
                 formatted_df = format_df_for_pretty_output(df)
                 formatted_df.to_excel(writer, sheet_name=f"{sub}_{k}")
-    
+
     output_ratios_xlsx = f"{outdir}/metric_ratios.xlsx"
     print(f"[INFO] Saving metric ratios to {output_ratios_xlsx}")
     with pd.ExcelWriter(output_tabs_xlsx) as writer:
@@ -240,6 +235,7 @@ def performance_metrics(mod_dirs, outdir, metrics, plot_outdir):
                 output_df = get_ratio_max_metric(df, metrics)
                 output_df.to_excel(writer, sheet_name=f"{sub}_{k}")
     return metrics
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -300,16 +296,10 @@ def parse_args() -> argparse.Namespace:
 
 def get_errorbars(df, metric):
     lower = [
-        metric_val - ci[0]
-        for metric_val, ci in zip(
-            df[metric], df[f"{metric} CI"]
-        )
+        metric_val - ci[0] for metric_val, ci in zip(df[metric], df[f"{metric} CI"])
     ]
     upper = [
-        ci[1] - metric_val
-        for metric_val, ci in zip(
-            df[metric], df[f"{metric} CI"]
-        )
+        ci[1] - metric_val for metric_val, ci in zip(df[metric], df[f"{metric} CI"])
     ]
     return lower, upper
 
@@ -318,7 +308,7 @@ def plot_metric(metric, combined_scores, outfile):
     fig, axes = plt.subplots(2, 2, figsize=(16, 10))
     axes = axes.flatten()
     handles_dict = {}
-    j=0
+    j = 0
     for data_type, sub_dicts in combined_scores.items():
         i = 0
         for sub, df in sub_dicts.items():
@@ -335,7 +325,7 @@ def plot_metric(metric, combined_scores, outfile):
                 color=COLORS[i],
                 ecolor=COLORS[i],
             )
-            i+=1
+            i += 1
             handles_dict[DATA_LABELS[data_type]] = line
             if j == 0:
                 ax.set_title(
@@ -348,7 +338,7 @@ def plot_metric(metric, combined_scores, outfile):
                 ax.tick_params(axis="x", labelsize=10)
                 ax.tick_params(axis="y", labelsize=10)
                 ax.set_xticks(df["n_feats"], labels=df["n_feats"].astype(int))
-        j+=1
+        j += 1
     handles = [handles_dict[d] for d in handles_dict]
     fig.legend(
         handles=handles,
@@ -369,17 +359,20 @@ def plot_metric(metric, combined_scores, outfile):
     plt.savefig(f"{outfile}.png", dpi=400, format="png")
     plt.close()
 
+
 def get_ci_str_from_list(value):
     return f"[{float(value[0]):.4f}, {float(value[1]):.4f}]"
+
 
 def make_n_index(df):
     df[INDEX_COL] = df[INDEX_COL].astype(int)
     df.set_index(INDEX_COL, inplace=True)
     return df
-        
+
+
 def format_df_for_pretty_output(df):
     formatted_df = df.copy()
-    
+
     # n_feats should be only int col and usable as index
     if INDEX_COL in formatted_df.columns:
         formatted_df = make_n_index(formatted_df)
@@ -390,15 +383,12 @@ def format_df_for_pretty_output(df):
     )
 
     # if CI cols in df, want to have them as ranges [lower, upper]
-    formatted_df[
+    formatted_df[[x for x in formatted_df.columns if x.endswith("CI")]] = formatted_df[
         [x for x in formatted_df.columns if x.endswith("CI")]
-    ] = formatted_df[
-        [x for x in formatted_df.columns if x.endswith("CI")]
-    ].applymap(
-        get_ci_str_from_list
-    )
+    ].applymap(get_ci_str_from_list)
 
     return formatted_df
+
 
 def get_ratio_max_metric(df, metrics):
     if INDEX_COL in df.columns:
@@ -409,33 +399,30 @@ def get_ratio_max_metric(df, metrics):
         new_df[f"ratio_max_{metric}"] = new_df[metric] / max
     return new_df
 
-def get_sub_shap_plot(sub_shap_dict, outfile):
-    plt.figure(figsize=(10,6))
+
+def get_sub_shap_plot(sub_shap_dict, outfile, title):
+    plt.figure(figsize=(10, 6))
     shap.summary_plot(
         sub_shap_dict["shap_val"],
         sub_shap_dict["feat_name"],
         plot_type="dot",
         show=False,
-        feature_names = [format_label(x) for x in sub_shap_dict["feat_name"].columns]
+        feature_names=[format_label(x) for x in sub_shap_dict["feat_name"].columns],
     )
     fig = plt.gcf()
     axes = fig.get_children()
     main_ax = [
-        a
-        for a in axes
-        if isinstance(a, plt.Axes) and "SHAP value" in a.get_xlabel()
+        a for a in axes if isinstance(a, plt.Axes) and "SHAP value" in a.get_xlabel()
     ][0]
     colorbar_ax = [
-        a
-        for a in axes
-        if isinstance(a, plt.Axes) and "Feature value" in a.get_ylabel()
+        a for a in axes if isinstance(a, plt.Axes) and "Feature value" in a.get_ylabel()
     ][0]
 
     colorbar_ax.set_ylabel("Feature value", fontsize=11)
     colorbar_ax.tick_params(labelsize=10)  # ticks along the colorbar
 
     main_ax.set_title(
-        f"{SUBREDDIT_LABELS[sub]}", loc="left", fontsize=12, weight="bold"
+        title, loc="left", fontsize=12, weight="bold"
     )
     main_ax.set_xlabel(
         "SHAP value", fontsize=11,
@@ -447,6 +434,7 @@ def get_sub_shap_plot(sub_shap_dict, outfile):
     plt.savefig(f"{outfile}.eps", dpi=350, format="eps")
     plt.savefig(f"{outfile}.png", dpi=400, format="png")
     plt.close()
+
 
 def combine_plots_vertical(png_filenames, outfile):
     # Load saved plots
@@ -467,20 +455,94 @@ def combine_plots_vertical(png_filenames, outfile):
     for ext in ["png", "eps"]:
         combined.save(f"{outfile}.{ext}", dpi=(400, 400))
 
+
 def plot_s1_shap_vals(selected_model_dirs, outdir):
     shap_vals = {}
     shap_outfiles = []
 
+    i=0
     print("[INFO] Making SHAP plots for each subreddit")
     for sub, mod_dir in selected_model_dirs.items():
         shap_vals[sub] = joblib.load(f"{mod_dir}/shap_plot_data.jl")
         outfile_name = f"{outdir}/{sub}_shap"
         shap_outfiles.append(f"{outfile_name}.png")
-        get_sub_shap_plot(shap_vals[sub], outfile_name)
-    
+        get_sub_shap_plot(shap_vals[sub], outfile_name, f"{LETTER_LOOKUP[i]} {sub}")
+        i+=1
+
     print("[INFO] Combining SHAP plots")
     combine_plots_vertical(shap_outfiles, f"{outdir}/combined_shap")
-        
+
+    print("[INFO] Saving SHAP plot data")
+    with pd.ExcelWriter(f"{outdir}/shap_plot_data.xlsx") as writer:
+        for sub, shap_dict in shap_vals.items():
+            for k, df in shap_dict.items():
+                df.to_excel(writer, sheet_name=f"{sub}_{k}")
+
+
+def plot_s2_shap_vals(selected_model_dirs, outdir, class_names):
+    class_shap_dicts = {}
+    shap_outfiles = {}
+    shap_dicts = {}
+    print("[INFO] Making SHAP plots for each subreddit")
+    for sub, mod_dir in selected_model_dirs.items():
+        vals = joblib.load(f"{mod_dir}/shap_values.jl")
+        x_test = pd.read_parquet(f"{mod_dir}/X_test.parquet")
+        shap_outfiles[sub] = []
+        class_shap_dicts[sub] = {}
+        shap_dicts[sub] = {
+            "shap_val": vals,
+            "feat_name": x_test
+        }
+        for class_idx, label in enumerate(class_names):
+            outfile_name = f"{outdir}/{sub}_shap_{label}"
+            shap_dict = {
+                "shap_val": vals[:, :, class_idx],
+                "feat_name": x_test,
+            }
+            get_sub_shap_plot(shap_dict, outfile_name, f"{LETTER_LOOKUP[class_idx]} {label}")
+            shap_outfiles[sub].append(f"{outfile_name}.png")
+            class_shap_dicts[sub][class_idx] = shap_dict
+    
+    print("[INFO] Combining SHAP plots")
+    for sub, outfile_list in shap_outfiles.items():
+        combine_plots_vertical(outfile_list, f"{outdir}/{sub}_SHAP")
+    
+    print("[INFO] Saving SHAP plot data")
+    with pd.ExcelWriter(f"{outdir}/shap_plot_data.xlsx") as writer:
+        for sub, shap_dict in shap_dicts.items():
+            for k, df in shap_dict.items():
+                df.to_excel(writer, sheet_name=f"{sub}_{k}")
+
+
+
+def output_s2_feature_importances(selected_model_dirs, outfile):
+    feat_importance_dfs = {}
+    for sub, mod_dir in selected_model_dirs.items():
+        print(f"[INFO][{sub}] Reading in SHAP values")
+        shap_vals = joblib.load(f"{mod_dir}/shap_values.jl")
+        shap_importance = np.abs(shap_vals).mean(axis=0)
+        print(f"[INFO][{sub}] Reading in features")
+        x_feats = pd.read_parquet(f"{mod_dir}/X_test.parquet").columns
+        print(f"[INFO][{sub}] Getting SHAP importance")
+        shap_importance_dict = {
+            "Feature": x_feats,
+            "MeanAbsoluteSHAP": np.abs(shap_importance).mean(axis=1),
+        }
+        for i in range(shap_importance.shape[1]):
+            shap_importance_dict[f"MeanSHAP_{i}"] = shap_importance[:, i]
+        shap_importance_df = pd.DataFrame(shap_importance_dict)
+
+        print(f"[INFO][{sub}] Getting tree importance")
+        classifier = joblib.load(f"{mod_dir}/model.jl")["classifier"]
+        tree_importance_df = get_tree_importance(classifier)
+        feat_importance_dfs[sub] = get_feat_importance_df(
+            shap_importance_df, tree_importance_df
+        )
+
+    print(f"[INFO] Saving feature importances to {outfile}")
+    with pd.ExcelWriter(outfile) as writer:
+        for sub, df in feat_importance_dfs.items():
+            df.to_excel(writer, sheet_name=sub, index=True)
 
 
 def output_s1_feature_importances(selected_model_dirs, outfile):
@@ -491,37 +553,38 @@ def output_s1_feature_importances(selected_model_dirs, outfile):
     for sub, mod_dir in selected_model_dirs.items():
         shap_importance_dfs[sub] = joblib.load(f"{mod_dir}/shap_importance_df.jl")
         mod_classifiers[sub] = joblib.load(f"{mod_dir}/model.jl")["classifier"]
-    
+
     print("[INFO] Getting tree importance")
     feat_importance_dfs = {}
     for sub, shap_imp_df in shap_importance_dfs.items():
         tree_importance = get_tree_importance(mod_classifiers[sub])
         feat_importance_df = get_feat_importance_df(shap_imp_df, tree_importance)
         feat_importance_dfs[sub] = format_df_for_pretty_output(feat_importance_df)
-    
+
     print(f"[INFO] Saving feature importances to {outfile}")
     with pd.ExcelWriter(outfile) as writer:
         for sub, df in feat_importance_dfs.items():
             df.to_excel(writer, sheet_name=sub, index=True)
 
+
 def get_feat_importance_df(shap_importance_df, tree_importance_df):
     feat_importance_df = pd.merge(
         shap_importance_df, tree_importance_df, on="Feature"
-    ).sort_values(
-        by="MeanAbsoluteSHAP", ascending=False
-    )
+    ).sort_values(by="MeanAbsoluteSHAP", ascending=False)
     feat_importance_df["Feature"] = feat_importance_df["Feature"].apply(format_label)
     return feat_importance_df
 
+
 def get_tree_importance(lgbm_classifier):
     tree_importance_df = pd.DataFrame(
-        [lgbm_classifier.booster_.feature_name(),
-        lgbm_classifier.booster_.feature_importance(),
-        lgbm_classifier.booster_.feature_importance(importance_type="gain")],
+        [
+            lgbm_classifier.booster_.feature_name(),
+            lgbm_classifier.booster_.feature_importance(),
+            lgbm_classifier.booster_.feature_importance(importance_type="gain"),
+        ],
         index=["Feature", "Split importance", "Gain importance"],
     ).T
     return tree_importance_df
-
 
 
 def main() -> None:
@@ -535,21 +598,21 @@ def main() -> None:
         raise ValueError(
             "You must specify --n-classes (3 or 4) when --stage 2 is selected."
         )
-    
+
     if args.stage == 2:
         class_names = CLASS_NAMES_STAGE2[args.n_classes]
         metrics = S2_METRICS
     else:
         class_names = CLASS_NAMES_STAGE1
         metrics = S1_METRICS
-    
+
     for class_name in class_names:
         metrics.append(f"Precision {class_name}")
 
     # add to S2 metrics
-    
+
     print(f"[INFO] Args: {args}")
-    
+
     os.makedirs(args.outdir, exist_ok=True)
     plot_outdir = f"{args.outdir}/plot_data"
     os.makedirs(plot_outdir, exist_ok=True)
@@ -564,18 +627,26 @@ def main() -> None:
     for sub, i in selected_models.items():
         model_dirs[sub] = f"{args.root}/{sub}/4_model"
         selected_model_dirs[sub] = f"{model_dirs[sub]}/model_{i}/model_data"
-    
+
     # handle confusion matrices
     confusion_matrixes(selected_model_dirs, args.outdir, plot_outdir, class_names)
 
     # handle performance metric outputs
     metrics = performance_metrics(model_dirs, args.outdir, metrics, plot_outdir)
 
-    # output feat importance
-    output_s1_feature_importances(selected_model_dirs, f"{args.outdir}/feat_importances.xlsx")
+    if args.stage == 1:
+        # output feat importance
+        output_s1_feature_importances(
+            selected_model_dirs, f"{args.outdir}/feat_importances.xlsx"
+        )
+        # output shap vals
+        plot_s1_shap_vals(selected_model_dirs, f"{args.outdir}")
+    else:
+        output_s2_feature_importances(
+            selected_model_dirs, f"{args.outdir}/feat_importances.xlsx"
+        )
+        # output shap vals
 
-    # output shap vals
-    plot_s1_shap_vals(selected_model_dirs, f"{args.outdir}")
 
 if __name__ == "__main__":
     main()
