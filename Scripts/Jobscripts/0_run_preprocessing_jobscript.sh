@@ -25,10 +25,6 @@ if [ -z "$1" ]; then
     exit 1
 fi
 
-# ===== Setup working directories =====
-mkdir -p "$TMPDIR/work"
-mkdir -p "$TMPDIR/output"
-
 # ===== Activate environment =====
 source ~/.bashrc
 conda activate threadsize 
@@ -43,7 +39,7 @@ COMMENTS_IN="$DATA_DIR/${SUBREDDIT}_comments.parquet"
 THREADS_IN="$DATA_DIR/${SUBREDDIT}_threads.parquet"
 
 # Output directory - use TMPDIR for speed, then copy back
-OUTDIR="$TMPDIR/output/${SUBREDDIT}"
+OUTDIR="/home/ucabcpl/Scratch/thread_size/thread-size/0_Preprocessing/${SUBREDDIT}"
 
 # ===== Verify inputs exist =====
 if [ ! -f "$COMMENTS_IN" ]; then
@@ -77,28 +73,11 @@ EXIT_CODE=$?
 if [ $EXIT_CODE -eq 0 ]; then
   echo ""
   echo "Preprocessing completed successfully"
-  echo "Copying results from TMPDIR to permanent storage..."
-  
-  FINAL_OUTDIR="/home/ucabcpl/Scratch/thread_size/thread-size/Outputs/0_Preprocessing/${SUBREDDIT}"
-  mkdir -p "$FINAL_OUTDIR"
-  
-  # Copy all outputs
-  cp -r "$OUTDIR"/* "$FINAL_OUTDIR/"
-  
-  echo "Results copied to: $FINAL_OUTDIR"
-  echo ""
-  echo "Output files:"
-  ls -lh "$FINAL_OUTDIR"
   
 else
   echo ""
   echo "ERROR: Preprocessing failed with exit code $EXIT_CODE"
   echo "Check logs in: $OUTDIR/logs/"
-  
-  # Still copy logs for debugging
-  FINAL_OUTDIR="/home/ucabcpl/Scratch/thread_size/thread-size/Outputs/${SUBREDDIT}"
-  mkdir -p "$FINAL_OUTDIR"
-  cp -r "$OUTDIR"/logs "$FINAL_OUTDIR/" 2>/dev/null || true
   
   exit $EXIT_CODE
 fi
