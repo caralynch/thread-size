@@ -244,6 +244,12 @@ def get_preds(thresholds, y_probas):
 
 
 def main():
+    """
+    Main entry point for Stage 2 final model evaluation.
+    
+    Trains final multiclass classifiers with tuned hyperparameters, generates
+    confusion matrices, SHAP analyses, and publication-ready outputs.
+    """
     print(f"{sys.argv[0]}")
     start = dt.datetime.now()
     print("[INFO] Running tuned model(s) and generating evaluation outputs.")

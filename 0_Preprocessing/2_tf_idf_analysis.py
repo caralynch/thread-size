@@ -1,5 +1,5 @@
 """
-TF-IDF + SVD model selection for text features using Optuna.
+Preprocessing step 2: TF-IDF + SVD model selection for text features.
 
 This script tunes a TF-IDF vectorizer and TruncatedSVD projection using
 Stratified K-fold cross-validation and a LightGBM probe model that optimizes Matthews Correlation Coefficient (MCC) on a binary target derived from `y_col`. It enforces a minimum explained variance by SVD and persists the selected text models and SVD features for downstream stages.
@@ -80,6 +80,12 @@ CATEGORICAL_FEATURES = {
 }
 
 def main():
+    """
+    Main entry point for TF-IDF and SVD hyperparameter tuning.
+    
+    Uses Optuna to search over TF-IDF vectorizer parameters and SVD
+    dimensionality, evaluating with cross-validated LightGBM probe models.
+    """
     print(f"{sys.argv[0]}")
     start = dt.datetime.now()
     print(f"[INFO] STARTED AT {start}")

@@ -153,6 +153,12 @@ def aggregate_params(param_list):
 
 
 def main():
+    """
+    Main entry point for Stage 2 tree hyperparameter tuning.
+    
+    Refines LightGBM tree hyperparameters for multiclass thread-size
+    classification using cross-validated Optuna optimization.
+    """
     print(f"{sys.argv[0]}")
     start = dt.datetime.now()
     print("[INFO] Hyperparameter tuning.")

@@ -1,6 +1,4 @@
 """
-1_construct_features.py
-
 Preprocessing step 1: construct comment- and thread-level feature tables.
 
 This script loads raw Reddit threads and comments for a single subreddit,
@@ -9,60 +7,24 @@ downstream modeling.
 
 Command-line interface
 ----------------------
-subreddit   : Subreddit key in {'conspiracy','crypto','politics'}.
-outdir      : Output directory.
-comments    : Path to comments dataframe.
-threads     : Path to threads dataframe.
+--subreddit : Subreddit key in {'conspiracy','crypto','politics'}.
+--outdir    : Output directory.
+--comments  : Path to comments dataframe.
+--threads   : Path to threads dataframe.
 
-Inputs (expected columns)
--------------------------
+Inputs
+------
 Comments dataframe:
-    id (str)                      Unique comment id.
-    parent (str)                  Id of parent (comment or root).
-    thread_id (str)               Thread identifier.
-    body (str)                    Comment text.
-    body_sentiment_score (float)  Sentiment score (precomputed).
-    level (int)                   Depth relative to thread root.
+    id, parent, thread_id, body, body_sentiment_score, level
 
 Threads dataframe:
-    thread_id (str)               Thread identifier.
-    subject (str)                 Thread title text.
-    body (str or NaN)             OP body text (if any).
-    domain (str)                  Linked domain (if any).
-    timestamp (datetime-like)     UTC timestamp.
-    thread_size (int)             Total number of comments in the thread.
-
-Engineered features (examples)
-------------------------------
-Per-comment:
-    body_length, direct_reply_count, direct_reply_sentiment_std,
-    mean_direct_reply_length, avg_word_length, unique_word_ratio,
-    stopword_ratio, noun_ratio, verb_ratio, exclamation_ratio,
-    caps_ratio, question_ratio, clean_text
-
-Per-thread:
-    includes_body, subject_length, hour, dayofweek, includes_image,
-    includes_video, reddit_domain, avg_word_length, unique_word_ratio,
-    stopword_ratio, noun_ratio, verb_ratio, exclamation_ratio,
-    caps_ratio, question_ratio, reply_count, reply_sentiment_std,
-    reply_length_mean, thread_depth, clean_text, log_thread_size
+    thread_id, subject, body, domain, timestamp, thread_size
 
 Outputs
 -------
 Writes two enriched DataFrames to --outdir:
     {subreddit}_comments_extra_feats.parquet
     {subreddit}_threads_extra_feats.parquet
-
-Notes
------
-- Requires NLTK tokenizers and stopwords. If not installed, download
-  'punkt', 'averaged_perceptron_tagger' (or 'averaged_perceptron_tagger_eng'),
-  and 'stopwords' before running. If you run into LookupError(resource_not_found)
-  due to missing NLTK data, run:
-  python -c "import nltk; nltk.download('punkt'); nltk.download('punkt_tab'); nltk.download('averaged_perceptron_tagger'); nltk.download('averaged_perceptron_tagger_eng'); nltk.download('stopwords')"
-  Note that NLTK's downloader is silent when running in a python -c, so it may
-  look like nothing is happening even when it's working.
-
 """
 
 import argparse
@@ -142,6 +104,19 @@ TEXT_COLS = ["subject", "body", "domain", "author", "id", "thread_id", "parent"]
 
 
 def normalize_domain(d):
+    """
+    Normalize Reddit domain strings to canonical forms.
+    
+    Parameters
+    ----------
+    d : str or None
+        Raw domain string from Reddit post.
+    
+    Returns
+    -------
+    str
+        Normalized domain string.
+    """
     if pd.isna(d):
         return ""
     d = str(d).lower()
@@ -157,6 +132,19 @@ def normalize_domain(d):
 
 
 def remove_links(text: str):
+    """
+    Remove URLs from text using regex pattern matching.
+    
+    Parameters
+    ----------
+    text : str
+        Input text potentially containing URLs.
+    
+    Returns
+    -------
+    str
+        Text with all URLs removed.
+    """
     text = str(text)
     if len(text) == 0:
         return ""
@@ -167,6 +155,19 @@ def remove_links(text: str):
 
 
 def get_tokens(text: str):
+    """
+    Tokenize and POS-tag text using NLTK.
+    
+    Parameters
+    ----------
+    text : str
+        Input text to tokenize.
+    
+    Returns
+    -------
+    list of tuple
+        List of (token, POS_tag) tuples.
+    """
     text = str(text)
     text = text.lower()
     text = remove_links(text)
@@ -175,34 +176,112 @@ def get_tokens(text: str):
 
 
 def get_words(text: str):
+    """
+    Extract alphabetic word tokens from text.
+    
+    Parameters
+    ----------
+    text : str
+        Input text.
+    
+    Returns
+    -------
+    list of str
+        Alphabetic tokens only.
+    """
     tokens = get_tokens(text)
     words = [token[0] for token in tokens if token[0].isalpha()]
     return words
 
 
 def get_non_stopwords(text: str):
+    """
+    Extract non-stopword tokens from text.
+    
+    Parameters
+    ----------
+    text : str
+        Input text.
+    
+    Returns
+    -------
+    list of str
+        Alphabetic tokens excluding English stopwords.
+    """
     words = get_words(text)
     non_stopwords = [x for x in words if x not in STOP_WORDS]
     return non_stopwords
 
 
 def get_word_tokens(text: str):
+    """
+    Get POS-tagged word tokens (alphabetic only).
+    
+    Parameters
+    ----------
+    text : str
+        Input text.
+    
+    Returns
+    -------
+    list of tuple
+        List of (word, POS_tag) tuples for alphabetic tokens.
+    """
     tokens = get_tokens(text)
     word_tokens = [token for token in tokens if token[0].isalpha()]
     return word_tokens
 
 
 def get_nouns(tokens: list):
+    """
+    Extract noun tokens from POS-tagged tokens.
+    
+    Parameters
+    ----------
+    tokens : list of tuple
+        POS-tagged tokens from nltk.pos_tag.
+    
+    Returns
+    -------
+    list of str
+        Tokens with noun POS tags (NN*).
+    """
     nouns = [token[0] for token in tokens if token[1].startswith("NN")]
     return nouns
 
 
 def get_verbs(tokens: list):
+    """
+    Extract verb tokens from POS-tagged tokens.
+    
+    Parameters
+    ----------
+    tokens : list of tuple
+        POS-tagged tokens from nltk.pos_tag.
+    
+    Returns
+    -------
+    list of str
+        Tokens with verb POS tags (VB*).
+    """
     verbs = [token[0] for token in tokens if token[1].startswith("VB")]
     return verbs
 
 
 def non_stopword_strings(text: str):
+    """
+    Extract non-stopwords as a single space-separated string.
+    
+    Parameters
+    ----------
+    text : str
+        Input text.
+    
+    Returns
+    -------
+    str
+        Space-separated non-stopword tokens.
+    """
     tokens = get_non_stopwords(text)
     outstr = ""
     for word in tokens:
@@ -211,6 +290,20 @@ def non_stopword_strings(text: str):
 
 
 def compute_text_features(text: str):
+    """
+    Compute multiple text-based features from input text.
+    
+    Parameters
+    ----------
+    text : str
+        Input text to analyze.
+    
+    Returns
+    -------
+    pd.Series
+        Series containing: avg_word_length, unique_word_ratio, stopword_ratio,
+        noun_ratio, verb_ratio, exclamation_ratio, question_ratio, caps_ratio.
+    """
     if pd.isna(text):
         return pd.Series([0, 0, 0, 0, 0, 0, 0, 0])
     words = get_words(text)
@@ -260,6 +353,19 @@ def compute_text_features(text: str):
 
 
 def classify_domains(domain_str):
+    """
+    Classify domain string into Reddit content type flags.
+    
+    Parameters
+    ----------
+    domain_str : str
+        Domain string to classify.
+    
+    Returns
+    -------
+    list of int
+        Binary flags: [includes_image, includes_video, reddit_domain, is_external_domain].
+    """
     domain_norm = normalize_domain(domain_str)
 
     # flags for image/video/reddit-hosted
@@ -275,6 +381,12 @@ def classify_domains(domain_str):
 
 
 def main():
+    """
+    Main entry point for feature construction pipeline.
+    
+    Loads raw Reddit data, extracts text and structural features,
+    and writes enriched DataFrames for downstream modeling.
+    """
     print(f"{sys.argv[0]}")
     print(f"[INFO] STARTED AT {dt.datetime.now()}")
 

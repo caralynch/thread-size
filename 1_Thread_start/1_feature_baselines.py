@@ -47,7 +47,7 @@ High-level behaviour
         joblib of aggregated scores by n_feats.
     - `importance_dfs.jl`:
         joblib list of per-fold importance DataFrames.
-    - `{subreddit}_1_feature_baselines.xlsx`:
+    - `{subreddit}_feature_baselines.xlsx`:
         model_info, summary_scores, aggregated_scores, and feature importances.
     - `{subreddit}_baseline_info.jl`:
         joblib of run configuration and metadata (arguments, runtime, etc.).
@@ -151,6 +151,12 @@ def ci(arr):
 
 
 def main():
+    """
+    Main entry point for Stage 1 baseline feature evaluation.
+    
+    Evaluates classification performance across increasing feature set sizes
+    using stratified cross-validation and bootstrap confidence intervals.
+    """
     print(f"{sys.argv[0]}")
     start = dt.datetime.now()
     print("[INFO] Feature baselines.")
@@ -550,7 +556,7 @@ def main():
     joblib.dump(model_info, f"{args.outdir}/{args.subreddit}_baseline_info.jl")
 
     with pd.ExcelWriter(
-        f"{args.outdir}/{args.subreddit}_1_feature_baselines.xlsx"
+        f"{args.outdir}/{args.subreddit}_feature_baselines.xlsx"
     ) as writer:
         pd.DataFrame.from_dict(model_info, orient="index").to_excel(
             writer, sheet_name="model_info", index=True

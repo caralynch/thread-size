@@ -475,6 +475,21 @@ def parse_args() -> argparse.Namespace:
 
 
 def get_errorbars(df, metric):
+    """
+    Calculate error bar lengths from confidence interval data.
+    
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame containing metric values and CI columns.
+    metric : str
+        Name of metric column.
+    
+    Returns
+    -------
+    tuple of list
+        (lower_errors, upper_errors) for matplotlib errorbar plotting.
+    """
     lower = [
         metric_val - ci[0] for metric_val, ci in zip(df[metric], df[f"{metric} CI"])
     ]
@@ -485,6 +500,18 @@ def get_errorbars(df, metric):
 
 
 def plot_metric(metric, combined_scores, outfile):
+    """
+    Generate multi-panel metric vs. feature count plot.
+    
+    Parameters
+    ----------
+    metric : str
+        Metric name to plot.
+    combined_scores : dict
+        Nested dict: data_type -> subreddit -> DataFrame.
+    outfile : str
+        Output file path (without extension).
+    """
     fig, axes = plt.subplots(2, 2, figsize=(16, 10))
     axes = axes.flatten()
     handles_dict = {}
@@ -541,16 +568,60 @@ def plot_metric(metric, combined_scores, outfile):
 
 
 def get_ci_str_from_list(value):
+    """
+    Format confidence interval list as string.
+    
+    Parameters
+    ----------
+    value : list of float
+        [lower, upper] confidence bounds.
+    
+    Returns
+    -------
+    str
+        Formatted string: "[lower, upper]".
+    """
     return f"[{float(value[0]):.4f}, {float(value[1]):.4f}]"
 
 
 def make_n_index(df):
+    """
+    Convert n_feats column to integer index.
+    
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame with n_feats column.
+    
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame with n_feats as integer index.
+    """
     df[INDEX_COL] = df[INDEX_COL].astype(int)
     df.set_index(INDEX_COL, inplace=True)
     return df
 
 
 def format_df_for_pretty_output(df):
+    """
+    Format DataFrame for publication-quality output in Excel.
+    
+    Applies formatting rules:
+    - Converts n_feats column to integer index
+    - Formats float values to 4 decimal places
+    - Converts CI columns from lists to formatted strings [lower, upper]
+    
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Raw DataFrame with metrics and confidence intervals.
+    
+    Returns
+    -------
+    pd.DataFrame
+        Formatted DataFrame ready for Excel export.
+    """
     formatted_df = df.copy()
 
     # n_feats should be only int col and usable as index
@@ -573,6 +644,26 @@ def format_df_for_pretty_output(df):
 
 
 def get_ratio_max_metric(df, metrics):
+    """
+    Calculate performance ratios relative to maximum value for each metric.
+    
+    For each metric, computes the ratio of each value to the maximum value
+    achieved across all feature set sizes. Useful for identifying how close
+    smaller models are to peak performance.
+    
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame containing metric columns.
+    metrics : list of str
+        List of metric column names to calculate ratios for.
+    
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame with original metrics plus ratio_max_{metric} columns
+        indexed by n_feats.
+    """
     if INDEX_COL in df.columns:
         df = make_n_index(df)
     new_df = df[metrics]
@@ -583,6 +674,18 @@ def get_ratio_max_metric(df, metrics):
 
 
 def get_sub_shap_plot(sub_shap_dict, outfile, title):
+    """
+    Generate SHAP summary plot for a single subreddit.
+    
+    Parameters
+    ----------
+    sub_shap_dict : dict
+        Dictionary with 'shap_val' and 'feat_name' keys.
+    outfile : str
+        Output file path (without extension).
+    title : str
+        Plot title.
+    """
     plt.figure(figsize=(10, 6))
     shap.summary_plot(
         sub_shap_dict["shap_val"],
@@ -617,6 +720,16 @@ def get_sub_shap_plot(sub_shap_dict, outfile, title):
 
 
 def combine_plots_vertical(png_filenames, outfile):
+    """
+    Stack multiple PNG images vertically into single output.
+    
+    Parameters
+    ----------
+    png_filenames : list of str
+        List of PNG file paths to combine.
+    outfile : str
+        Output file path (without extension).
+    """
     # Load saved plots
     imgs = [Image.open(f) for f in png_filenames]
 
@@ -637,6 +750,16 @@ def combine_plots_vertical(png_filenames, outfile):
 
 
 def combine_plots_square(png_filenames, outfile):
+    """
+    Arrange PNG images in 2x2 grid layout.
+    
+    Parameters
+    ----------
+    png_filenames : list of str
+        List of PNG file paths (should be 3-4 files).
+    outfile : str
+        Output file path (without extension).
+    """
     imgs = [Image.open(f) for f in png_filenames]
     # Determine the width and total height
     max_width = np.max([img.width for img in imgs]) * 2
@@ -661,6 +784,16 @@ def combine_plots_square(png_filenames, outfile):
 
 
 def plot_s1_shap_vals(selected_model_dirs, outdir):
+    """
+    Generate Stage 1 SHAP visualizations for all subreddits.
+    
+    Parameters
+    ----------
+    selected_model_dirs : dict
+        Mapping from subreddit to model directory.
+    outdir : str
+        Output directory for plots.
+    """
     shap_vals = {}
     shap_outfiles = []
 
@@ -684,6 +817,18 @@ def plot_s1_shap_vals(selected_model_dirs, outdir):
 
 
 def plot_s2_shap_vals(selected_model_dirs, outdir, class_names):
+    """
+    Generate Stage 2 SHAP visualizations for all classes and subreddits.
+    
+    Parameters
+    ----------
+    selected_model_dirs : dict
+        Mapping from subreddit to model directory.
+    outdir : str
+        Output directory for plots.
+    class_names : list of str
+        Class label names.
+    """
     class_shap_dicts = {}
     shap_outfiles = {}
     shap_dfs = {}
@@ -719,6 +864,18 @@ def plot_s2_shap_vals(selected_model_dirs, outdir, class_names):
 
 
 def plot_s2_col_shap_plots(selected_model_dirs, outdir, class_names):
+    """
+    Generate per-feature SHAP scatter plots for Stage 2 models.
+    
+    Parameters
+    ----------
+    selected_model_dirs : dict
+        Mapping from subreddit to model directory.
+    outdir : str
+        Output directory for plots.
+    class_names : list of str
+        Class label names.
+    """
     print("[INFO] Getting SHAP scatter plots per column and class")
     shap_dfs = {}
     for sub, mod_dir in selected_model_dirs.items():
@@ -753,6 +910,16 @@ def plot_s2_col_shap_plots(selected_model_dirs, outdir, class_names):
 
 
 def plot_s1_col_shap_plots(selected_model_dirs, outdir):
+    """
+    Generate per-feature SHAP scatter plots for Stage 1 models.
+    
+    Parameters
+    ----------
+    selected_model_dirs : dict
+        Mapping from subreddit to model directory.
+    outdir : str
+        Output directory for plots.
+    """
     print("[INFO] Getting SHAP scatter plots per column")
     shap_vals_dict = {}
     for sub, mod_dir in selected_model_dirs.items():
@@ -770,6 +937,20 @@ def plot_s1_col_shap_plots(selected_model_dirs, outdir):
 
 
 def plot_cls_col_shap_plot(cls_shap_vals, colname, outfile, title=None):
+    """
+    Create SHAP scatter plot for a single feature.
+    
+    Parameters
+    ----------
+    cls_shap_vals : shap.Explanation
+        SHAP values for specific class.
+    colname : str
+        Feature name to plot.
+    outfile : str
+        Output file path (without extension).
+    title : str, optional
+        Plot title.
+    """
     plt.figure(figsize=(10, 6))
     shap.plots.scatter(cls_shap_vals[:, colname], show=False)
     fig = plt.gcf()
@@ -796,6 +977,16 @@ def plot_cls_col_shap_plot(cls_shap_vals, colname, outfile, title=None):
 
 
 def output_s2_feature_importances(selected_model_dirs, outfile):
+    """
+    Export combined SHAP and tree-based feature importances for Stage 2.
+    
+    Parameters
+    ----------
+    selected_model_dirs : dict
+        Mapping from subreddit to model directory.
+    outfile : str
+        Output Excel file path.
+    """
     feat_importance_dfs = {}
     for sub, mod_dir in selected_model_dirs.items():
         print(f"[INFO][{sub}] Reading in SHAP values")
@@ -826,6 +1017,16 @@ def output_s2_feature_importances(selected_model_dirs, outfile):
 
 
 def output_s1_feature_importances(selected_model_dirs, outfile):
+    """
+    Export combined SHAP and tree-based feature importances for Stage 1.
+    
+    Parameters
+    ----------
+    selected_model_dirs : dict
+        Mapping from subreddit to model directory.
+    outfile : str
+        Output Excel file path.
+    """
     # get shap importance dfs and model classifiers
     shap_importance_dfs = {}
     mod_classifiers = {}
@@ -848,6 +1049,21 @@ def output_s1_feature_importances(selected_model_dirs, outfile):
 
 
 def get_feat_importance_df(shap_importance_df, tree_importance_df):
+    """
+    Merge SHAP and tree importance DataFrames.
+    
+    Parameters
+    ----------
+    shap_importance_df : pd.DataFrame
+        SHAP importance values.
+    tree_importance_df : pd.DataFrame
+        LightGBM tree importance values.
+    
+    Returns
+    -------
+    pd.DataFrame
+        Merged importance DataFrame sorted by SHAP importance.
+    """
     feat_importance_df = pd.merge(
         shap_importance_df, tree_importance_df, on="Feature"
     ).sort_values(by="MeanAbsoluteSHAP", ascending=False)
@@ -856,6 +1072,19 @@ def get_feat_importance_df(shap_importance_df, tree_importance_df):
 
 
 def get_tree_importance(lgbm_classifier):
+    """
+    Extract split and gain importance from LightGBM classifier.
+    
+    Parameters
+    ----------
+    lgbm_classifier : lgb.LGBMClassifier
+        Fitted LightGBM model.
+    
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame with Feature, Split importance, Gain importance columns.
+    """
     tree_importance_df = pd.DataFrame(
         [
             lgbm_classifier.booster_.feature_name(),
@@ -868,6 +1097,19 @@ def get_tree_importance(lgbm_classifier):
 
 
 def get_correct_classes(cm):
+    """
+    Calculate per-class accuracy from confusion matrix.
+    
+    Parameters
+    ----------
+    cm : np.ndarray
+        Confusion matrix.
+    
+    Returns
+    -------
+    list of float
+        Proportion correct for each class.
+    """
     class_correct = []
     for i in range(0, len(cm)):
         class_correct.append(cm[i, i] / sum(cm[i, :]))
@@ -875,6 +1117,19 @@ def get_correct_classes(cm):
 
 
 def get_true_class_counts(cm):
+    """
+    Get total true instances per class from confusion matrix.
+    
+    Parameters
+    ----------
+    cm : np.ndarray
+        Confusion matrix.
+    
+    Returns
+    -------
+    list of int
+        Row sums (true class counts).
+    """
     class_counts = []
     for i in range(0, len(cm)):
         class_counts.append(sum(cm[i, :]))
@@ -882,6 +1137,19 @@ def get_true_class_counts(cm):
 
 
 def get_predicted_class_counts(cm):
+    """
+    Get total predicted instances per class from confusion matrix.
+    
+    Parameters
+    ----------
+    cm : np.ndarray
+        Confusion matrix.
+    
+    Returns
+    -------
+    list of int
+        Column sums (predicted class counts).
+    """
     class_counts = []
     for i in range(0, len(cm)):
         class_counts.append(sum(cm[:, i]))
@@ -889,6 +1157,19 @@ def get_predicted_class_counts(cm):
 
 
 def get_predicted_class_ratios_df(cm_dict):
+    """
+    Calculate predicted vs. true class distribution ratios.
+    
+    Parameters
+    ----------
+    cm_dict : dict
+        Dictionary containing confusion matrices with bootstrap CIs.
+    
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame with predicted and true class proportions.
+    """
     pred_class_ratios = {}
     for k, cm in cm_dict.items():
         pred_class_ratios[k] = get_predicted_class_counts(cm) / cm_dict["CM"].sum()
@@ -900,12 +1181,22 @@ def get_predicted_class_ratios_df(cm_dict):
 
 
 def get_misclassified_dict(i, j, cm_dict):
-    """Class i misclassified as class j in given confusion matrix cm.
-
-    Args:
-        i int: integer associated with class
-        j int: integer associated with class
-        cm pd.DataFrame: confusion matrix
+    """
+    Calculate misclassification rate from class i to class j.
+    
+    Parameters
+    ----------
+    i : int
+        True class index.
+    j : int
+        Predicted class index.
+    cm_dict : dict
+        Dictionary with CM and bootstrap bounds.
+    
+    Returns
+    -------
+    dict
+        Misclassification rate with confidence intervals.
     """
     true_class_counts = get_true_class_counts(cm_dict["CM"])[i]
     misclassified_dict = {
@@ -919,6 +1210,19 @@ def get_misclassified_dict(i, j, cm_dict):
 
 
 def get_misclassified_df(cm_dict):
+    """
+    Generate complete misclassification analysis DataFrame.
+    
+    Parameters
+    ----------
+    cm_dict : dict
+        Dictionary containing confusion matrices with bootstrap CIs.
+    
+    Returns
+    -------
+    pd.DataFrame
+        All pairwise misclassification rates with confidence intervals.
+    """
     rows = []
     for i in range(0, len(cm_dict["CM"])):
         for j in [x for x in range(0, len(cm_dict["CM"])) if x != i]:
@@ -941,6 +1245,12 @@ def get_misclassified_df(cm_dict):
 
 
 def main() -> None:
+    """
+    Main entry point for publication output generation.
+    
+    Processes trained model outputs to create publication-ready figures,
+    tables, and analyses for both Stage 1 and Stage 2 models.
+    """
     print(f"{sys.argv[0]}")
     start = dt.datetime.now()
     print("[INFO] Generating publication outputs.")

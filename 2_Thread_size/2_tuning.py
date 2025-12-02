@@ -218,6 +218,12 @@ def neg_mcc(thresholds, y_probas, y_true):
 
 
 def main():
+    """
+    Main entry point for Stage 2 class weight and threshold tuning.
+    
+    Optimizes per-class weights and probability thresholds for multiclass
+    thread-size prediction using Optuna and cross-validation.
+    """
     print(f"{sys.argv[0]}")
     start = dt.datetime.now()
     print("[INFO] Class weight and threshold tuning.")

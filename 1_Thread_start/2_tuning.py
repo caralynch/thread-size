@@ -145,6 +145,12 @@ CLASS_NAMES = {
 
 
 def main():
+    """
+    Main entry point for Stage 1 class weight and threshold tuning.
+    
+    Uses Optuna to optimize class weights and decision thresholds for
+    binary thread-start classification across multiple feature set sizes.
+    """
     print(f"{sys.argv[0]}")
     start = dt.datetime.now()
     print("[INFO] Class weight and threshold tuning.")

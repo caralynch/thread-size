@@ -188,13 +188,10 @@ def ci(arr):
 
 def main():
     """
-    Entry point for Thread Size stage 1 feature-baseline analysis.
-
-    This function parses command-line arguments, loads the training data,
-    discretises the target into bins, runs stratified CV with LightGBM
-    models over increasing numbers of top-ranked features, and writes
-    all metrics, feature importances, and plots to the specified
-    output directory.
+    Main entry point for Stage 2 baseline feature evaluation.
+    
+    Evaluates multiclass thread-size classification performance across
+    increasing feature set sizes with bootstrap confidence intervals.
     """
     print(f"{sys.argv[0]}")
     start = dt.datetime.now()

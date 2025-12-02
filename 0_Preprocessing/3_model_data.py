@@ -1,4 +1,6 @@
 """
+Preprocessing step 3: Build model-ready train/test matrices.
+
 Builds model-ready train/test matrices: merges metadata/features, applies
 author/domain encodings, filters collinearity, and persists X/y splits.
 
@@ -103,6 +105,19 @@ PRIORITY_ORDER = [
 
 
 def log_vals(y: pd.Series):
+    """
+    Apply logarithmic transformation to target variable.
+    
+    Parameters
+    ----------
+    y : pd.Series
+        Target variable values.
+    
+    Returns
+    -------
+    pd.Series or None
+        Log-transformed values, log(y+1) if min < 1, or None if negative values.
+    """
     if y.min() < 0:
         print(f"[INFO] Values are negative, not taking log.")
         return None
@@ -115,6 +130,21 @@ def log_vals(y: pd.Series):
 
 
 def get_high_corr_pairs(df: pd.DataFrame, corr_threshold=0.5):
+    """
+    Identify highly correlated feature pairs above threshold.
+    
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Feature matrix.
+    corr_threshold : float, default 0.5
+        Absolute correlation threshold.
+    
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame with columns: Feature 1, Feature 2, Correlation.
+    """
     corr_matrix = df.corr()
     high_corr_pairs = (
         corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1) == 1)
@@ -129,6 +159,19 @@ def get_high_corr_pairs(df: pd.DataFrame, corr_threshold=0.5):
 
 
 def get_feats_to_remove(row):
+    """
+    Determine lower-priority feature from correlated pair.
+    
+    Parameters
+    ----------
+    row : pd.Series
+        Row from high_corr_pairs DataFrame.
+    
+    Returns
+    -------
+    str
+        Name of feature to remove (lower priority in PRIORITY_ORDER).
+    """
     # return lower-priority feature. Doesn't include SVD feats.
     feat_1 = row["Feature 1"]
     feat_2 = row["Feature 2"]
@@ -139,6 +182,12 @@ def get_feats_to_remove(row):
 
 
 def main():
+    """
+    Main entry point for model data preparation.
+    
+    Builds final train/test feature matrices with encoding, correlation
+    filtering, and feature selection applied.
+    """
     print(f"{sys.argv[0]}")
     start = dt.datetime.now()
     print(f"[INFO] STARTED AT {start}")

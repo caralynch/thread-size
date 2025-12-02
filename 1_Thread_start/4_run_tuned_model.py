@@ -144,6 +144,12 @@ def ci(arr):
 
 
 def main():
+    """
+    Main entry point for Stage 1 final model evaluation.
+    
+    Trains final binary classifiers with tuned hyperparameters, generates
+    performance metrics, SHAP analyses, and publication-ready outputs.
+    """
     print(f"{sys.argv[0]}")
     start = dt.datetime.now()
     print("[INFO] Running tuned model(s) and generating evaluation outputs.")
@@ -857,7 +863,7 @@ def main():
     end = dt.datetime.now()
     total_runtime = end - start
     model_info["total_runtime"] = str(total_runtime)
-    with pd.ExcelWriter(f"{args.outdir}/stage1_model_summaries.xlsx") as writer:
+    with pd.ExcelWriter(f"{args.outdir}/evaluation.xlsx") as writer:
         pd.DataFrame.from_dict(model_info, orient="index", columns=["Value"]).to_excel(
             writer, sheet_name="model_info"
         )
