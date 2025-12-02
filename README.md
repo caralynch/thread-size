@@ -1,4 +1,4 @@
-# Reddit Thread Prediction Models
+# Thread Prediction Model Pipeline
 
 A comprehensive machine learning pipeline for predicting Reddit thread outcomes using LightGBM classifiers. This repository contains code for two-stage modeling: binary classification of thread initiation (started vs. stalled) and multiclass prediction of thread size categories.
 
