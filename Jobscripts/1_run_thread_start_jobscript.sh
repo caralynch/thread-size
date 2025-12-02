@@ -31,8 +31,8 @@ source ~/.bashrc
 conda activate threadsize 
 
 # ===== Set paths =====
-SCRIPT_DIR="/home/ucabcpl/Scratch/thread_size/thread-size/Scripts/1_Thread_start"
-DATA_DIR="/home/ucabcpl/Scratch/thread_size/thread-size/Outputs/Preprocessing/${SUBREDDIT}"
+SCRIPT_DIR="/home/ucabcpl/Scratch/thread_size/thread-size/1_Thread_start"
+DATA_DIR="/home/ucabcpl/Scratch/thread_size/Outputs/0_preprocessing/${SUBREDDIT}"
 
 # Input files
 TRAIN_X="${DATA_DIR}/${SUBREDDIT}_train_X.parquet"
@@ -50,7 +50,7 @@ for f in "${TRAIN_X}" "${TEST_X}" "${TRAIN_Y}" "${TEST_Y}"; do
 done
 
 # Main output directory
-OUTDIR="/home/ucabcpl/Scratch/thread_size/thread-size/Outputs/1_Thread_Start/${SUBREDDIT}"
+OUTDIR="/home/ucabcpl/Scratch/thread_size/Outputs/1_thread_start/${SUBREDDIT}"
 mkdir -p "${OUTDIR}"
 
 LOGDIR="${OUTDIR}/logs"

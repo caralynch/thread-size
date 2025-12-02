@@ -23,7 +23,7 @@ LOGDIR="${OUTDIR}/logs"
 TFIDFOUTDIR="${OUTDIR}/tf-idf"
 mkdir -p "${LOGDIR}" "${TFIDFOUTDIR}"
 
-SCRIPT_DIR=/home/ucabcpl/Scratch/thread_size/thread-size/Scripts
+SCRIPT_DIR=/home/ucabcpl/Scratch/thread_size/thread-size
 
 # Helper: run + log + check
 run_step () {

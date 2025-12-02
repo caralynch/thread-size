@@ -30,15 +30,15 @@ conda activate threadsize
 
 # ===== Set paths =====
 SUBREDDIT="$1"  # e.g. conspiracy, crypto, politics
-SCRIPT_DIR="/home/ucabcpl/Scratch/thread_size/thread-size/Scripts/2_Thread_size"
-DATA_DIR="/home/ucabcpl/Scratch/thread_size/thread-size/Outputs/Preprocessing/${SUBREDDIT}"
+SCRIPT_DIR="/home/ucabcpl/Scratch/thread_size/thread-size/2_Thread_size"
+DATA_DIR="/home/ucabcpl/Scratch/thread_size/Outputs/0_preprocessing/${SUBREDDIT}"
 
 # Input files
 TRAIN_X="${DATA_DIR}/${SUBREDDIT}_train_X.parquet"
 TRAIN_Y="${DATA_DIR}/${SUBREDDIT}_train_Y.parquet"
 
 # Output directory
-OUTDIR="/home/ucabcpl/Scratch/thread_size/thread-size/Outputs/2_Thread_Size/${SUBREDDIT}/1_feat_baselines"
+OUTDIR="/home/ucabcpl/Scratch/thread_size/thread-size/Outputs/2_thread_size/${SUBREDDIT}/1_feat_baselines"
 mkdir -p "${OUTDIR}"
 
 LOGDIR="${OUTDIR}/logs"

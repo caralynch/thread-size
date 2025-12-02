@@ -31,16 +31,16 @@ conda activate threadsize
 
 # ===== Set paths =====
 SUBREDDIT=$1  # Change as needed: conspiracy, crypto, politics
-SCRIPT_DIR=/home/ucabcpl/Scratch/thread_size/thread-size/Scripts # Adjust to where your scripts are
-DATA_DIR=/home/ucabcpl/Scratch/thread_size/thread-size/Inputs # Adjust to your data location
+SCRIPT_DIR=/home/ucabcpl/Scratch/thread_size/thread-size # Adjust to where your scripts are
+DATA_DIR=/home/ucabcpl/Scratch/thread_size/Inputs # Adjust to your data location
 
 # Input files (adjust paths to your actual data)
 COMMENTS_IN="$DATA_DIR/${SUBREDDIT}_comments.parquet"
 THREADS_IN="$DATA_DIR/${SUBREDDIT}_threads.parquet"
 
 # Output directory - use TMPDIR for speed, then copy back
-OUTDIR="/home/ucabcpl/Scratch/thread_size/thread-size/Outputs/0_Preprocessing/${SUBREDDIT}"
-mkdir $OUTDIR
+OUTDIR="/home/ucabcpl/Scratch/thread_size/Outputs/0_preprocessing/${SUBREDDIT}"
+mkdir -p $OUTDIR
 
 # ===== Verify inputs exist =====
 if [ ! -f "$COMMENTS_IN" ]; then
