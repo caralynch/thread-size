@@ -15,7 +15,7 @@ for SUB in "${SUBREDDITS[@]}"; do
     echo "Submitting preprocessing job for: $SUB"
 
     # Submit job AND pass subreddit as the first argument
-    qsub -N ${SUB}_0 "$JOBSCRIPT" "$SUB"
+    qsub -N ${SUB}_0 -o "${SUB}_0.out" -e "${SUB}_0.err" "$JOBSCRIPT" "$SUB"
 
     echo ""
 done
