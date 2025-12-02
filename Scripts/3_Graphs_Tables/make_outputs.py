@@ -123,13 +123,12 @@ def format_label(text, max_word_length=20):
     for i, word in enumerate(words):
         if word.lower() == "avg":
             word = "avg."
-
         if word.lower() == "pagerank":
             formatted_words.append("PageRank")
         elif (word.lower() == "reddit") or (i == 0):
             formatted_words.append(word.capitalize())
         # Keep known acronyms uppercase, otherwise title case
-        elif word.upper() in ["PR", "URL", "ID"]:
+        elif word.upper() in ["PR", "URL", "ID", "SVD"]:
             formatted_words.append(word.upper())
         else:
             formatted_words.append(word.lower())
