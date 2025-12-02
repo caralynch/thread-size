@@ -65,7 +65,7 @@ echo "Threads: $THREADS_IN"
 echo "Output: $OUTDIR"
 echo ""
 
-bash "$SCRIPT_DIR/0_run_preprocessing.sh" \
+bash "$SCRIPT_DIR/Jobscripts/0_run_preprocessing.sh" \
   "$SUBREDDIT" \
   "$OUTDIR" \
   "$COMMENTS_IN" \
