@@ -2,7 +2,7 @@
 # Copyright (c) 2025 Cara Lynch
 # See the LICENSE file for details.
 """
-Stage 2.3 Multiclass hyperparameter tuning for thread-size classification.
+Stage 2.3 – multiclass hyperparameter tuning for thread-size classification.
 
 This script refines LightGBM hyperparameters for the multiclass
 thread-size model, conditional on:
@@ -11,7 +11,7 @@ thread-size model, conditional on:
     * a fixed set of class weights and per-class decision thresholds, and
     * a set of feature subsets (indexed by n_feats).
 
-Given a precomputed parameter dictionary (from the tuning script)
+Given a precomputed parameter dictionary (from the Stage 2.2 tuning script)
 containing, for each n_feats:
 
     - `features`           : list of feature names to use,
@@ -23,7 +23,7 @@ this script:
 
     1. Loads X (features) and y (continuous log_thread_size).
     2. Discretises y into ordinal class labels using the bin edges from the
-       first configuration, and uses these labels for Stratified K-fold CV.
+       configuration, and uses these labels for Stratified K-fold CV.
     3. For each outer CV fold and each n_feats:
          a. Restricts X to the selected feature subset.
          b. Optionally splits the validation fold into calibration and
@@ -35,14 +35,9 @@ this script:
     4. Aggregates per-fold best hyperparameters across folds (mode for integer
        / categorical params, mean for continuous params) to obtain a single
        configuration per n_feats.
-    5. Writes out:
-         - per-fold best hyperparameters (joblib),
-         - aggregated best hyperparameters per n_feats (joblib),
-         - a tuning log with runtime, arguments, and library versions (CSV).
-
-This script does *not* report final model performance; it is intended as an
-internal hyperparameter refinement step. Final evaluation and uncertainty
-estimation are handled in the Stage 2 model-evaluation script.
+    5. Writes out per-fold best hyperparameters, aggregated best
+       hyperparameters per n_feats, a foldwise score log, and an updated
+       parameter dictionary for Stage 2.4.
 
 Command-line interface
 ----------------------
@@ -56,17 +51,42 @@ Command-line interface
 --rs          : Random seed (default 42).
 --trials      : Number of Optuna trials (default 300, or 10 in debug mode).
 --splits      : Number of StratifiedKFold splits (default 5, or 2 in debug).
---params      : Path to precomputed Stage 2 tuning params (joblib).
+--params      : Path to precomputed Stage 2.2 tuning params (tuned_params.jl).
 --debug       : If set, run in lightweight debug mode.
 --no-cal / -nc: If set, disables probability calibration.
 --cal         : "sigmoid" or "isotonic" (default "sigmoid").
+
+Outputs
+-------
+Written to --outdir:
+
+    - {n_feats}_feats_best_hyperparams_fold_{k}.jl
+        Best hyperparameters for each (n_feats, fold) combination.
+
+    - {n_feats}_feats_best_hyperparams.jl
+        Aggregated best hyperparameters per n_feats (mode/mean across folds).
+
+    - foldwise_best_scores.csv
+        Table of per-fold best scores (for diagnostics and reporting).
+
+    - tuning_log.csv
+        CSV log with runtime, CLI arguments, and library versions.
+
+    - params_post_hyperparam_tuning.jl
+        Joblib dict with:
+            * "info"   : model_info (arguments, versions, runtime, feature_counts).
+            * "params" : updated per-n_feats configs including:
+                - "best_hyperparams"    : aggregated tree hyperparameters.
+                - f"best_{scorer_name}" : mean cross-fold score.
+        This file is used as --params input to the Stage 2.4 final evaluation
+        script.
 
 Reproducibility
 ---------------
 All stochastic components (Optuna sampler, CV splits, LightGBM) are seeded by
 `--rs`. Library versions and all CLI arguments are logged in the tuning log.
-
 """
+
 
 import sys
 import argparse

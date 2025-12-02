@@ -53,19 +53,60 @@ size (n_feats), it:
     * Aggregates results across feature subset sizes into:
         - combined_scores.jl (metrics vs n_feats with CIs for test and OOF),
         - metric-vs-n_feats plots, and
-        - a global evaluation.xlsx with combined tables.
+        - an evaluation.xlsx with combined tables.
 
-This script does not perform hyperparameter tuning itself; it assumes that the
-params joblib contains, for each n_feats:
-    - a feature list (`features`),
-    - bin edges for discretising log(thread_size) (`bins`),
-    - tuned tree hyperparameters (`best_hyperparams`), and
-    - final class weights (`final_class_weights`).
+Inputs
+------
+- --train_X / --test_X : Stage 2 feature matrices (parquet).
+- --train_y / --test_y : DataFrames containing the continuous target
+                         (log_thread_size).
+- --params             : params_post_hyperparam_tuning.jl from Stage 2.3,
+                         containing, for each n_feats:
+                             * "features"
+                             * "bins"
+                             * "final_class_weights"
+                             * "best_hyperparams"
+- --classes            : Number of ordinal classes (2, 3, or 4).
+- --scorer             : Primary evaluation metric (e.g. MCC).
+- --rs                 : Random seed for CV, bootstrapping, and LightGBM.
+
+Outputs
+-------
+Per n_feats (written under {outdir}/model_{n_feats}/):
+
+    - test_data_results.xlsx
+        Per-model workbook with:
+            * model_info
+            * class sizes and binning
+            * tuned hyperparameters and class weights
+            * classification reports
+            * OOF and test metrics
+            * SHAP summaries and (if applicable) SVD word tables.
+
+    - model_data/*.parquet and *.jl
+        Parquet and joblib files containing:
+            * X_train, X_test, y_train, y_test
+            * OOF and test predictions and probabilities
+            * fitted model and, if used, calibrated wrapper
+            * SHAP explainer and SHAP values
+            * confusion matrices and bootstrap summaries.
+
+Run-level (across n_feats, written to --outdir):
+
+    - combined_scores.jl
+        Joblib dict with OOF/test metrics and their CIs vs n_feats.
+
+    - evaluation.xlsx
+        Excel workbook with combined summary tables for all n_feats:
+            * global metrics
+            * per-class metrics
+            * threshold information
+            * model_info.
 
 Reproducibility
 ---------------
-All stochastic components (StratifiedKFold splits, train/test splits, LightGBM
-fit, bootstrap sampling) are controlled by the `--rs` random seed. Library
+All stochastic components (StratifiedKFold splits, LightGBM fitting,
+bootstrap resampling) are controlled by the --rs random seed. Library
 versions and all CLI arguments are recorded in the output metadata.
 """
 

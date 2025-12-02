@@ -14,12 +14,13 @@ High-level behaviour
 Inputs:
     - --train_X : Training feature matrix (parquet).
     - --train_y : Training target data (parquet) containing --y-col.
-    - --params  : Joblib file with 2_tuning outputs:
-              {n_feats: {...}, ...}
-      Each entry in "params" is expected to contain:
-          * "features"           : list of feature names,
-          * "final_class_weights": dict for class_weight,
-          * "final_threshold"    : scalar decision threshold.
+    - --params  : Joblib file with Stage 1.2 outputs
+                  (tuned_params.jl from 1_2_tuning.py), a dict:
+                      {n_feats: {...}, ...}
+                  Each entry for a given n_feats is expected to contain:
+                      * "features"            : list of feature names,
+                      * "final_class_weights" : dict for class_weight,
+                      * "final_threshold"     : scalar decision threshold.
 
 Target construction:
     - --y-col (default: "log_thread_size") is thresholded at --y_thresh
@@ -56,17 +57,19 @@ Outputs
 Written to --outdir:
 
     - params_post_hyperparam_tuning.jl
-        A joblib dict with:
+        Joblib dict with:
             * "info"   : model_info (arguments, versions, runtime, feature_counts).
             * "params" : updated per-n_feats configs including:
                 - "best_hyperparams"    : aggregated tree hyperparameters.
                 - f"best_{scorer_name}" : mean cross-fold score.
 
     - {n_feats}_feats_best_hyperparams_fold_{k}.jl
-        Best hyperparameters for each (n_feats, fold) combination.
+        Best hyperparameters for each (n_feats, fold) combination (for
+        diagnostics and publication tables).
 
-    - {n_feats}_feats_best_hyperparams.jl
-        Aggregated best hyperparameters per n_feats.
+    - tuning_log.csv
+        Flat table of hyperparameter tuning runs and scores across n_feats
+        and folds.
 
 Reproducibility
 ---------------
@@ -76,6 +79,7 @@ Reproducibility
   LightGBM, scikit-learn) are stored in model_info.
 - Debug mode (--debug) reduces CV splits and Optuna trials for rapid iteration.
 """
+
 
 import sys
 import argparse

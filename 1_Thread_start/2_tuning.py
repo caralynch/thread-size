@@ -2,7 +2,7 @@
 # Copyright (c) 2025 Cara Lynch
 # See the LICENSE file for details.
 """
-Stage 1.2 - hyperparameter and threshold tuning for thread-start classification.
+Stage 1.2 - class-weight and threshold tuning for thread-start classification.
 
 This script tunes LightGBM classifiers that predict whether a thread starts
 (thread_size > 1) using cross-validated Optuna searches over class weights,
@@ -25,9 +25,10 @@ Cross-validation & feature ranking
 ----------------------------------
 - StratifiedKFold with --splits folds (default 5, or 2 in debug mode), using
   a fixed random seed (--rs).
-- Within each outer fold, a LightGBM classifier is fitted with class_weight="balanced"
-  to obtain split- and gain-based feature importances; these are min–max scaled
-  and averaged to yield a combined importance score per feature.
+- Within each outer fold, a LightGBM classifier is fitted with
+  class_weight="balanced" to obtain split- and gain-based feature importances;
+  these are min–max scaled and averaged to yield a combined importance score
+  per feature.
 - For each n_feats in the feature grid (from --feats or --feats-file), models
   are restricted to the top-n_feats ranked features.
 
@@ -35,7 +36,7 @@ Optuna tuning
 -------------
 - For each fold and each n_feats:
     - An Optuna study maximises the chosen scorer (--scorer: MCC, F-beta, F1,
-      or Balanced accuracy).
+      or balanced accuracy).
     - The search space includes:
         * class-weight type: "balanced" vs custom weighted,
         * positive-class weight ratio cw_ratio within cw_ratio_range.
@@ -49,26 +50,27 @@ Threshold tuning
 - Validation data are split into:
     * threshold-calibration subset, and
     * evaluation subset.
-- A scalar optimiser (minimize_scalar) finds the threshold in [0, 1] that
-  maximises the primary scorer (via a negative scoring wrapper).
+- A scalar optimiser finds the threshold in [0, 1] that maximises the primary
+  scorer (via a negative scoring wrapper).
 - Metrics before and after threshold tuning are recorded.
 
 Outputs
 -------
 Written to --outdir:
 
-- stage1_model_param_dict.jl:
-    { "info": model_info, "params": per-n_feats configs }.
+- tuned_params.jl:
+    joblib dict with {"info": model_info, "params": per-n_feats configs}
+    (used as --params input to Stage 1.3).
 - optuna_params.jl:
-    Cross-fold aggregated best params & scores per n_feats.
-- stage1_tuning_outputs.xlsx:
+    cross-fold aggregated best params & scores per n_feats.
+- tuning_outputs.xlsx:
     * model_info
     * params (per n_feats: scores, thresholds, class weights, features)
     * feature_importances (cross-fold importances)
     * flattened_features (feature-by-feature)
     * all_configs (all Optuna trial configurations).
 - optuna_fold*_convergence.png:
-    Convergence plots per fold and n_feats.
+    convergence plots per fold and n_feats.
 
 Reproducibility
 ---------------
@@ -78,6 +80,7 @@ Reproducibility
 - Debug mode (--debug) reduces folds, trials, feature counts, and (optionally)
   search ranges for quick iteration.
 """
+
 
 import sys
 import argparse

@@ -5,13 +5,18 @@
 Preprocessing step 2: TF-IDF + SVD model selection for text features.
 
 This script tunes a TF-IDF vectorizer and TruncatedSVD projection using
-Stratified K-fold cross-validation and a LightGBM probe model that optimizes Matthews Correlation Coefficient (MCC) on a binary target derived from `y_col`. It enforces a minimum explained variance by SVD and persists the selected text models and SVD features for downstream stages.
+Stratified K-fold cross-validation and a LightGBM probe model that optimizes
+Matthews Correlation Coefficient (MCC) on a binary target derived from
+`y_col`. It enforces a minimum explained variance by SVD and persists the
+selected text models and SVD features for downstream stages.
 
 Inputs (CLI):
-    subreddit:        Subreddit identifier (used only in paths/metadata).
-    outdir:           Output directory for artifacts.
-    comments:         Path to comments DataFrame (parquet) (produced by 1_construct_features).
-    threads:          Path to thread-level DataFrame (parquet) (produced by 1_construct_features).
+    --subreddit:      Subreddit identifier (used only in paths/metadata).
+    --outdir:         Output directory for artifacts.
+    --comments:       Path to comments DataFrame (parquet)
+                      (produced by 0_1_construct_features.py).
+    --threads:        Path to thread-level DataFrame (parquet)
+                      (produced by 0_1_construct_features.py).
     --text-col:       Name of text column in thread DataFrame (default: "clean_text").
     --y-col:          Name of thread target column (default: "thread_size").
     --train-split:    Fraction for chronological split into train/test (default: 0.8).
@@ -23,9 +28,9 @@ Inputs (CLI):
 Procedure:
     1) Chronologically split threads into train/test using `train_split`.
     2) Build a binary label y = 1[thread_size > 1] on TRAIN ONLY.
-    3) Optuna searches over TF-IDF hyperparameters (max_features, min_df,
+    3) Use Optuna to search over TF-IDF hyperparameters (max_features, min_df,
        ngram_range, text source: posts vs posts+comments). SVD n_components
-       is chosen per-trial with a constraint on explained variance.
+       is chosen per-trial subject to a minimum explained variance.
     4) For each trial: fit TF-IDF on the chosen training text, transform
        training posts, fit SVD, then evaluate a LightGBM classifier with
        Stratified K-fold CV to obtain mean MCC/F1.
@@ -34,6 +39,7 @@ Procedure:
 
 Outputs:
     {outdir}/{subreddit}_tf_idf_model_params.csv
+    {outdir}/{subreddit}_optuna_results.csv
     {outdir}/{subreddit}_tf_idf_optuna_study.jl
     {outdir}/{subreddit}_best_trial.csv
     {outdir}/{subreddit}_optuna_tfidf_vectorizer.jl
@@ -45,9 +51,10 @@ Outputs:
 
 Notes:
     - Reproducibility: seed all randomized steps with `--rs`.
-    - No leakage: TF-IDF is fit on training text only; test is transformed
+    - No leakage: TF-IDF/SVD are fit on training text only; test is transformed
       with the persisted vectorizer/SVD.
 """
+
 
 import os
 import sys

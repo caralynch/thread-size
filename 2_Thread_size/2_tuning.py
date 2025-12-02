@@ -46,7 +46,7 @@ Outputs
 -------
 Written to --outdir:
 
-  * tuning_params.jl
+  * tuned_params.jl
       Final configuration per n_feats, including:
           - "features"            : top-n_feats features,
           - "bins"                : list of bin edges used for discretisation,
@@ -54,25 +54,26 @@ Written to --outdir:
           - "final_threshold"     : per-class decision thresholds,
           - "mcc_before_thresh"   : mean MCC before threshold tuning,
           - "mcc_after_thresh"    : mean MCC after threshold tuning.
+      This file is used as --params input to Stage 2.3.
 
   * optuna_params.jl
       Summary of aggregated Optuna hyperparameters per n_feats and
       their mean best MCC across folds.
 
-  * all_configs_df.(csv|jl)
+  * foldwise_importances.jl
+      Joblib list of per-fold importance DataFrames used to derive
+      feature rankings.
+
+  * all_configs_df.csv / all_configs_df.jl
       Long-format table of all non-pruned Optuna trials, including
       per-trial MCC, F1, cw_type and class-weight vectors.
-
-  * feature_importances (in tuning_outputs.xlsx)
-      Fold-wise and aggregated feature importances used to rank
-      candidate feature subsets.
 
   * tuning_outputs.xlsx
       Excel workbook containing:
           - "model_info"
           - "params"               (final per-n_feats configs)
           - "all_configs"          (all trials)
-          - "feature_importances"
+          - "feature_importances"  (foldwise + aggregated importances)
           - "flattened_features"   (feature ranks + final weights/thresholds).
 
 Reproducibility

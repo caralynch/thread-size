@@ -7,33 +7,61 @@ Stage 1.4 – final evaluation of tuned thread-start classifier.
 This script:
 
     * Loads tuned LightGBM hyperparameters and class weights per feature subset
-      (n_feats) from the Stage 1 tuning pipeline.
-    * Loads train/test feature matrices (X_train, X_test) and log thread size
-      targets, then binarises them to "Stalled" vs "Started" based on a log-size
-      threshold.
-    * For each n_feats:
-        - Trains a model under StratifiedKFold CV to obtain out-of-fold (OOF)
-          predicted probabilities.
-        - Within each fold, splits off a holdout subset to optimise a single
-          decision threshold on the chosen scorer (MCC, F-beta, etc.).
-        - Optionally calibrates probabilities via isotonic regression.
-        - Trains a final classifier on the full training set and evaluates on
-          the held-out test set.
-        - Computes ROC and precision–recall curves, bootstrap confidence
-          intervals for key metrics, confusion matrices, calibration curves,
-          SVD component word lists (if present), and SHAP-based feature
-          importance summaries.
-    * Aggregates results across n_feats into combined score tables and plots
-      (metrics vs number of features) and writes:
-        - per-model Excel workbooks (config, metrics, hyperparams, SHAP),
-        - a run-level Excel summary,
-        - joblib artefacts with combined scores, OOF/test probabilities, and
-          SHAP data.
+      (n_feats) from the Stage 1 tuning pipeline (params_post_hyperparam_tuning.jl
+      from Stage 1.3).
+    * Loads train/test feature matrices (X_train, X_test) and log thread-size
+      targets, then binarises them to "Stalled" vs "Started" based on a
+      log-size threshold:
+          y = 1  ⇔  log_thread_size > y_thresh  (thread started)
+          y = 0  ⇔  log_thread_size ≤ y_thresh  (thread stalled).
+
+For each n_feats configuration:
+    - Trains a model under StratifiedKFold CV to obtain out-of-fold (OOF)
+      predicted probabilities on the training data.
+    - Within each fold, splits off a holdout subset to optimise a single
+      decision threshold on the chosen scorer (MCC, F-beta, etc.).
+    - Optionally calibrates probabilities via isotonic regression.
+    - Trains a final classifier on the full training set and evaluates on
+      the held-out test set.
+    - Computes ROC and precision–recall curves, bootstrap confidence
+      intervals for key metrics, confusion matrices, calibration curves,
+      SVD component word lists (if present), and SHAP-based feature
+      importance summaries.
+
+Outputs (per n_feats)
+---------------------
+For each feature-count setting n_feats, outputs are written under:
+
+    {outdir}/model_{n_feats}/
+
+including:
+    - `test_data_results.xlsx`:
+        model_info, configuration, test-set performance, hyperparameters,
+        per-threshold reports, SHAP importance, and SVD word tables (if used).
+    - `model_data/`:
+        joblib artefacts:
+            * OOF and test predictions,
+            * confusion matrices,
+            * calibrated models,
+            * SHAP explainer and SHAP values,
+            * any additional diagnostics.
+
+Run-level outputs (across n_feats)
+----------------------------------
+Written directly to --outdir:
+
+    - combined_scores.jl
+        joblib dict of OOF/test metrics and thresholds across n_feats.
+    - stage1_model_summaries.xlsx
+        model_info plus per-n_feats summary sheets for metrics and reports.
+    - thread_start_final_model_params.jl
+        dict with:
+            * "params": params_post_hyperparam_tuning.jl content,
+            * "info"  : model_info.
 
 This script is intended as the final evaluation and figure-artefact generator
 for Stage 1. Higher-level “paper-ready” plots and tables that span multiple
 subreddits are produced by separate make_outputs scripts.
-
 """
 
 import sys

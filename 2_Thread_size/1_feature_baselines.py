@@ -92,12 +92,12 @@ Written to --outdir:
             - model_info           (arguments, versions, binning info)
             - summary_scores       (per-fold, per-n_feats metrics)
             - aggregated_scores    (mean metrics vs n_feats)
-            - feat_importance      (mean/std feature importances)
+            - feat_importance      (mean/std feature importances).
 
     baseline_info.jl
         Joblib dict of model_info (metadata and binning).
 
-    plots/*.png
+    plots/{metric}_vs_n_feats_bootstrap.png
         Errorbar plots of each metric against the number of features.
 
 Reproducibility
@@ -109,6 +109,7 @@ Reproducibility
 - Debug mode provides a reduced configuration for fast iteration
   without modifying the main experimental design.
 """
+
 
 import sys
 import argparse

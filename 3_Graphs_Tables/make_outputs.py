@@ -2,39 +2,133 @@
 # Copyright (c) 2025 Cara Lynch
 # See the LICENSE file for details.
 """
-Output Generator for Reddit Thread Prediction Models
+make_outputs.py
 
-This script generates publication-ready figures, tables, and analysis outputs from
-trained machine learning models that predict Reddit thread outcomes. It supports
-two modeling stages:
+Stage 3 – output generator for Reddit thread prediction models.
+
+This script generates publication-ready figures, tables, and analysis outputs
+from trained machine learning models that predict Reddit thread outcomes. It
+operates on the final evaluation artefacts produced by:
+
+    - Stage 1.4: Thread-start (binary) models
+    - Stage 2.4: Thread-size (multiclass) models
+
+It supports two modelling stages:
+
     - Stage 1: Binary classification (thread started vs. stalled)
-    - Stage 2: Multi-class classification (thread size categories)
+    - Stage 2: Multiclass classification (thread size categories)
 
 The script processes model evaluation results including:
     - Confusion matrices and classification metrics
-    - Performance metrics across different feature set sizes
-    - SHAP (SHapley Additive exPlanations) values for model interpretability
-    - Feature importance rankings
+    - Performance metrics across different feature set sizes (n_feats)
+    - SHAP (SHapley Additive exPlanations) values for interpretability
+    - Feature-importance rankings and per-feature SHAP profiles
 
-Outputs include:
-    - High-resolution figures (EPS and PNG formats)
-    - Excel workbooks with detailed metrics
-    - Combined visualization panels for publication
+High-level behaviour
+--------------------
+Given:
+    * a root directory for a stage (containing one subdirectory per subreddit),
+    * a CSV file specifying the selected model (n_feats) for each subreddit,
+    * the number of classes for Stage 2 (3 or 4),
 
-Usage:
-    Stage 1 (Binary):
-        python make_outputs.py --stage 1 --root ./stage1_results \
-            --selected-models selected.csv --outdir ./publication_outputs
+the script:
 
-    Stage 2 (Multi-class):
-        python make_outputs.py --stage 2 --n-classes 3 --root ./stage2_results \
-            --selected-models selected.csv --outdir ./publication_outputs
+    1. Locates, for each subreddit, the chosen model directory
+       (…/4_model/model_{n_feats}/model_data) produced by Stage 1.4 or 2.4.
+    2. Loads combined_scores.jl and other per-model artefacts (metrics,
+       confusion matrices, SHAP values, etc.).
+    3. Builds:
+         - confusion matrices and predicted/true class-ratio summaries,
+         - per-metric performance curves vs. n_feats across subreddits,
+         - SHAP-based global importance summaries and per-feature plots.
+    4. Writes publication-ready figures and tables into structured
+       subdirectories under --outdir.
 
-Requirements:
-    - joblib, numpy, pandas, matplotlib, seaborn, shap, PIL
-    - Pre-computed model outputs.
+Command-line interface
+----------------------
+--stage
+    Model stage: 1 = thread start (binary), 2 = thread size (multiclass).
+--root
+    Root directory for this stage, containing per-subreddit folders.
+    Each subreddit folder must be the --outdir used when running the
+    corresponding Stage_1_4_run_tuned_model.py or Stage_2_4_run_tuned_model.py.
+--selected-models
+    CSV or text file specifying the chosen model per subreddit
+    (columns: subreddit,n_feats).
+--n-classes
+    Number of Stage 2 classes (3 or 4). Required when --stage 2 is selected.
+    Ignored for --stage 1.
+--outdir
+    Directory where publication-ready figures and tables will be written.
+--overwrite
+    If set, regenerate outputs even if summary files already exist.
 
+Outputs (under --outdir)
+------------------------
+The script creates several subdirectories:
+
+    cms/
+        Confusion-matrix plots and Excel workbooks, including:
+            - {subreddit}_{data_type}_cm_data.xlsx
+            - predicted_class_ratios.xlsx
+
+    metrics/
+        Combined metric tables and ratios, including:
+            - combined metric summaries from combined_scores.jl
+            - metric_ratios.xlsx
+
+    plot_data/
+        Data used for metric-vs-n_feats plots (per metric, per dataset type).
+
+    shap_plots/
+        Combined SHAP summary figures across subreddits and data types, plus
+        shap_plot_data.xlsx containing the underlying SHAP arrays/DataFrames.
+
+    col_shap_plots/
+        Per-feature SHAP plots and shap_columns_data.xlsx, summarising
+        feature-wise SHAP distributions across subreddits.
+
+In addition, the script creates multi-panel figures (e.g. MCC vs n_feats) that
+can be used directly in a paper or thesis.
+
+Usage examples
+--------------
+Stage 1 (thread start – binary):
+    python make_outputs.py \
+        --stage 1 \
+        --root ./output/stage1/final \
+        --selected-models ./config/selected_models_stage1.csv \
+        --outdir ./publication/stage1
+
+Stage 2 (thread size – multiclass):
+    python make_outputs.py \
+        --stage 2 \
+        --n-classes 4 \
+        --root ./output/stage2/final \
+        --selected-models ./config/selected_models_stage2.csv \
+        --outdir ./publication/stage2
+
+Requirements
+------------
+    - joblib
+    - numpy
+    - pandas
+    - matplotlib
+    - seaborn
+    - shap
+    - pillow (PIL)
+
+Pre-computed model outputs from Stage 1.4 and/or Stage 2.4 must exist in the
+directory structure described above. This script does not perform any model
+training or tuning; it only aggregates and visualises existing results.
+
+Reproducibility
+---------------
+This script introduces no additional randomness: it deterministically consumes
+the saved outputs of previous stages. All configuration is controlled via the
+command-line arguments described above.
 """
+
 import sys
 import argparse
 from pathlib import Path

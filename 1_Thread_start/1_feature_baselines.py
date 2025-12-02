@@ -2,7 +2,7 @@
 # Copyright (c) 2025 Cara Lynch
 # See the LICENSE file for details.
 """
-Stage 1 baseline feature scores for thread-start classification.
+Stage 1.1 - baseline feature scores for thread-start classification.
 
 This script evaluates how predictive different-sized feature subsets are for
 Stage 1 (thread-start vs stalled) using LightGBM classifiers and stratified
@@ -21,7 +21,7 @@ High-level behaviour
           y = 0  ⇔  log_thread_size ≤ y_thresh  (thread stalled)
 - Cross-validation:
     - StratifiedKFold with `--splits` folds (default 5, or 2 in debug mode),
-      shuffling and fixed random seed.
+      shuffling and fixed random seed (`--rs`).
 - Feature ranking:
     - Fit a LightGBM classifier on each training fold.
     - Compute split- and gain-based feature importances from the booster.
@@ -43,19 +43,23 @@ High-level behaviour
     - For each (fold, n_feats), metrics are bootstrapped `--n-bs` times
       (default 1000, or 20 in debug mode) with replacement to obtain 95%
       percentile confidence intervals.
-- Outputs (in `--outdir`):
+
+Outputs (in `--outdir`)
+------------------------
     - `summary_scores.csv`:
         per-fold, per-n_feats metrics and CIs.
     - `aggregated_scores.jl`:
         joblib of aggregated scores by n_feats.
     - `importance_dfs.jl`:
         joblib list of per-fold importance DataFrames.
+    - `all_fold_dfs.jl`:
+        joblib dict of per-fold per-n_feats raw metrics (for diagnostics).
     - `{subreddit}_feature_baselines.xlsx`:
         model_info, summary_scores, aggregated_scores, and feature importances.
     - `{subreddit}_baseline_info.jl`:
         joblib of run configuration and metadata (arguments, runtime, etc.).
     - `{metric}_vs_n_feats_bootstrap.png`:
-        performance vs number of features with bootstrap CIs.
+        performance vs number of features with bootstrap CIs (one per metric).
 
 Reproducibility notes
 ---------------------
@@ -64,6 +68,7 @@ Reproducibility notes
 - Default behaviour is conservative; debug mode (`--debug`) reduces splits,
   features, and bootstrap trials for rapid iteration.
 """
+
 
 import sys
 import argparse

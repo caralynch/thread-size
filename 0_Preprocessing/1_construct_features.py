@@ -12,15 +12,15 @@ Command-line interface
 ----------------------
 --subreddit : Subreddit key in {'conspiracy','crypto','politics'}.
 --outdir    : Output directory.
---comments  : Path to comments dataframe.
---threads   : Path to threads dataframe.
+--comments  : Path to comments DataFrame (parquet).
+--threads   : Path to threads DataFrame (parquet).
 
 Inputs
 ------
-Comments dataframe:
+Comments DataFrame:
     id, parent, thread_id, body, body_sentiment_score, level
 
-Threads dataframe:
+Threads DataFrame:
     thread_id, subject, body, domain, timestamp, thread_size
 
 Outputs

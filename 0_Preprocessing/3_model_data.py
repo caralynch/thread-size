@@ -2,7 +2,7 @@
 # Copyright (c) 2025 Cara Lynch
 # See the LICENSE file for details.
 """
-Preprocessing step 3: Build model-ready train/test matrices.
+Preprocessing step 3: build model-ready train/test matrices.
 
 Builds model-ready train/test matrices: merges metadata/features, applies
 author/domain encodings, filters collinearity, and persists X/y splits.
@@ -18,7 +18,7 @@ Inputs (CLI):
     --subreddit:   Used for naming outputs.
 
 Processing:
-    1) Optionally add log-transformed target `log_{y_col}` when strictly
+    1) Optionally add a log-transformed target `log_{y_col}` when strictly
        positive (retained as the modeling target if created).
     2) Fit label encoders for `author` and `domain` **on the TRAIN split only**,
        persist the mapping, and apply to both splits as `encoded_author`,
@@ -31,8 +31,11 @@ Processing:
        feature inventory, and the list of removed correlated features.
 
 Outputs:
-    {outdir}/label_encoder_maps.jl
-    {outdir}/{subreddit}_train_test_data.jl
+    {outdir}/label_encoder_maps.parquet
+    {outdir}/{subreddit}_train_X.parquet
+    {outdir}/{subreddit}_train_Y.parquet
+    {outdir}/{subreddit}_test_X.parquet
+    {outdir}/{subreddit}_test_Y.parquet
     {outdir}/3_model_data_log.xlsx  # sheets: params, threads, features, correlated_feats, removed_feats
 
 Notes:
@@ -40,6 +43,7 @@ Notes:
     - No leakage: encoding and correlation filtering decisions are derived
       from TRAIN only and then applied to TEST.
 """
+
 
 import sys
 import argparse
