@@ -2,7 +2,7 @@ import sys
 import argparse
 from pathlib import Path
 import os
-from typing import Dict, Iterable, List, Mapping, Tuple
+from typing import Dict
 
 import datetime as dt
 
@@ -247,7 +247,7 @@ def performance_metrics(mod_dirs, outdir, metrics, plot_outdir):
 
     output_ratios_xlsx = f"{outdir}/metric_ratios.xlsx"
     print(f"[INFO] Saving metric ratios to {output_ratios_xlsx}")
-    with pd.ExcelWriter(output_tabs_xlsx) as writer:
+    with pd.ExcelWriter(output_ratios_xlsx) as writer:
         for k, sub_dict in combined_scores.items():
             for sub, df in sub_dict.items():
                 output_df = get_ratio_max_metric(df, metrics)
@@ -403,7 +403,7 @@ def format_df_for_pretty_output(df):
     # if CI cols in df, want to have them as ranges [lower, upper]
     formatted_df[[x for x in formatted_df.columns if x.endswith("CI")]] = formatted_df[
         [x for x in formatted_df.columns if x.endswith("CI")]
-    ].applymap(get_ci_str_from_list)
+    ].apply(get_ci_str_from_list)
 
     return formatted_df
 
@@ -553,15 +553,24 @@ def plot_s2_shap_vals(selected_model_dirs, outdir, class_names):
                 df.to_excel(writer, sheet_name=f"{sub}_{k}")
 
 
-def plot_s2_col_shap_plots(selected_model_dirs, outdir, class_names):
+def plot_s2_col_shap_plots(selected_model_dirs, outdir, class_names, data_outdir=None):
     print("[INFO] Getting SHAP scatter plots per column and class")
+    shap_dfs = {}
     for sub, mod_dir in selected_model_dirs.items():
         shap_exp = joblib.load(f"{mod_dir}/shap_explainer.jl")
         X = pd.read_parquet(f"{mod_dir}/X_test.parquet")
         shap_vals = shap_exp(X)
+        shap_dfs[sub] = {}
+        for class_idx, label in enumerate(class_names):
+            shap_dfs[sub][class_idx] = pd.DataFrame(
+                data=shap_vals[:, :, class_idx], columns=X.columns
+            )
         for col in X.columns:
             outfiles = []
             for class_idx, label in enumerate(class_names):
+                shap_dfs[sub][class_idx] = pd.DataFrame(
+                    data=shap_vals[:, :, class_idx], columns=X.columns
+                )
                 outfile = f"{outdir}/{sub}_{col}_{label}_shap"
                 plot_cls_col_shap_plot(
                     shap_vals[:, :, class_idx],
@@ -571,17 +580,30 @@ def plot_s2_col_shap_plots(selected_model_dirs, outdir, class_names):
                 )
                 outfiles.append(f"{outfile}.png")
             combine_plots_square(outfiles, f"{outdir}/{sub}_{col}_shap")
+    if data_outdir is None:
+        data_outdir = outdir
+    with pd.ExcelWriter(f"{data_outdir}/shap_columns_data.xlsx") as writer:
+        for sub, sub_dict in shap_dfs.items():
+            for class_idx, df in sub_dict.items():
+                df.to_excel(writer, sheet_name=f"{sub}_{class_idx}")
 
 
-def plot_s1_col_shap_plots(selected_model_dirs, outdir):
+def plot_s1_col_shap_plots(selected_model_dirs, outdir, data_outdir=None):
     print("[INFO] Getting SHAP scatter plots per column")
+    if data_outdir is None:
+        data_outdir = outdir
+    shap_vals_dict = {}
     for sub, mod_dir in selected_model_dirs.items():
         shap_exp = joblib.load(f"{mod_dir}/shap_explainer.jl")
         X = joblib.load(f"{mod_dir}/shap_plot_data.jl")["feat_name"]
         shap_vals = shap_exp(X)
+        shap_vals_dict[sub] = pd.DataFrame(data=shap_vals, columns=X.columns)
         for col in X.columns:
             outfile = f"{outdir}/{sub}_{col}_shap"
             plot_cls_col_shap_plot(shap_vals, col, outfile)
+    with pd.ExcelWriter(f"{data_outdir}/shap_columns_data.xlsx") as writer:
+        for sub, df in shap_vals_dict.items():
+            df.to_excel(writer, sheet_name=sub)
 
 
 def plot_cls_col_shap_plot(cls_shap_vals, colname, outfile, title=None):
@@ -814,7 +836,7 @@ def main() -> None:
         # output shap vals
         plot_s1_shap_vals(selected_model_dirs, shap_outdir)
 
-        plot_s1_col_shap_plots(selected_model_dirs, col_shap_outdir)
+        plot_s1_col_shap_plots(selected_model_dirs, col_shap_outdir, plot_outdir)
     else:
         output_s2_feature_importances(
             selected_model_dirs, f"{args.outdir}/feat_importances.xlsx"
@@ -822,7 +844,9 @@ def main() -> None:
         # output shap vals
         plot_s2_shap_vals(selected_model_dirs, shap_outdir, class_names)
 
-        plot_s2_col_shap_plots(selected_model_dirs, col_shap_outdir, class_names)
+        plot_s2_col_shap_plots(
+            selected_model_dirs, col_shap_outdir, class_names, plot_outdir
+        )
 
 
 if __name__ == "__main__":
