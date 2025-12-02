@@ -40,6 +40,7 @@ THREADS_IN="$DATA_DIR/${SUBREDDIT}_threads.parquet"
 
 # Output directory - use TMPDIR for speed, then copy back
 OUTDIR="/home/ucabcpl/Scratch/thread_size/thread-size/0_Preprocessing/${SUBREDDIT}"
+mkdir $OUTDIR
 
 # ===== Verify inputs exist =====
 if [ ! -f "$COMMENTS_IN" ]; then
