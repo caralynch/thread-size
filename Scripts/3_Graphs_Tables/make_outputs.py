@@ -302,8 +302,7 @@ def confusion_matrices(selected_model_dirs, outdir, class_names):
 
     Args:
         selected_model_dirs (Dict[str, str]): Mapping from subreddit to model directory
-        outdir (str): Main output directory for figures
-        plot_outdir (str): Directory for Excel data outputs
+        outdir (str): Output directory
         class_names (List[str]): Class label names
 
     Returns:
@@ -325,7 +324,7 @@ def confusion_matrices(selected_model_dirs, outdir, class_names):
         make_cm_fig(cms[k], f"{outdir}/{k}_CM", class_names)
         print(f"[INFO] Saving {k} confusion matrix data to {outdir}.")
         for sub in cms[k]:
-            with pd.ExcelWriter(f"{plot_outdir}/{sub}_{k}_cm_data.xlsx") as writer:
+            with pd.ExcelWriter(f"{outdir}/{sub}_{k}_cm_data.xlsx") as writer:
                 for j, cm in cms[k][sub].items():
                     df_cm = pd.DataFrame(cm, index=class_names, columns=class_names)
                     df_cm.index.name = "true_class"
@@ -970,8 +969,6 @@ def main() -> None:
     os.makedirs(args.outdir, exist_ok=True)
     plot_outdir = f"{args.outdir}/plot_data"
     os.makedirs(plot_outdir, exist_ok=True)
-    table_outdir = f"{args.outdir}/table_data"
-    os.makedirs(table_outdir, exist_ok=True)
     col_shap_outdir = f"{args.outdir}/col_shap_plots"
     os.makedirs(col_shap_outdir, exist_ok=True)
     shap_outdir = f"{args.outdir}/shap_plots"
