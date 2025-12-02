@@ -183,8 +183,12 @@ def make_cm_fig(cm_dicts, outfile, class_names):
 
 def confusion_matrixes(selected_model_dirs, outdir, plot_outdir, class_names):
     cms = {}
+    predicted_class_ratios = {}
+    misclassified_dfs = {}
     print(f"[INFO] Loading test and OOF set confusion matrix data")
     for k in DATA_LABELS:
+        predicted_class_ratios[k] = {}
+        misclassified_dfs[k] = {}
         cms[k] = get_cm_data(selected_model_dirs, data_type=k)
         print(f"[INFO] Saving {k} confusion matrix to {outdir}/{k}_CM")
         make_cm_fig(cms[k], f"{args.outdir}/{k}_CM", class_names)
@@ -195,6 +199,20 @@ def confusion_matrixes(selected_model_dirs, outdir, plot_outdir, class_names):
                     df_cm = pd.DataFrame(cm, index=class_names, columns=class_names)
                     df_cm.index.name = "true_class"
                     df_cm.to_excel(writer, sheet_name=j)
+
+            predicted_class_ratios[k][sub] = get_predicted_class_ratios_df(cms[k][sub])
+            misclassified_dfs[k][sub] = get_misclassified_df(cms[k][sub])
+    print(f"[INFO] Saving predicted vs true class counts")
+    with pd.ExcelWriter(f"{outdir}/predicted_class_ratios.xlsx") as writer:
+        for k in predicted_class_ratios:
+            for sub, df in predicted_class_ratios[k].items():
+                df.to_excel(writer, sheet_name=f"{k}_{sub}")
+
+    print(f"[INFO] Saving misclassified xlsx")
+    with pd.ExcelWriter(f"{outdir}/misclassified_ratios.xlsx") as writer:
+        for k in misclassified_dfs:
+            for sub, df in misclassified_dfs[k].items():
+                df.to_excel(writer, sheet_name=f"{k}_{sub}")
 
 
 def performance_metrics(mod_dirs, outdir, metrics, plot_outdir):
@@ -421,9 +439,7 @@ def get_sub_shap_plot(sub_shap_dict, outfile, title):
     colorbar_ax.set_ylabel("Feature value", fontsize=11)
     colorbar_ax.tick_params(labelsize=10)  # ticks along the colorbar
 
-    main_ax.set_title(
-        title, loc="left", fontsize=12, weight="bold"
-    )
+    main_ax.set_title(title, loc="left", fontsize=12, weight="bold")
     main_ax.set_xlabel(
         "SHAP value", fontsize=11,
     )
@@ -456,18 +472,42 @@ def combine_plots_vertical(png_filenames, outfile):
         combined.save(f"{outfile}.{ext}", dpi=(400, 400))
 
 
+def combine_plots_square(png_filenames, outfile):
+    imgs = [Image.open(f) for f in png_filenames]
+    # Determine the width and total height
+    max_width = np.max([img.width for img in imgs]) * 2
+    total_height = int(np.sum([img.height for img in imgs]) / 2)
+
+    # Create new blank image (white background)
+    combined = Image.new("RGB", (max_width, total_height), (255, 255, 255))
+
+    # Paste images one below the other
+    y_offset = 0
+    x_offset = 0
+    for i, img in enumerate(imgs):
+        combined.paste(img, (x_offset, y_offset))
+        if i % 2 == 0:
+            x_offset += img.width
+        else:
+            x_offset = 0
+            y_offset += img.height
+
+    for ext in ["png", "eps"]:
+        combined.save(f"{outfile}.{ext}", dpi=(400, 400))
+
+
 def plot_s1_shap_vals(selected_model_dirs, outdir):
     shap_vals = {}
     shap_outfiles = []
 
-    i=0
+    i = 0
     print("[INFO] Making SHAP plots for each subreddit")
     for sub, mod_dir in selected_model_dirs.items():
         shap_vals[sub] = joblib.load(f"{mod_dir}/shap_plot_data.jl")
         outfile_name = f"{outdir}/{sub}_shap"
         shap_outfiles.append(f"{outfile_name}.png")
         get_sub_shap_plot(shap_vals[sub], outfile_name, f"{LETTER_LOOKUP[i]} {sub}")
-        i+=1
+        i += 1
 
     print("[INFO] Combining SHAP plots")
     combine_plots_vertical(shap_outfiles, f"{outdir}/combined_shap")
@@ -489,30 +529,85 @@ def plot_s2_shap_vals(selected_model_dirs, outdir, class_names):
         x_test = pd.read_parquet(f"{mod_dir}/X_test.parquet")
         shap_outfiles[sub] = []
         class_shap_dicts[sub] = {}
-        shap_dicts[sub] = {
-            "shap_val": vals,
-            "feat_name": x_test
-        }
+        shap_dicts[sub] = {"shap_val": vals, "feat_name": x_test}
         for class_idx, label in enumerate(class_names):
             outfile_name = f"{outdir}/{sub}_shap_{label}"
             shap_dict = {
                 "shap_val": vals[:, :, class_idx],
                 "feat_name": x_test,
             }
-            get_sub_shap_plot(shap_dict, outfile_name, f"{LETTER_LOOKUP[class_idx]} {label}")
+            get_sub_shap_plot(
+                shap_dict, outfile_name, f"{LETTER_LOOKUP[class_idx]} {label}"
+            )
             shap_outfiles[sub].append(f"{outfile_name}.png")
             class_shap_dicts[sub][class_idx] = shap_dict
-    
+
     print("[INFO] Combining SHAP plots")
     for sub, outfile_list in shap_outfiles.items():
         combine_plots_vertical(outfile_list, f"{outdir}/{sub}_SHAP")
-    
+
     print("[INFO] Saving SHAP plot data")
     with pd.ExcelWriter(f"{outdir}/shap_plot_data.xlsx") as writer:
         for sub, shap_dict in shap_dicts.items():
             for k, df in shap_dict.items():
                 df.to_excel(writer, sheet_name=f"{sub}_{k}")
 
+
+def plot_s2_col_shap_plots(selected_model_dirs, outdir, class_names):
+    print("[INFO] Getting SHAP scatter plots per column and class")
+    for sub, mod_dir in selected_model_dirs.items():
+        shap_exp = joblib.load(f"{mod_dir}/shap_explainer.jl")
+        X = pd.read_parquet(f"{mod_dir}/X_test.parquet")
+        shap_vals = shap_exp(X)
+        for col in X.columns:
+            outfiles = []
+            for class_idx, label in enumerate(class_names):
+                outfile = f"{outdir}/{sub}_{col}_{label}_shap"
+                plot_cls_col_shap_plot(
+                    shap_vals[:, :, class_idx],
+                    col,
+                    outfile,
+                    f"{LETTER_LOOKUP[class_idx]} {label}",
+                )
+                outfiles.append(f"{outfile}.png")
+            combine_plots_square(outfiles, f"{outdir}/{sub}_{col}_shap")
+
+
+def plot_s1_col_shap_plots(selected_model_dirs, outdir):
+    print("[INFO] Getting SHAP scatter plots per column")
+    for sub, mod_dir in selected_model_dirs.items():
+        shap_exp = joblib.load(f"{mod_dir}/shap_explainer.jl")
+        X = joblib.load(f"{mod_dir}/shap_plot_data.jl")["feat_name"]
+        shap_vals = shap_exp(X)
+        for col in X.columns:
+            outfile = f"{outdir}/{sub}_{col}_shap"
+            plot_cls_col_shap_plot(shap_vals, col, outfile)
+
+
+def plot_cls_col_shap_plot(cls_shap_vals, colname, outfile, title=None):
+    plt.figure(figsize=(10, 6))
+    shap.plots.scatter(cls_shap_vals[:, colname], show=False)
+    fig = plt.gcf()
+    axes = fig.get_axes()
+    # find the main axis (SHAP value axis)
+    main_ax = [a for a in axes if "SHAP value" in a.get_ylabel()][0]
+
+    # remove the other axis (the histogram)
+    for ax in axes:
+        if ax is not main_ax:
+            fig.delaxes(ax)
+    if title is not None:
+        main_ax.set_title(
+            title, loc="left", fontsize=12, weight="bold",
+        )
+    main_ax.set_xlabel(
+        format_label(colname), fontsize=11,
+    )
+    main_ax.set_ylabel("SHAP value", fontsize=11)
+    main_ax.tick_params(labelsize=10)
+    plt.savefig(f"{outfile}.eps", dpi=350, format="eps")
+    plt.savefig(f"{outfile}.png", dpi=350, format="png")
+    plt.close()
 
 
 def output_s2_feature_importances(selected_model_dirs, outfile):
@@ -587,6 +682,79 @@ def get_tree_importance(lgbm_classifier):
     return tree_importance_df
 
 
+def get_correct_classes(cm):
+    class_correct = []
+    for i in range(0, len(cm)):
+        class_correct.append(cm[i, i] / sum(cm[i, :]))
+    return class_correct
+
+
+def get_true_class_counts(cm):
+    class_counts = []
+    for i in range(0, len(cm)):
+        class_counts.append(sum(cm[i, :]))
+    return class_counts
+
+
+def get_predicted_class_counts(cm):
+    class_counts = []
+    for i in range(0, len(cm)):
+        class_counts.append(sum(cm[:, i]))
+    return class_counts
+
+
+def get_predicted_class_ratios_df(cm_dict):
+    pred_class_ratios = {}
+    for k, cm in cm_dict.items():
+        pred_class_ratios[k] = get_predicted_class_counts(cm) / cm_dict["CM"].sum()
+    true_class_ratios = get_true_class_counts(cm_dict["CM"]) / cm_dict["CM"].sum()
+    df = pd.concat(
+        [pd.DataFrame(pred_class_ratios), pd.DataFrame(true_class_ratios)], axis=1
+    ).rename(columns={"CM": "predicted", 0: "true"})
+    return df
+
+
+def get_misclassified_dict(i, j, cm_dict):
+    """Class i misclassified as class j in given confusion matrix cm.
+
+    Args:
+        i int: integer associated with class
+        j int: integer associated with class
+        cm pd.DataFrame: confusion matrix
+    """
+    true_class_counts = get_true_class_counts(cm_dict["CM"])[i]
+    misclassified_dict = {
+        f"misclassified": np.sum(cm_dict["CM"][i, j]) / true_class_counts,
+    }
+    for m in ["lower", "upper"]:
+        misclassified_dict[f"misclassified_{m}"] = (
+            np.sum(cm_dict[m][i, j]) / true_class_counts
+        )
+    return misclassified_dict
+
+
+def get_misclassified_df(cm_dict):
+    rows = []
+    for i in range(0, len(cm_dict["CM"])):
+        for j in [x for x in range(0, len(cm_dict["CM"])) if x != i]:
+            df = pd.DataFrame.from_dict(
+                get_misclassified_dict(i, j, cm_dict), orient="index"
+            ).T
+            df["Origin"] = i
+            df["Destination"] = j
+            rows.append(df)
+    df = pd.concat(rows).reset_index(drop=True)[
+        [
+            "Origin",
+            "Destination",
+            "misclassified",
+            "misclassified_lower",
+            "misclassified_upper",
+        ]
+    ]
+    return df
+
+
 def main() -> None:
     print(f"{sys.argv[0]}")
     start = dt.datetime.now()
@@ -618,6 +786,10 @@ def main() -> None:
     os.makedirs(plot_outdir, exist_ok=True)
     table_outdir = f"{args.outdir}/table_data"
     os.makedirs(table_outdir, exist_ok=True)
+    col_shap_outdir = f"{args.outdir}/col_shap_plots"
+    os.makedirs(col_shap_outdir, exist_ok=True)
+    shap_outdir = f"{args.outdir}/shap_plots"
+    os.makedirs(shap_outdir, exist_ok=True)
 
     selected_models = load_selected_models(args.selected_models)
     print(f"[INFO] Selected models: {selected_models}")
@@ -640,12 +812,17 @@ def main() -> None:
             selected_model_dirs, f"{args.outdir}/feat_importances.xlsx"
         )
         # output shap vals
-        plot_s1_shap_vals(selected_model_dirs, f"{args.outdir}")
+        plot_s1_shap_vals(selected_model_dirs, shap_outdir)
+
+        plot_s1_col_shap_plots(selected_model_dirs, col_shap_outdir)
     else:
         output_s2_feature_importances(
             selected_model_dirs, f"{args.outdir}/feat_importances.xlsx"
         )
         # output shap vals
+        plot_s2_shap_vals(selected_model_dirs, shap_outdir, class_names)
+
+        plot_s2_col_shap_plots(selected_model_dirs, col_shap_outdir, class_names)
 
 
 if __name__ == "__main__":
