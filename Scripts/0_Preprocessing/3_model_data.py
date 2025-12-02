@@ -191,6 +191,7 @@ def main():
 
     encoder_maps = {}
     for col in ["author", "domain"]:
+        """
         print(f"[INFO] Creating {col} ID label encoder map (train-only)")
         # classes_ is sorted; enumerate gives 0..K-1 -> add +1 so 0 is reserved for unknown
         classes = pd.Index(data["train"][col].astype(str).unique())
@@ -198,6 +199,7 @@ def main():
             "label_to_code": {label: i + 1 for i, label in enumerate(classes)},
             "unknown_code": 0,
         }
+        """
         print(f"[INFO] {col} frequency encoding")
         freq = data["train"][col].astype(str).value_counts(normalize=True)
         for k, df in data.items():
@@ -205,18 +207,21 @@ def main():
                 df[col].astype(str).map(freq).fillna(0.0).astype("float32")
             )
 
-    print(f"[INFO] Encoding domain names and author IDs and taking log(y)")
+    print(f"[INFO] Taking log(y)")
+    #print(f"[INFO] Encoding domain names and author IDs and taking log(y)")
     for k, df in data.items():
         log_y_col = log_vals(df[args.y_col])
         if log_y_col is not None:
             df[f"log_{args.y_col}"] = log_y_col
+        """
         for col, colmap in encoder_maps.items():
             m = colmap["label_to_code"]
             unk = colmap["unknown_code"]
             df[f"encoded_{col}"] = df[col].astype(str).map(m).fillna(unk)
             df[f"{col}_unseen"] = df[f"encoded_{col}"] == unk
             df[f"encoded_{col}"] = df[f"encoded_{col}"].astype("category")
-
+        """   
+        
     if f"log_{args.y_col}" in data["train"]:
         TARGET_Y_COLS.append(f"log_{args.y_col}")
         y_col = f"log_{args.y_col}"
