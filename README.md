@@ -284,7 +284,8 @@ If you use this code, please cite:
 
 ## License
 
-[Specify your license here, e.g., MIT, Apache 2.0]
+This project is licensed under the MIT License.  
+See the [LICENSE](./LICENSE) file for full details.
 
 ## Support
 

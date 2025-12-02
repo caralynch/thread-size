@@ -1,5 +1,8 @@
+# MIT License
+# Copyright (c) 2025 Cara Lynch
+# See the LICENSE file for details.
 """
-Stage 3 - tree hyperparameter tuning for thread-start classification.
+Stage 1.3 - tree hyperparameter tuning for thread-start classification.
 
 This script takes the tuned configurations from Stage 1.2 (feature subsets,
 class weights, and decision thresholds for predicting whether a thread

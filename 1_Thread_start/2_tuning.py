@@ -1,5 +1,8 @@
+# MIT License
+# Copyright (c) 2025 Cara Lynch
+# See the LICENSE file for details.
 """
-Stage 2 - hyperparameter and threshold tuning for thread-start classification.
+Stage 1.2 - hyperparameter and threshold tuning for thread-start classification.
 
 This script tunes LightGBM classifiers that predict whether a thread starts
 (thread_size > 1) using cross-validated Optuna searches over class weights,

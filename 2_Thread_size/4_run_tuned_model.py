@@ -1,7 +1,8 @@
+# MIT License
+# Copyright (c) 2025 Cara Lynch
+# See the LICENSE file for details.
 """
-4_run_tuned_model.py
-
-Stage 2 – final evaluation of tuned thread-size classifier.
+Stage 2.4 – final evaluation of tuned thread-size classifier.
 
 This script evaluates multiclass LightGBM models for predicting discretised
 thread size (e.g. stalled, small, medium, large) using tuned hyperparameters

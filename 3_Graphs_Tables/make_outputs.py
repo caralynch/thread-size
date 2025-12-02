@@ -1,3 +1,6 @@
+# MIT License
+# Copyright (c) 2025 Cara Lynch
+# See the LICENSE file for details.
 """
 Output Generator for Reddit Thread Prediction Models
 

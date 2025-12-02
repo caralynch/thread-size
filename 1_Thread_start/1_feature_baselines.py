@@ -1,3 +1,6 @@
+# MIT License
+# Copyright (c) 2025 Cara Lynch
+# See the LICENSE file for details.
 """
 Stage 1 baseline feature scores for thread-start classification.
 

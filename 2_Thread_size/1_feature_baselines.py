@@ -1,5 +1,8 @@
+# MIT License
+# Copyright (c) 2025 Cara Lynch
+# See the LICENSE file for details.
 """
-Stage 1 – baseline feature subsets for thread-size classification.
+Stage 2.1 – baseline feature subsets for thread-size classification.
 
 This script computes baseline performance curves for Stage 2
 (thread-size / bin prediction) by:

@@ -1,7 +1,8 @@
+# MIT License
+# Copyright (c) 2025 Cara Lynch
+# See the LICENSE file for details.
 """
-3_hyperparameter_tuning.py
-
-Multiclass hyperparameter tuning for thread-size classification.
+Stage 2.3 Multiclass hyperparameter tuning for thread-size classification.
 
 This script refines LightGBM hyperparameters for the multiclass
 thread-size model, conditional on:

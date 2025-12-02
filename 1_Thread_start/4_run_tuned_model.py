@@ -1,7 +1,8 @@
+# MIT License
+# Copyright (c) 2025 Cara Lynch
+# See the LICENSE file for details.
 """
-4_run_tuned_model.py
-
-Stage 1 – final evaluation of tuned thread-start classifier.
+Stage 1.4 – final evaluation of tuned thread-start classifier.
 
 This script:
 

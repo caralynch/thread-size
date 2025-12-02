@@ -1,5 +1,8 @@
+# MIT License
+# Copyright (c) 2025 Cara Lynch
+# See the LICENSE file for details.
 """
-Stage 2 – class-weight and threshold tuning for thread-size classification.
+Stage 2.2 – class-weight and threshold tuning for thread-size classification.
 
 This script implements the second tuning stage for the thread-size (Stage 2)
 classifier. Given:
