@@ -13,20 +13,20 @@ The pipeline includes feature engineering, TF-IDF text vectorization with SVD di
 ## Repository Structure
 ```
 .
-└── 0_Preprocessing
-    ├── 1_construct_features.py          # Feature engineering from raw Reddit data
-    ├── 2_tf_idf_analysis.py             # TF-IDF vectorizer and SVD tuning
-    └── 3_model_data.py                  # Final train/test split preparation
-└── 1_Thread_start
-    ├── 1_feature_baselines.py           # Stage 1 baseline feature evaluation
-    ├── 2_tuning.py                      # Stage 1 class weight and threshold tuning
-    ├── 3_hyperparameter_tuning.py       # Stage 1 tree hyperparameter optimization
-    └── 4_run_tuned_model.py             # Stage 1 final model evaluation
-└── 2_Thread_size
-    ├── 1_feature_baselines.py           # Stage 2 baseline feature evaluation
-    ├── 2_tuning.py                      # Stage 2 class weight and threshold tuning
-    ├── 3_hyperparameter_tuning.py       # Stage 2 tree hyperparameter optimization
-    └── 4_run_tuned_model.py             # Stage 2 final model evaluation
+├── 0_Preprocessing
+|    ├── 1_construct_features.py          # Feature engineering from raw Reddit data
+|    ├── 2_tf_idf_analysis.py             # TF-IDF vectorizer and SVD tuning
+|    └── 3_model_data.py                  # Final train/test split preparation
+├── 1_Thread_start
+|    ├── 1_feature_baselines.py           # Stage 1 baseline feature evaluation
+|    ├── 2_tuning.py                      # Stage 1 class weight and threshold tuning
+|    ├── 3_hyperparameter_tuning.py       # Stage 1 tree hyperparameter optimization
+|    └── 4_run_tuned_model.py             # Stage 1 final model evaluation
+├── 2_Thread_size
+|    ├── 1_feature_baselines.py           # Stage 2 baseline feature evaluation
+|    ├── 2_tuning.py                      # Stage 2 class weight and threshold tuning
+|    ├── 3_hyperparameter_tuning.py       # Stage 2 tree hyperparameter optimization
+|    └── 4_run_tuned_model.py             # Stage 2 final model evaluation
 └── 3_Graphs_Tables
     └── make_outputs.py                  # Publication-ready figures and tables
 ```
