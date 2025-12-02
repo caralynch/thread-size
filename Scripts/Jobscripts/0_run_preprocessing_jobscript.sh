@@ -79,7 +79,7 @@ if [ $EXIT_CODE -eq 0 ]; then
   echo "Preprocessing completed successfully"
   echo "Copying results from TMPDIR to permanent storage..."
   
-  FINAL_OUTDIR="/home/ucabcpl/Scratch/thread_size/thread-size/Outputs/${SUBREDDIT}"
+  FINAL_OUTDIR="/home/ucabcpl/Scratch/thread_size/thread-size/Outputs/0_Preprocessing/${SUBREDDIT}"
   mkdir -p "$FINAL_OUTDIR"
   
   # Copy all outputs
