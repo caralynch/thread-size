@@ -1,3 +1,37 @@
+"""
+Output Generator for Reddit Thread Prediction Models
+
+This script generates publication-ready figures, tables, and analysis outputs from
+trained machine learning models that predict Reddit thread outcomes. It supports
+two modeling stages:
+    - Stage 1: Binary classification (thread started vs. stalled)
+    - Stage 2: Multi-class classification (thread size categories)
+
+The script processes model evaluation results including:
+    - Confusion matrices and classification metrics
+    - Performance metrics across different feature set sizes
+    - SHAP (SHapley Additive exPlanations) values for model interpretability
+    - Feature importance rankings
+
+Outputs include:
+    - High-resolution figures (EPS and PNG formats)
+    - Excel workbooks with detailed metrics
+    - Combined visualization panels for publication
+
+Usage:
+    Stage 1 (Binary):
+        python make_outputs.py --stage 1 --root ./stage1_results \
+            --selected-models selected.csv --outdir ./publication_outputs
+
+    Stage 2 (Multi-class):
+        python make_outputs.py --stage 2 --n-classes 3 --root ./stage2_results \
+            --selected-models selected.csv --outdir ./publication_outputs
+
+Requirements:
+    - joblib, numpy, pandas, matplotlib, seaborn, shap, PIL
+    - Pre-computed model outputs.
+
+"""
 import sys
 import argparse
 from pathlib import Path
@@ -54,6 +88,31 @@ INDEX_COL = "n_feats"
 
 
 def format_label(text, max_word_length=20):
+    """
+    Format feature names for display in plots by applying capitalization rules
+    and wrapping long labels across multiple lines.
+
+    Applies the following transformations:
+        - Replaces underscores with spaces
+        - Capitalizes first word and proper nouns (Reddit)
+        - Keeps known acronyms uppercase (PR, URL, ID)
+        - Handles special terms (PageRank, avg.)
+        - Wraps text to fit within max_word_length
+
+    Args:
+        text (str): Raw feature name to format
+        max_word_length (int, optional): Maximum characters per line before wrapping.
+            Defaults to 20.
+
+    Returns:
+        str: Formatted label, potentially with newline characters for multi-line display
+
+    Examples:
+        >>> format_label("avg_pagerank_score")
+        'Avg. PageRank score'
+        >>> format_label("reddit_user_id_length")
+        'Reddit user id\\nlength'
+    """
     # Replace underscores with spaces
     text = text.replace("_", " ")
 
@@ -100,13 +159,28 @@ def format_label(text, max_word_length=20):
 
 def load_selected_models(path: Path) -> Dict[str, int]:
     """
-    Load mapping subreddit -> n_feats.
+    Load mapping of subreddit to selected feature count from CSV or text file.
 
-    Supports two formats:
+    Supports two file formats:
+        1) CSV with header containing 'subreddit' and 'n_feats' columns
+        2) Plain text with lines in format: subreddit,n_feats[,ignored_cols...]
 
-      1) CSV with header: columns 'subreddit' and 'n_feats'.
-      2) Plain text file with one line per subreddit:
-             subreddit,n_feats[,<ignored>]
+    Args:
+        path (Path): Path to the selected models file
+
+    Returns:
+        Dict[str, int]: Mapping from subreddit name to number of features
+
+    Raises:
+        ValueError: If file cannot be parsed in either expected format
+
+    Examples:
+        File content (CSV):
+            subreddit,n_feats
+            conspiracy,50
+            crypto,75
+
+        Returns: {"conspiracy": 50, "crypto": 75}
     """
     # First, try CSV with headers
     try:
@@ -138,6 +212,19 @@ def load_selected_models(path: Path) -> Dict[str, int]:
 
 
 def get_cm_data(selected_model_dirs, data_type="test"):
+    """
+    Load confusion matrix data for all subreddits from saved model outputs.
+
+    Args:
+        selected_model_dirs (Dict[str, str]): Mapping from subreddit to model
+            directory path
+        data_type (str, optional): Type of data split ("test" or "oof").
+            Defaults to "test".
+
+    Returns:
+        Dict[str, Any]: Nested dictionary mapping subreddit to confusion matrix
+            data structure containing CM and confidence intervals
+    """
     cms = {}
     for subreddit, indir in selected_model_dirs.items():
         cms[subreddit] = joblib.load(f"{indir}/{data_type}_confusion_matrix_data.jl")
@@ -145,6 +232,17 @@ def get_cm_data(selected_model_dirs, data_type="test"):
 
 
 def plot_cm(cm, class_names, ax):
+    """
+    Create a heatmap visualization of a confusion matrix on a given axes.
+
+    Args:
+        cm (np.ndarray): Confusion matrix as a 2D numpy array
+        class_names (List[str]): List of class label names for axis labels
+        ax (matplotlib.axes.Axes): Axes object to plot on
+
+    Returns:
+        None: Modifies ax in place
+    """
     sns.heatmap(
         cm,
         annot=True,
@@ -159,13 +257,28 @@ def plot_cm(cm, class_names, ax):
 
 
 def make_cm_fig(cm_dicts, outfile, class_names):
+    """
+    Generate a multi-panel figure showing confusion matrices for multiple subreddits.
+
+    Creates a 2x2 grid layout with confusion matrices for up to 3 subreddits
+    (fourth panel is removed). Saves in both EPS and PNG formats.
+
+    Args:
+        cm_dicts (Dict[str, Dict]): Nested dictionary with subreddit -> confusion
+            matrix data
+        outfile (str): Output file path without extension
+        class_names (List[str]): Class labels for confusion matrix axes
+
+    Returns:
+        None: Saves figures to disk
+    """
     i = 0
     fig, axes = plt.subplots(2, 2, figsize=(12, 10))
     axes = axes.flatten()
     for subreddit, cm_dict in cm_dicts.items():
         plot_cm(cm_dict["CM"], class_names, axes[i])
         axes[i].set_title(
-            f"{SUBREDDIT_LABELS[subreddit]}", loc="left", fontsize=12, weight="bold",
+            f"{LETTER_LOOKUP[i]} {SUBREDDIT_LABELS[subreddit]}", loc="left", fontsize=12, weight="bold",
         )
         axes[i].set_xlabel("Predicted Class", fontsize=11)
         axes[i].set_ylabel("True Class", fontsize=11)
@@ -181,7 +294,26 @@ def make_cm_fig(cm_dicts, outfile, class_names):
     plt.close()
 
 
-def confusion_matrixes(selected_model_dirs, outdir, plot_outdir, class_names):
+def confusion_matrices(selected_model_dirs, outdir, class_names):
+    """
+    Process and visualize confusion matrices for all subreddits and data splits.
+
+    Generates confusion matrix figures, calculates predicted class ratios,
+    identifies misclassification patterns, and saves all results to Excel files.
+
+    Args:
+        selected_model_dirs (Dict[str, str]): Mapping from subreddit to model directory
+        outdir (str): Main output directory for figures
+        plot_outdir (str): Directory for Excel data outputs
+        class_names (List[str]): Class label names
+
+    Returns:
+        None: Saves confusion matrix figures and Excel files to disk
+
+    Side effects:
+        - Creates PNG and EPS confusion matrix figures
+        - Generates Excel files with CM data, class ratios, and misclassification stats
+    """
     cms = {}
     predicted_class_ratios = {}
     misclassified_dfs = {}
@@ -191,8 +323,8 @@ def confusion_matrixes(selected_model_dirs, outdir, plot_outdir, class_names):
         misclassified_dfs[k] = {}
         cms[k] = get_cm_data(selected_model_dirs, data_type=k)
         print(f"[INFO] Saving {k} confusion matrix to {outdir}/{k}_CM")
-        make_cm_fig(cms[k], f"{args.outdir}/{k}_CM", class_names)
-        print(f"[INFO] Saving {k} confusion matrix data to {plot_outdir}.")
+        make_cm_fig(cms[k], f"{outdir}/{k}_CM", class_names)
+        print(f"[INFO] Saving {k} confusion matrix data to {outdir}.")
         for sub in cms[k]:
             with pd.ExcelWriter(f"{plot_outdir}/{sub}_{k}_cm_data.xlsx") as writer:
                 for j, cm in cms[k][sub].items():
@@ -216,15 +348,35 @@ def confusion_matrixes(selected_model_dirs, outdir, plot_outdir, class_names):
 
 
 def performance_metrics(mod_dirs, outdir, metrics, plot_outdir):
+    """
+    Generate performance metric visualizations and summary tables.
+
+    Loads performance scores across different feature set sizes, creates line plots
+    with error bars, and exports formatted tables with metrics and ratios.
+
+    Args:
+        mod_dirs (Dict[str, str]): Mapping from subreddit to model directory
+        outdir (str): Output directory for figures
+        metrics (List[str]): List of metric names to plot and summarize
+        plot_outdir (str): Directory for Excel data outputs
+
+    Returns:
+        List[str]: Filtered list of metrics actually present in the data
+
+    Side effects:
+        - Creates metric line plots (PNG and EPS)
+        - Generates Excel files with performance metrics and ratios
+    """
     print(f"[INFO] Loading performance metrics.")
     combined_scores = dict(zip(DATA_LABELS.keys(), [{}, {}]))
+    sub_scores = {}
     for sub, mod_dir in mod_dirs.items():
-        sub_scores = joblib.load(f"{mod_dir}/combined_scores.jl")
+        sub_scores[sub] = joblib.load(f"{mod_dir}/combined_scores.jl")
         for k in combined_scores:
             combined_scores[k][sub] = pd.DataFrame(sub_scores[sub][k])
 
         # don't want to try to graph metrics that aren't in the data
-        metrics = list(set(metrics) & set(sub_scores["test"].keys()))
+        metrics = list(set(metrics) & set(sub_scores[sub]["test"].keys()))
 
     print(f"[INFO] Plotting performance metrics.")
     for metric in metrics:
@@ -256,6 +408,18 @@ def performance_metrics(mod_dirs, outdir, metrics, plot_outdir):
 
 
 def parse_args() -> argparse.Namespace:
+    """
+    Parse command-line arguments for the publication output generator.
+
+    Returns:
+        argparse.Namespace: Parsed arguments with the following attributes:
+            - stage (int): Model stage (1 or 2)
+            - root (Path): Root directory containing subreddit folders
+            - selected_models (Path): CSV file specifying selected models
+            - n_classes (int): Number of classes for Stage 2 (3 or 4)
+            - outdir (Path): Output directory for generated files
+            - overwrite (bool): Whether to regenerate existing outputs
+    """
     parser = argparse.ArgumentParser(
         description=(
             "Collate Stage 1 or Stage 2 evaluation outputs into "
@@ -334,20 +498,20 @@ def plot_metric(metric, combined_scores, outfile):
 
             lower, upper = get_errorbars(df, metric)
 
+            fmt = "o-" if data_type == "test" else "o:"
+
             line = ax.errorbar(
                 df["n_feats"],
                 df[f"{metric}"],
                 yerr=[lower, upper],
-                fmt="o-",
+                fmt=fmt,
                 capsize=3,
-                color=COLORS[i],
-                ecolor=COLORS[i],
             )
             i += 1
             handles_dict[DATA_LABELS[data_type]] = line
             if j == 0:
                 ax.set_title(
-                    f"{SUBREDDIT_LABELS[sub]}", loc="left", fontsize=12, weight="bold"
+                    f"{LETTER_LOOKUP[i]} {SUBREDDIT_LABELS[sub]}", loc="left", fontsize=12, weight="bold"
                 )
                 if i > 0:
                     ax.set_xlabel("Number of features", fontsize=11)
@@ -401,9 +565,11 @@ def format_df_for_pretty_output(df):
     )
 
     # if CI cols in df, want to have them as ranges [lower, upper]
-    formatted_df[[x for x in formatted_df.columns if x.endswith("CI")]] = formatted_df[
-        [x for x in formatted_df.columns if x.endswith("CI")]
-    ].apply(get_ci_str_from_list)
+    ci_cols = [x for x in formatted_df.columns if x.endswith("CI")]
+    if len(ci_cols) > 0:
+        formatted_df[ci_cols] = formatted_df[
+            ci_cols
+        ].map(get_ci_str_from_list)
 
     return formatted_df
 
@@ -515,27 +681,28 @@ def plot_s1_shap_vals(selected_model_dirs, outdir):
     print("[INFO] Saving SHAP plot data")
     with pd.ExcelWriter(f"{outdir}/shap_plot_data.xlsx") as writer:
         for sub, shap_dict in shap_vals.items():
-            for k, df in shap_dict.items():
-                df.to_excel(writer, sheet_name=f"{sub}_{k}")
+            for k, np_array in shap_dict.items():
+                pd.DataFrame(data=np_array).to_excel(writer, sheet_name=f"{sub}_{k}")
 
 
 def plot_s2_shap_vals(selected_model_dirs, outdir, class_names):
     class_shap_dicts = {}
     shap_outfiles = {}
-    shap_dicts = {}
+    shap_dfs = {}
     print("[INFO] Making SHAP plots for each subreddit")
     for sub, mod_dir in selected_model_dirs.items():
         vals = joblib.load(f"{mod_dir}/shap_values.jl")
         x_test = pd.read_parquet(f"{mod_dir}/X_test.parquet")
         shap_outfiles[sub] = []
         class_shap_dicts[sub] = {}
-        shap_dicts[sub] = {"shap_val": vals, "feat_name": x_test}
+        shap_dfs[sub] = {}
         for class_idx, label in enumerate(class_names):
             outfile_name = f"{outdir}/{sub}_shap_{label}"
             shap_dict = {
                 "shap_val": vals[:, :, class_idx],
                 "feat_name": x_test,
             }
+            shap_dfs[sub][class_idx] = pd.DataFrame(data=vals[:,:,class_idx], columns=x_test.columns)
             get_sub_shap_plot(
                 shap_dict, outfile_name, f"{LETTER_LOOKUP[class_idx]} {label}"
             )
@@ -548,12 +715,12 @@ def plot_s2_shap_vals(selected_model_dirs, outdir, class_names):
 
     print("[INFO] Saving SHAP plot data")
     with pd.ExcelWriter(f"{outdir}/shap_plot_data.xlsx") as writer:
-        for sub, shap_dict in shap_dicts.items():
-            for k, df in shap_dict.items():
-                df.to_excel(writer, sheet_name=f"{sub}_{k}")
+        for sub, shap_dict in shap_dfs.items():
+            for class_idx, df in shap_dict.items():
+                df.to_excel(writer, sheet_name=f"{sub}_{class_idx}")
 
 
-def plot_s2_col_shap_plots(selected_model_dirs, outdir, class_names, data_outdir=None):
+def plot_s2_col_shap_plots(selected_model_dirs, outdir, class_names):
     print("[INFO] Getting SHAP scatter plots per column and class")
     shap_dfs = {}
     for sub, mod_dir in selected_model_dirs.items():
@@ -563,13 +730,13 @@ def plot_s2_col_shap_plots(selected_model_dirs, outdir, class_names, data_outdir
         shap_dfs[sub] = {}
         for class_idx, label in enumerate(class_names):
             shap_dfs[sub][class_idx] = pd.DataFrame(
-                data=shap_vals[:, :, class_idx], columns=X.columns
+                data=shap_vals[:, :, class_idx].values, columns=X.columns
             )
         for col in X.columns:
             outfiles = []
             for class_idx, label in enumerate(class_names):
                 shap_dfs[sub][class_idx] = pd.DataFrame(
-                    data=shap_vals[:, :, class_idx], columns=X.columns
+                    data=shap_vals[:, :, class_idx].values, columns=X.columns
                 )
                 outfile = f"{outdir}/{sub}_{col}_{label}_shap"
                 plot_cls_col_shap_plot(
@@ -580,28 +747,26 @@ def plot_s2_col_shap_plots(selected_model_dirs, outdir, class_names, data_outdir
                 )
                 outfiles.append(f"{outfile}.png")
             combine_plots_square(outfiles, f"{outdir}/{sub}_{col}_shap")
-    if data_outdir is None:
-        data_outdir = outdir
-    with pd.ExcelWriter(f"{data_outdir}/shap_columns_data.xlsx") as writer:
+
+    with pd.ExcelWriter(f"{outdir}/shap_columns_data.xlsx") as writer:
         for sub, sub_dict in shap_dfs.items():
             for class_idx, df in sub_dict.items():
                 df.to_excel(writer, sheet_name=f"{sub}_{class_idx}")
 
 
-def plot_s1_col_shap_plots(selected_model_dirs, outdir, data_outdir=None):
+def plot_s1_col_shap_plots(selected_model_dirs, outdir):
     print("[INFO] Getting SHAP scatter plots per column")
-    if data_outdir is None:
-        data_outdir = outdir
     shap_vals_dict = {}
     for sub, mod_dir in selected_model_dirs.items():
-        shap_exp = joblib.load(f"{mod_dir}/shap_explainer.jl")
-        X = joblib.load(f"{mod_dir}/shap_plot_data.jl")["feat_name"]
+        shap_exp_dict = joblib.load(f"{mod_dir}/shap_explainer.jl")
+        X = shap_exp_dict["X_test"]
+        shap_exp = shap_exp_dict["explainer"]
         shap_vals = shap_exp(X)
-        shap_vals_dict[sub] = pd.DataFrame(data=shap_vals, columns=X.columns)
+        shap_vals_dict[sub] = pd.DataFrame(data=shap_vals.values, columns=X.columns)
         for col in X.columns:
             outfile = f"{outdir}/{sub}_{col}_shap"
             plot_cls_col_shap_plot(shap_vals, col, outfile)
-    with pd.ExcelWriter(f"{data_outdir}/shap_columns_data.xlsx") as writer:
+    with pd.ExcelWriter(f"{outdir}/shap_columns_data.xlsx") as writer:
         for sub, df in shap_vals_dict.items():
             df.to_excel(writer, sheet_name=sub)
 
@@ -650,7 +815,7 @@ def output_s2_feature_importances(selected_model_dirs, outfile):
         shap_importance_df = pd.DataFrame(shap_importance_dict)
 
         print(f"[INFO][{sub}] Getting tree importance")
-        classifier = joblib.load(f"{mod_dir}/model.jl")["classifier"]
+        classifier = joblib.load(f"{mod_dir}/model.jl")
         tree_importance_df = get_tree_importance(classifier)
         feat_importance_dfs[sub] = get_feat_importance_df(
             shap_importance_df, tree_importance_df
@@ -688,7 +853,7 @@ def get_feat_importance_df(shap_importance_df, tree_importance_df):
     feat_importance_df = pd.merge(
         shap_importance_df, tree_importance_df, on="Feature"
     ).sort_values(by="MeanAbsoluteSHAP", ascending=False)
-    feat_importance_df["Feature"] = feat_importance_df["Feature"].apply(format_label)
+    feat_importance_df["Feature"] = feat_importance_df["Feature"].map(format_label)
     return feat_importance_df
 
 
@@ -812,6 +977,10 @@ def main() -> None:
     os.makedirs(col_shap_outdir, exist_ok=True)
     shap_outdir = f"{args.outdir}/shap_plots"
     os.makedirs(shap_outdir, exist_ok=True)
+    metrics_outdir = f"{args.outdir}/metrics"
+    os.makedirs(metrics_outdir, exist_ok=True)
+    cm_outdir = f"{args.outdir}/cms"
+    os.makedirs(cm_outdir, exist_ok=True)
 
     selected_models = load_selected_models(args.selected_models)
     print(f"[INFO] Selected models: {selected_models}")
@@ -823,20 +992,28 @@ def main() -> None:
         selected_model_dirs[sub] = f"{model_dirs[sub]}/model_{i}/model_data"
 
     # handle confusion matrices
-    confusion_matrixes(selected_model_dirs, args.outdir, plot_outdir, class_names)
+    confusion_matrices(selected_model_dirs, cm_outdir, class_names)
+
+    plt.close()
 
     # handle performance metric outputs
-    metrics = performance_metrics(model_dirs, args.outdir, metrics, plot_outdir)
+    metrics = performance_metrics(model_dirs, metrics_outdir, metrics, plot_outdir)
+
+    plt.close()
 
     if args.stage == 1:
         # output feat importance
         output_s1_feature_importances(
-            selected_model_dirs, f"{args.outdir}/feat_importances.xlsx"
+            selected_model_dirs, f"{shap_outdir}/feat_importances.xlsx"
         )
         # output shap vals
         plot_s1_shap_vals(selected_model_dirs, shap_outdir)
 
-        plot_s1_col_shap_plots(selected_model_dirs, col_shap_outdir, plot_outdir)
+        plt.close()
+
+        plot_s1_col_shap_plots(selected_model_dirs, col_shap_outdir)
+
+        plt.close()
     else:
         output_s2_feature_importances(
             selected_model_dirs, f"{args.outdir}/feat_importances.xlsx"
@@ -844,9 +1021,17 @@ def main() -> None:
         # output shap vals
         plot_s2_shap_vals(selected_model_dirs, shap_outdir, class_names)
 
+        plt.close()
+
         plot_s2_col_shap_plots(
-            selected_model_dirs, col_shap_outdir, class_names, plot_outdir
+            selected_model_dirs, col_shap_outdir, class_names
         )
+
+        plt.close()
+    
+    end = dt.datetime.now()
+    print(f"[OK] Saved all outputs to: {args.outdir}")
+    print(f"[OK] Finished. Total runtime {end-start}.")
 
 
 if __name__ == "__main__":
