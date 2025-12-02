@@ -35,7 +35,7 @@ conda activate threadsize
 
 # ===== Set paths =====
 SUBREDDIT=$1  # Change as needed: conspiracy, crypto, politics
-SCRIPT_DIR=/home/ucabcpl/Scratch/thread_size/thread-size/Scripts/Jobscripts # Adjust to where your scripts are
+SCRIPT_DIR=/home/ucabcpl/Scratch/thread_size/thread-size/Scripts # Adjust to where your scripts are
 DATA_DIR=/home/ucabcpl/Scratch/thread_size/thread-size/Inputs # Adjust to your data location
 
 # Input files (adjust paths to your actual data)
