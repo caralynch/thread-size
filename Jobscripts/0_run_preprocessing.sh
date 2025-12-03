@@ -37,13 +37,13 @@ run_step () {
   fi
 }
 
-echo "== 1. Constructing features =="
-run_step "${SUBREDDIT}_0_1_construct_features" \
-  "${SCRIPT_DIR}/0_Preprocessing/1_construct_features.py" \
-  --subreddit "${SUBREDDIT}" \
-  --outdir "${OUTDIR}" \
-  --comments "${COMMENTS_IN}" \
-  --threads "${THREADS_IN}"
+# echo "== 1. Constructing features =="
+# run_step "${SUBREDDIT}_0_1_construct_features" \
+#   "${SCRIPT_DIR}/0_Preprocessing/1_construct_features.py" \
+#   --subreddit "${SUBREDDIT}" \
+#   --outdir "${OUTDIR}" \
+#   --comments "${COMMENTS_IN}" \
+#   --threads "${THREADS_IN}"
 
 # Verify outputs from step 1 exist before continuing
 COMMENTS="${OUTDIR}/${SUBREDDIT}_comments_extra_feats.parquet"
@@ -53,7 +53,7 @@ if [ ! -f "${COMMENTS}" ] || [ ! -f "${THREADS}" ]; then
   exit 1
 fi
 
-echo "Finished constructing features."
+# echo "Finished constructing features."
 
 echo "== 2. TF-IDF analysis =="
 run_step "${SUBREDDIT}_0_2_tfidf_analysis" \
