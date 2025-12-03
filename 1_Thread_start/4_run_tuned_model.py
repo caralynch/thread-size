@@ -436,7 +436,7 @@ def main():
                 X_tr, X_calib, y_tr, y_calib = train_test_split(
                     X_tr,
                     y_tr,
-                    train_size=0.9,  # p0% for train, 10% for calib
+                    train_size=0.9,  # 90% for train, 10% for calib
                     stratify=y_tr,  # preserve class balance
                     random_state=args.rs,  # for reproducibility
                 )
