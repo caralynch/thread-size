@@ -637,7 +637,7 @@ def plot_metric(metric, combined_scores, outfile):
                 )
                 if i > 0:
                     ax.set_xlabel("Number of features", fontsize=11)
-                if i % 2 == 0:
+                if i % 2 == 1:
                     ax.set_ylabel(metric, fontsize=11)
                 ax.tick_params(axis="x", labelsize=10)
                 ax.tick_params(axis="y", labelsize=10)
@@ -900,7 +900,7 @@ def plot_s1_shap_vals(selected_model_dirs, outdir):
         shap_vals[sub] = joblib.load(f"{mod_dir}/shap_plot_data.jl")
         outfile_name = f"{outdir}/{sub}_shap"
         shap_outfiles.append(f"{outfile_name}.png")
-        get_sub_shap_plot(shap_vals[sub], outfile_name, f"{LETTER_LOOKUP[i]} {sub}")
+        get_sub_shap_plot(shap_vals[sub], outfile_name, f"{LETTER_LOOKUP[i]} {SUBREDDIT_LABELS[sub]}")
         i += 1
 
     print("[INFO] Combining SHAP plots")
@@ -1067,6 +1067,10 @@ def plot_cls_col_shap_plot(cls_shap_vals, colname, outfile, title=None):
         format_label(colname), fontsize=11,
     )
     main_ax.set_ylabel("SHAP value", fontsize=11)
+    # After main_ax is found
+    vals = cls_shap_vals[:, colname].data  # the raw feature values
+    main_ax.set_xlim(vals.min()-vals.max()/20, vals.max()+vals.max()/20)
+
     main_ax.tick_params(labelsize=10)
     plt.savefig(f"{outfile}.eps", dpi=350, format="eps")
     plt.savefig(f"{outfile}.png", dpi=350, format="png")
