@@ -29,6 +29,7 @@ The pipeline includes feature engineering, TF-IDF text vectorization with SVD di
 |    └── 4_run_tuned_model.py             # Stage 2 final model evaluation
 └── 3_Graphs_Tables
     └── make_outputs.py                  # Publication-ready figures and tables
+    └── make_tables.ipynb          # Create LaTeX tables (e.g., hyperparameters, thresholds, feature rankings)
 ```
 
 ## Installation
@@ -201,6 +202,13 @@ conspiracy,15
 crypto,20
 politics,18
 ```
+
+#### LaTeX Table Generation
+
+The repository includes a notebook for producing LaTeX tables: ```3_Graphs_Tables/make_tables.ipynb```. This notebook:
+- Loads model output files,
+- Reshapes outputs into dataframes suitable for table viewing,
+- Generates LaTeX tables used in the manuscript and supplementary materials.
 
 ## Key Features
 
