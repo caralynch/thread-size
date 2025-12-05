@@ -1,0 +1,16 @@
+name: threadsize
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - matplotlib
+  - python=3.11
+  - seaborn
+  - optuna
+  - shap
+  - numpy
+  - scikit-learn
+  - lightgbm
+  - pandas
+  - openpyxl
+  - xlsxwriter
