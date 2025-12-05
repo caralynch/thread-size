@@ -220,6 +220,9 @@ def format_label(text, max_word_length=20):
     for i, word in enumerate(words):
         if word.lower() == "avg":
             word = "avg."
+        if word.lower() == "freq":
+            word = "frequency"
+            
         if word.lower() == "pagerank":
             formatted_words.append("PageRank")
         elif (word.lower() == "reddit") or (i == 0):
@@ -1030,7 +1033,7 @@ def plot_s1_col_shap_plots(selected_model_dirs, outdir):
         for i, col in enumerate(X.columns):
             outfile = f"{outdir}/{sub}_{col}_shap"
             outfiles[sub].append(f"{outfile}.png")
-            plot_cls_col_shap_plot(shap_vals, col, outfile, title=f"{LETTER_LOOKUP[i]} {format_label[col]}")
+            plot_cls_col_shap_plot(shap_vals, col, outfile, title=f"{LETTER_LOOKUP[i]} {format_label(col)}")
     with pd.ExcelWriter(f"{outdir}/shap_columns_data.xlsx") as writer:
         for sub, df in shap_vals_dict.items():
             df.to_excel(writer, sheet_name=sub)
