@@ -10,6 +10,22 @@ This project analyzes Reddit discussion threads to predict:
 
 The pipeline includes feature engineering, TF-IDF text vectorization with SVD dimensionality reduction, hyperparameter tuning via Optuna, and comprehensive model evaluation with SHAP interpretability analysis.
 
+## Data Availability
+
+**Input data and trained model artifacts are available on Zenodo:**
+
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.17831100.svg)](https://doi.org/10.5281/zenodo.17831100)
+
+The Zenodo repository contains:
+- **Raw Reddit data**: Comment and thread parquet files for analyzed subreddits
+- **Processed features**: Engineered features with TF-IDF/SVD embeddings
+- **Trained models**: Final LightGBM classifiers for both stages
+- **TF-IDF/SVD artifacts**: Fitted vectorizers and dimensionality reduction models
+- **Model predictions**: Out-of-fold and test set probability predictions
+- **Evaluation results**: Performance metrics, SHAP analyses, and confusion matrices
+
+To reproduce the results, download the data from Zenodo and place files in the appropriate directories as specified in the Usage section below.
+
 ## Repository Structure
 ```
 .
@@ -280,20 +296,30 @@ Each output includes:
 
 ## Citation
 
-If you use this code, please cite:
+If you use this code or data, please cite:
 ```bibtex
 @software{reddit_thread_prediction,
   title = {Reddit Thread Prediction Models},
-  author = {Cara Lynch},
+  author = {Lynch, Cara},
   year = {2025},
   url = {https://github.com/caralynch/thread-size}
+}
+
+@dataset{reddit_thread_data,
+  author = {Lynch, Cara},
+  title = {Reddit Thread Prediction: Input Data and Model Artifacts},
+  year = {2025},
+  publisher = {Zenodo},
+  doi = {10.5281/zenodo.17831100},
+  url = {https://doi.org/10.5281/zenodo.17831100}
 }
 ```
 
 ## License
 
-This project is licensed under the MIT License.  
-See the [LICENSE](./LICENSE) file for full details.
+**Code**: This project's code is licensed under the MIT License. See the [LICENSE](./LICENSE) file for details.
+
+**Data**: The input data and model artifacts available on Zenodo are licensed under [Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/).
 
 ## Support
 
