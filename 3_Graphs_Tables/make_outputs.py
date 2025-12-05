@@ -1019,18 +1019,25 @@ def plot_s1_col_shap_plots(selected_model_dirs, outdir):
     """
     print("[INFO] Getting SHAP scatter plots per column")
     shap_vals_dict = {}
+    outfiles = {}
     for sub, mod_dir in selected_model_dirs.items():
         shap_exp_dict = joblib.load(f"{mod_dir}/shap_explainer.jl")
         X = shap_exp_dict["X_test"]
         shap_exp = shap_exp_dict["explainer"]
         shap_vals = shap_exp(X)
         shap_vals_dict[sub] = pd.DataFrame(data=shap_vals.values, columns=X.columns)
-        for col in X.columns:
+        outfiles[sub] = []
+        for i, col in enumerate(X.columns):
             outfile = f"{outdir}/{sub}_{col}_shap"
-            plot_cls_col_shap_plot(shap_vals, col, outfile)
+            outfiles[sub].append(f"{outfile}.png")
+            plot_cls_col_shap_plot(shap_vals, col, outfile, title=f"{LETTER_LOOKUP[i]} {format_label[col]}")
     with pd.ExcelWriter(f"{outdir}/shap_columns_data.xlsx") as writer:
         for sub, df in shap_vals_dict.items():
             df.to_excel(writer, sheet_name=sub)
+    for sub, shap_pngs in outfiles.items():
+        if len(shap_pngs) <= 4:
+            combine_plots_square(shap_pngs, f"{outdir}/{sub}_col_shaps")
+
 
 
 def plot_cls_col_shap_plot(cls_shap_vals, colname, outfile, title=None):
