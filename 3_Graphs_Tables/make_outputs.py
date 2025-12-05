@@ -222,7 +222,7 @@ def format_label(text, max_word_length=20):
             word = "avg."
         if word.lower() == "freq":
             word = "frequency"
-            
+
         if word.lower() == "pagerank":
             formatted_words.append("PageRank")
         elif (word.lower() == "reddit") or (i == 0):
@@ -388,7 +388,7 @@ def make_cm_fig(cm_dicts, outfile, class_names):
         f"{outfile}.eps", dpi=350, format="eps", bbox_inches="tight",
     )
     plt.savefig(
-        f"{outfile}.png", dpi=400, format="png", bbox_inches="tight",
+        f"{outfile}.png", dpi=100, format="png", bbox_inches="tight",
     )
     plt.close()
 
@@ -663,7 +663,7 @@ def plot_metric(metric, combined_scores, outfile):
     fig.delaxes(axes[-1])
     plt.tight_layout()
     plt.savefig(f"{outfile}.eps", dpi=350, format="eps")
-    plt.savefig(f"{outfile}.png", dpi=400, format="png")
+    plt.savefig(f"{outfile}.png", dpi=100, format="png")
     plt.close()
 
 
@@ -815,7 +815,7 @@ def get_sub_shap_plot(sub_shap_dict, outfile, title):
 
     plt.tight_layout()
     plt.savefig(f"{outfile}.eps", dpi=350, format="eps")
-    plt.savefig(f"{outfile}.png", dpi=400, format="png")
+    plt.savefig(f"{outfile}.png", dpi=100, format="png")
     plt.close()
 
 
@@ -845,8 +845,10 @@ def combine_plots_vertical(png_filenames, outfile):
     for img in imgs:
         combined.paste(img, (0, y_offset))
         y_offset += img.height
-    for ext in ["png", "eps"]:
-        combined.save(f"{outfile}.{ext}", dpi=(400, 400))
+    #for ext in ["png", "eps"]:
+        #combined.save(f"{outfile}.{ext}", dpi=(400, 400))
+    combined.save(f"{outfile}.eps", dpi=(400, 400))
+    combined.save(f"{outfile}.png", dpi=(100, 100))
 
 
 def combine_plots_square(png_filenames, outfile):
@@ -879,8 +881,10 @@ def combine_plots_square(png_filenames, outfile):
             x_offset = 0
             y_offset += img.height
 
-    for ext in ["png", "eps"]:
-        combined.save(f"{outfile}.{ext}", dpi=(400, 400))
+    #for ext in ["png", "eps"]:
+    #    combined.save(f"{outfile}.{ext}", dpi=(400, 400))
+    combined.save(f"{outfile}.eps", dpi=(400, 400))
+    combined.save(f"{outfile}.png", dpi=(100, 100))
 
 
 def plot_s1_shap_vals(selected_model_dirs, outdir):
@@ -1083,7 +1087,7 @@ def plot_cls_col_shap_plot(cls_shap_vals, colname, outfile, title=None):
 
     main_ax.tick_params(labelsize=10)
     plt.savefig(f"{outfile}.eps", dpi=350, format="eps")
-    plt.savefig(f"{outfile}.png", dpi=350, format="png")
+    plt.savefig(f"{outfile}.png", dpi=300, format="png")
     plt.close()
 
 
