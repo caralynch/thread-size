@@ -209,6 +209,8 @@ def main():
     ap.add_argument(
         "--debug", action="store_true", help="Run the script in debug mode."
     )
+    ap.add_argument("--balanced", action="store_true", help="Run the models for balanced class weights.")
+
     ap.add_argument(
         "-nc", "--no-cal", action="store_true", help="Deactivate model calibration."
     )
@@ -231,7 +233,7 @@ def main():
         help="Number of CV splits. Defaults to 5, or 2 in debug mode.",
     )
 
-    ap.add_argument("--params", help="Tuned model params file (jl).")
+    ap.add_argument("--params", help="Tuned model params file (jl).", default=None)
 
     ap.add_argument(
         "--cal",
@@ -263,7 +265,12 @@ def main():
     if args.debug:
         debug = True
         print("[INFO] DEBUG MODE ENGAGED")
-
+    balanced = False
+    if args.balanced:
+        class_weights = "balanced"
+        balanced = True
+    print(f"[INFO] Loading tuning params")
+    params = joblib.load(args.params)
     calibrate = True
     if args.no_cal:
         calibrate = False
@@ -298,9 +305,6 @@ def main():
     print(f"[INFO] Loading training data.")
     X = pd.read_parquet(args.train_X)
     y = pd.read_parquet(args.train_y)[args.y_col]
-
-    print(f"[INFO] Loading tuning params")
-    params = joblib.load(args.params)
 
     # run data for outfile
     model_info = {
@@ -337,7 +341,7 @@ def main():
             config = params[n_feats]
             print(f"[INFO][{fold + 1}/{args.splits}][{n_feats} feats]")
             x_cols = config["features"]
-            cw = config["final_class_weights"]
+            cw = config["final_class_weights"] if not balanced else class_weights
             config["final_n_features"] = n_feats
             bins = config["bins"]
 

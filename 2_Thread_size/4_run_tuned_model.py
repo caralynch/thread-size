@@ -285,6 +285,8 @@ def main():
 
     ap.add_argument("--params", help="Tuned model params file (jl).")
 
+    ap.add_argument("--balanced", action="store_true", help="Run the models for balanced class weights.")
+
     ap.add_argument("--tfidf", help="TF-IDF model.")
 
     ap.add_argument("--svd", help="SVD model.")
@@ -381,6 +383,10 @@ def main():
     else:
         args.n_bs = int(args.n_bs)
 
+    balanced = False
+    if args.balanced:
+        class_weights = "balanced"
+        balanced = True
     if not os.path.isfile(args.params):
         raise FileNotFoundError(f"[ERROR] Model params file not found: {args.params}")
 
@@ -397,8 +403,9 @@ def main():
     y_train_data = pd.read_parquet(args.train_y)[args.y_col]
     y_test_data = pd.read_parquet(args.test_y)[args.y_col]
 
-    print(f"[INFO] Loading tuned model params from {args.params}.")
-    params = joblib.load(args.params)
+    if not balanced:
+        print(f"[INFO] Loading tuned model params from {args.params}.")
+        params = joblib.load(args.params)
 
     # run data for outfile
     model_info = {
@@ -482,7 +489,7 @@ def main():
         current_scores = {}
 
         x_cols = config["features"]
-        cw = config["final_class_weights"]
+        cw = config["final_class_weights"] if not balanced else class_weights
         if y_test_data.max() > y_train_data.max():
             # have final bin edge be adjusted if test data has larger bin size
             config["bins"][-1] = y_test_data.max() + 1e-3
