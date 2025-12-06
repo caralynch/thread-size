@@ -848,7 +848,13 @@ def combine_plots_vertical(png_filenames, outfile):
     #for ext in ["png", "eps"]:
         #combined.save(f"{outfile}.{ext}", dpi=(400, 400))
     combined.save(f"{outfile}.eps", dpi=(400, 400))
-    combined.save(f"{outfile}.png", dpi=(100, 100))
+
+    # pngs smaller for easy viewing
+    scale = 0.4
+    new_size = (int(combined.width * scale), int(combined.height * scale))
+    combined_small = combined.resize(new_size, Image.LANCZOS)
+
+    combined_small.save(f"{outfile}.png")
 
 
 def combine_plots_square(png_filenames, outfile):
@@ -884,7 +890,13 @@ def combine_plots_square(png_filenames, outfile):
     #for ext in ["png", "eps"]:
     #    combined.save(f"{outfile}.{ext}", dpi=(400, 400))
     combined.save(f"{outfile}.eps", dpi=(400, 400))
-    combined.save(f"{outfile}.png", dpi=(100, 100))
+
+    # pngs smaller for easy viewing
+    scale = 0.4
+    new_size = (int(combined.width * scale), int(combined.height * scale))
+    combined_small = combined.resize(new_size, Image.LANCZOS)
+
+    combined_small.save(f"{outfile}.png")
 
 
 def plot_s1_shap_vals(selected_model_dirs, outdir):
