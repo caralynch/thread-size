@@ -1,6 +1,6 @@
 #!/bin/bash -l
 # ===== SGE resource requests =====
-#$ -l h_rt=48:00:00           # wallclock limit
+#$ -l h_rt=24:00:00           # wallclock limit
 #$ -l mem=8G                  # RAM per core (8G x 8 cores = 64G total)
 #$ -l tmpfs=400G              # fast local scratch for intermediate files
 #$ -pe smp 8                  # 8 CPU cores for parallel processing
