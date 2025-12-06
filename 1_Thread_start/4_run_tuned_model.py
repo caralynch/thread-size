@@ -4,29 +4,57 @@
 """
 Stage 1.4 – final evaluation of tuned thread-start classifier.
 
-This script:
+This script evaluates the binary Stage 1 models that predict whether a post
+starts a discussion (thread started vs stalled). It takes as input the tuned
+hyperparameters and class weights from the Stage 1 tuning pipeline and
+produces out-of-fold (OOF) and test-set performance metrics, diagnostic
+plots, and artefacts for downstream analysis.
 
-    * Loads tuned LightGBM hyperparameters and class weights per feature subset
-      (n_feats) from the Stage 1 tuning pipeline (params_post_hyperparam_tuning.jl
-      from Stage 1.3).
-    * Loads train/test feature matrices (X_train, X_test) and log thread-size
-      targets, then binarises them to "Stalled" vs "Started" based on a
-      log-size threshold:
+For each feature subset size n_feats, the script:
+
+    * Loads tuned LightGBM hyperparameters and class weights from
+      params_post_hyperparam_tuning.jl (Stage 1.3).
+
+    * Loads train/test feature matrices (X_train, X_test) and the continuous
+      log-thread-size targets, then binarises the target to "Stalled" vs
+      "Started" using a log-size threshold:
           y = 1  ⇔  log_thread_size > y_thresh  (thread started)
           y = 0  ⇔  log_thread_size ≤ y_thresh  (thread stalled).
 
-For each n_feats configuration:
-    - Trains a model under StratifiedKFold CV to obtain out-of-fold (OOF)
-      predicted probabilities on the training data.
-    - Within each fold, splits off a holdout subset to optimise a single
-      decision threshold on the chosen scorer (MCC, F-beta, etc.).
-    - Optionally calibrates probabilities via isotonic regression.
-    - Trains a final classifier on the full training set and evaluates on
-      the held-out test set.
-    - Computes ROC and precision–recall curves, bootstrap confidence
-      intervals for key metrics, confusion matrices, calibration curves,
-      SVD component word lists (if present), and SHAP-based feature
-      importance summaries.
+    * Runs a StratifiedKFold cross-validation loop on X_train to obtain
+      out-of-fold predicted probabilities:
+        - Within each fold, the fold training split is further divided into
+          model-training and threshold-calibration subsets, and (optionally)
+          a separate calibration subset for probability calibration.
+        - A LightGBM classifier is fitted using the tuned hyperparameters
+          and class weights.
+        - If enabled, predicted probabilities are calibrated via isotonic
+          regression using CalibratedClassifierCV.
+        - On the threshold-calibration subset, an exhaustive 1-D grid search
+          over probability thresholds in [0, 1] is performed to find the
+          scalar threshold that maximises the chosen scorer (e.g. MCC).
+        - The resulting hard predictions on the validation split are stored
+          together with the corresponding probabilities.
+
+      The per-fold optimal thresholds are averaged to yield a single scalar
+      decision threshold per n_feats, which is then applied to the OOF
+      probabilities to obtain OOF class predictions.
+
+    * Trains a final classifier on the full training data with the tuned
+      hyperparameters and class weights, optionally calibrates its output
+      probabilities, and generates predicted probabilities and hard class
+      predictions for the held-out test set using the cross-validated
+      decision threshold.
+
+    * Computes a rich set of diagnostic quantities for both OOF and test
+      predictions, including:
+        - overall metrics (ROC AUC, MCC, F1, balanced accuracy, per-class
+          precision and recall),
+        - bootstrap 95% confidence intervals for all metrics,
+        - confusion matrices with bootstrap summaries,
+        - calibration curves,
+        - SHAP-based feature importance summaries, and
+        - SVD component word tables when SVD-derived features are present.
 
 Outputs (per n_feats)
 ---------------------
@@ -35,33 +63,51 @@ For each feature-count setting n_feats, outputs are written under:
     {outdir}/model_{n_feats}/
 
 including:
-    - `test_data_results.xlsx`:
-        model_info, configuration, test-set performance, hyperparameters,
-        per-threshold reports, SHAP importance, and SVD word tables (if used).
-    - `model_data/`:
-        joblib artefacts:
-            * OOF and test predictions,
-            * confusion matrices,
-            * calibrated models,
-            * SHAP explainer and SHAP values,
-            * any additional diagnostics.
+
+    - test_data_results.xlsx
+        A per-model workbook containing:
+            * model_info (arguments, library versions, runtime)
+            * tuned model parameters and class weights
+            * OOF and test performance metrics
+            * classification reports
+            * tuned scalar decision threshold
+            * SHAP feature importance summaries
+            * SVD component word tables (if applicable).
+
+    - model_data/
+        Joblib artefacts and supporting data:
+            * fitted final classifier (and calibrated wrapper, if used)
+            * X_train, X_test, y_train, y_test
+            * OOF and test predictions and probabilities
+            * confusion matrices and bootstrap summaries
+            * SHAP explainer and SHAP values
+            * calibration-curve inputs.
 
 Run-level outputs (across n_feats)
 ----------------------------------
 Written directly to --outdir:
 
     - combined_scores.jl
-        joblib dict of OOF/test metrics and thresholds across n_feats.
-    - stage1_model_summaries.xlsx
-        model_info plus per-n_feats summary sheets for metrics and reports.
-    - thread_start_final_model_params.jl
-        dict with:
-            * "params": params_post_hyperparam_tuning.jl content,
-            * "info"  : model_info.
+        Joblib dict of OOF/test metrics (with bootstrap CIs) and the
+        corresponding thresholds across all n_feats.
 
-This script is intended as the final evaluation and figure-artefact generator
-for Stage 1. Higher-level “paper-ready” plots and tables that span multiple
-subreddits are produced by separate make_outputs scripts.
+    - evaluation.xlsx
+        Excel workbook with:
+            * model_info (run metadata)
+            * combined metrics for OOF and test predictions vs n_feats
+            * concatenated parameter, hyperparameter, report and SHAP
+              summary tables for all models.
+
+    - thread_start_final_model_params.jl
+        Joblib dict containing:
+            * "params": the final configuration dictionary for each n_feats
+              (including class weights, decision threshold, and selected
+              features),
+            * "info"  : run-level metadata (arguments, versions, runtime).
+
+This script is intended as the final evaluation and artefact generator for
+Stage 1. Higher-level publication plots and tables that span subreddits and
+feature-count settings are produced by separate make_outputs scripts.
 """
 
 import sys
@@ -81,7 +127,6 @@ from functools import partial
 import pandas as pd
 import numpy as np
 import lightgbm as lgb
-from scipy.optimize import minimize_scalar
 import shap
 
 import matplotlib
@@ -170,6 +215,61 @@ def ci(arr):
     arr = np.array(arr)
     arr = arr[~np.isnan(arr)]  # exclude NaNs
     return np.percentile(arr, [2.5, 97.5])
+
+def tune_threshold_grid(proba, y_true, scorer=matthews_corrcoef, grid=None):
+    """
+    Perform exhaustive 1-D grid search to identify the probability threshold
+    that maximises the classification performance on a calibration subset.
+
+    Parameters
+    ----------
+    proba : array-like of shape (n_samples,)
+        Predicted positive-class probabilities for the calibration subset.
+        These probabilities must come from a model fitted *only* on the
+        training portion of the fold (i.e., not on the threshold-calibration
+        or evaluation subsets).
+
+    y_true : array-like of shape (n_samples,)
+        Ground-truth binary labels for the calibration subset.
+
+    scorer : callable
+        A scoring function of the form scorer(y_true, y_pred) returning a
+        scalar performance metric (e.g. Matthews correlation coefficient,
+        F1-score, balanced accuracy). Higher scores are assumed better.
+
+    grid : array-like of floats in [0, 1], optional
+        Candidate thresholds to evaluate. If None, a default grid of
+        1001 points (step size 0.001) on [0, 1] is used. The grid need not
+        be uniformly spaced.
+
+    Returns
+    -------
+    best_threshold : float
+        The threshold in the provided grid that maximises the scorer.
+
+    best_score : float
+        The maximal scorer value achieved among all thresholds in the grid.
+
+    Notes
+    -----
+    Unlike continuous optimisers, this method is robust for metrics such as
+    MCC whose values change only at probability cut points. The function does
+    not assume differentiability or smoothness of the objective. It provides a
+    transparent and reproducible way to tune decision thresholds within each
+    fold of cross-validation.
+    """
+    if grid is None:
+        grid = np.linspace(0.0, 1.0, 1001)  # step = 0.001
+
+    best_score = -np.inf
+    best_t = 0.5
+    for t in grid:
+        preds = (proba >= t).astype(int)
+        score = scorer(y_true, preds)
+        if score > best_score:
+            best_score = score
+            best_t = t
+    return best_t, best_score
 
 
 def main():
@@ -269,10 +369,6 @@ def main():
             f"[ERROR] Invalid scorer '{args.scorer}'. "
             f"Must be one of {list(SCORERS.keys())} or their aliases."
         )
-
-    def neg_score(threshold, y_proba, y_true):
-        y_pred = (y_proba >= threshold).astype(int)
-        return -SCORERS[args.scorer](y_true, y_pred)
 
     if str(args.subreddit).lower() not in LABEL_LOOKUP:
         print(
@@ -458,15 +554,12 @@ def main():
 
             oof_probas[val_idx] = proba
             print(
-                f"[INFO][{n_feats} feats][{i}/{args.splits}] Using minimize_scalar to get threshold"
+                f"[INFO][{n_feats} feats][{i}/{args.splits}] "
+                "Tuning scalar threshold by grid search"
             )
-            result = minimize_scalar(
-                neg_score,
-                bounds=(0, 1),
-                method="bounded",
-                args=(calib_proba, y_thresh_calib),
-            )
-            thresholds.append(result.x)
+
+            best_thresh, _ = tune_threshold_grid(calib_proba, y_thresh_calib, scorer=SCORERS[args.scorer])
+            thresholds.append(best_thresh)
 
             i += 1
 
@@ -491,7 +584,7 @@ def main():
             test_proba = calibrated_final.predict_proba(X_test[x_cols])[:, 1]
         else:
             test_proba = final_clf.predict_proba(X_test[x_cols])[:, 1]
-        test_pred = (test_proba > thresh).astype(int)
+        test_pred = (test_proba >= thresh).astype(int)
 
         y_probas[n_feats] = test_proba
         y_preds[n_feats] = test_pred
