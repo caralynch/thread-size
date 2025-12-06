@@ -5,9 +5,9 @@
 Stage 2.4 – final evaluation of tuned thread-size classifier.
 
 This script evaluates multiclass LightGBM models for predicting discretised
-thread size (e.g. stalled, small, medium, large) using tuned hyperparameters
-and bin definitions from the Stage 2 tuning pipeline. For each feature subset
-size (n_feats), it:
+thread size (e.g. stalled, small, medium, large) using tuned hyperparameters,
+class weights and bin definitions from the Stage 2 tuning pipeline. For each
+feature subset size (n_feats), it:
 
     * Loads training and test feature matrices and continuous log thread size
       targets, then discretises them into K ordinal classes using fixed bin
@@ -15,26 +15,21 @@ size (n_feats), it:
 
     * Runs an outer StratifiedKFold cross-validation loop on the training data
       to obtain out-of-fold (OOF) predicted probabilities. Within each fold:
-        - Splits the fold training set into model-training and threshold-
-          calibration subsets, and optionally a separate calibration subset for
-          probability calibration.
+        - Splits the fold training set into model-training and, optionally,
+          a separate calibration subset for probability calibration.
         - Fits a multiclass LightGBM classifier with fixed class weights and
           tuned tree hyperparameters.
-        - Optionally calibrates the model probabilities using sigmoid
-          regression (CalibratedClassifierCV).
-        - Optimises a vector of per-class probability thresholds using
-          scipy.optimize.minimize to maximise a chosen scorer (MCC, macro F1,
-          balanced accuracy, etc.) on the threshold-calibration subset.
+        - Optionally calibrates the model probabilities using sigmoid or
+          isotonic regression (CalibratedClassifierCV).
+        - Stores predicted class probabilities on the held-out fold.
 
-    * Aggregates the per-fold optimal thresholds by averaging across folds to
-      obtain a single set of class-wise thresholds per n_feats, and uses these
-      to:
-        - derive OOF hard class predictions from OOF probabilities, and
-        - derive test-set hard predictions from a final model trained on the
-          full training data (with optional recalibration).
+    * Derives OOF hard class predictions by taking the argmax over the (optionally
+      calibrated) OOF class probabilities, and similarly obtains hard predictions
+      for the test set from a final model trained on the full training data
+      (with optional recalibration).
 
-    * Computes a rich set of performance metrics on both OOF and test
-      predictions, including:
+    * Computes a rich set of performance metrics on both OOF and test predictions,
+      including:
         - global metrics (MCC, macro F1, balanced accuracy, macro precision,
           macro recall),
         - per-class precision and recall,
@@ -66,7 +61,7 @@ Inputs
                              * "bins"
                              * "final_class_weights"
                              * "best_hyperparams"
-- --classes            : Number of ordinal classes (2, 3, or 4).
+- --classes            : Number of ordinal classes (e.g. 3 or 4).
 - --scorer             : Primary evaluation metric (e.g. MCC).
 - --rs                 : Random seed for CV, bootstrapping, and LightGBM.
 
@@ -100,7 +95,6 @@ Run-level (across n_feats, written to --outdir):
         Excel workbook with combined summary tables for all n_feats:
             * global metrics
             * per-class metrics
-            * threshold information
             * model_info.
 
 Reproducibility
@@ -140,7 +134,6 @@ from sklearn.metrics import (
     precision_score,
 )
 from sklearn.model_selection import StratifiedKFold, train_test_split
-from scipy.optimize import minimize
 import shap
 
 import matplotlib
@@ -254,37 +247,6 @@ def ci(arr):
     return np.percentile(arr, [2.5, 97.5])
 
 
-def get_preds(thresholds, y_probas):
-    """
-    Convert per-class predicted probabilities into hard class labels using
-    class-specific probability thresholds.
-
-    For each sample, probabilities below the corresponding class threshold are
-    masked out (set to -1). If at least one class passes its threshold, the
-    predicted class is the argmax among the passing classes; otherwise, the
-    argmax over the original probability vector is used.
-
-    Parameters
-    ----------
-    thresholds : array-like of shape (n_classes,)
-        Per-class probability thresholds in [0, 1].
-    y_probas : array-like of shape (n_samples, n_classes)
-        Predicted class probabilities.
-
-    Returns
-    -------
-    list of int
-        Predicted class indices for each sample.
-    """
-    preds = []
-    for row in y_probas:
-        passed = [
-            row[i] if row[i] >= thresholds[i] else -1 for i in range(len(thresholds))
-        ]
-        preds.append(np.argmax(passed) if max(passed) != -1 else np.argmax(row))
-    return preds
-
-
 def main():
     """
     Main entry point for Stage 2 final model evaluation.
@@ -392,10 +354,6 @@ def main():
             f"[ERROR] Invalid scorer '{args.scorer}'. "
             f"Must be one of {list(SCORERS.keys())} or their aliases."
         )
-
-    def neg_score(thresholds, y_probas, y_true):
-        preds = get_preds(thresholds, y_probas)
-        return -SCORERS[args.scorer](y_true, preds)
 
     if str(args.subreddit).lower() not in LABEL_LOOKUP:
         print(
@@ -525,8 +483,6 @@ def main():
 
         x_cols = config["features"]
         cw = config["final_class_weights"]
-        initial_guess = [0.4,0.5,0.6,0.7]
-        bounds = [(0.0, 1.0)] * args.classes
         if y_test_data.max() > y_train_data.max():
             # have final bin edge be adjusted if test data has larger bin size
             config["bins"][-1] = y_test_data.max() + 1e-3
@@ -570,20 +526,10 @@ def main():
         fold_idx = 1
 
         oof_probas = np.zeros((len(X_tr), args.classes))
-        thresholds = []
         for train_idx, val_idx in outer_cv.split(X_tr, y_tr):
             print(f"[INFO][{n_feats} feats] Fold {fold_idx}/{args.splits}")
             X_fold_tr, X_fold_val = X_tr.iloc[train_idx], X_tr.iloc[val_idx]
             y_fold_tr, y_fold_val = y_tr.iloc[train_idx], y_tr.iloc[val_idx]
-
-            # Split fold training into model-training and threshold-calibration sets
-            X_fold_tr, X_thresh_calib, y_fold_tr, y_thresh_calib = train_test_split(
-                X_fold_tr,
-                y_fold_tr,
-                train_size=0.8,
-                stratify=y_fold_tr,  # preserve class balance within the fold
-                random_state=args.rs,
-            )
 
             # Optionally split further for probability calibration
             if calibrate:
@@ -613,34 +559,19 @@ def main():
                 )
                 calibrated_clf.fit(X_calib, y_calib)
                 proba = calibrated_clf.predict_proba(X_fold_val)
-                calib_proba = calibrated_clf.predict_proba(X_thresh_calib)
             else:
                 proba = model.predict_proba(X_fold_val)
-                calib_proba = model.predict_proba(X_thresh_calib)
 
             oof_probas[val_idx] = proba
             print(
                 f"[INFO][{n_feats} feats][{fold_idx}/{args.splits}] "
                 "Optimising per-class thresholds with L-BFGS-B"
             )
-            result = minimize(
-                neg_score,
-                x0=initial_guess,
-                bounds=bounds,
-                args=(calib_proba, y_thresh_calib),
-                method="L-BFGS-B",
-            )
-            thresholds.append(result.x)
             fold_idx += 1
 
-        print(f"[INFO][{n_feats} feats] Averaging thresholds over folds")
 
-        thresholds_final = []
-        for i in range(args.classes):
-            thresholds_final.append(np.mean([t[i] for t in thresholds]))
-        config["model_threshold"] = thresholds_final
+        oof_preds = np.argmax(oof_probas, axis=1)
 
-        oof_preds = get_preds(thresholds_final, oof_probas)
 
         print(f"[INFO][{n_feats} feats] Creating and fitting model")
         model = lgb.LGBMClassifier(
@@ -664,10 +595,11 @@ def main():
 
             print(f"[INFO][{n_feats} feats] Getting test set predicted probabilities")
             y_proba = calibrated.predict_proba(X_te)
+            y_pred = calibrated.predict(X_te)
         else:
             print(f"[INFO][{n_feats} feats] Getting test set predicted probabilities")
             y_proba = model.predict_proba(X_te)
-        y_pred = get_preds(thresholds_final, y_proba)
+            y_pred = model.predict(X_te)
 
         y_pred_dict[n_feats] = {"test": y_pred, "oof": oof_preds}
 
