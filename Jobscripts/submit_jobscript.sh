@@ -12,11 +12,6 @@ if [ ! -f "$JOBSCRIPT" ]; then
     exit 1
 fi
 
-if [ ! -f "$SUFFIX" ]; then
-    echo "ERROR: Jobscript not found: $SUFFIX"
-    exit 1
-fi
-
 for SUB in "${SUBREDDITS[@]}"; do
     echo "Submitting thread start job for: $SUB"
 
