@@ -71,19 +71,19 @@ run_step () {
 
 # ===== Stage 1.2 – feature + weight + threshold tuning =====
 TUNING_OUTDIR="${OUTDIR}/2_tuning"
-# echo "===================================="
-# echo "[INFO] Stage 2.2 – feature + weight + threshold tuning"
-# echo "[INFO] Output directory: ${TUNING_OUTDIR}"
-# echo "===================================="
+echo "===================================="
+echo "[INFO] Stage 2.2 – feature + weight + threshold tuning"
+echo "[INFO] Output directory: ${TUNING_OUTDIR}"
+echo "===================================="
 
-# mkdir -p "${TUNING_OUTDIR}"
+mkdir -p "${TUNING_OUTDIR}"
 
-# run_step "${SUBREDDIT}_tuning" "${SCRIPT_DIR}/2_tuning.py" \
-#   --subreddit "${SUBREDDIT}" \
-#   --outdir "${TUNING_OUTDIR}" \
-#   --train_X "${TRAIN_X}" \
-#   --train_y "${TRAIN_Y}" \
-#   --feats "${MAX_FEATS}"
+run_step "${SUBREDDIT}_tuning" "${SCRIPT_DIR}/2_tuning.py" \
+  --subreddit "${SUBREDDIT}" \
+  --outdir "${TUNING_OUTDIR}" \
+  --train_X "${TRAIN_X}" \
+  --train_y "${TRAIN_Y}" \
+  --feats "${MAX_FEATS}"
 
 TUNED_PARAMS="${TUNING_OUTDIR}/tuned_params.jl"
 if [ ! -f "${TUNED_PARAMS}" ]; then
@@ -108,6 +108,7 @@ run_step "${SUBREDDIT}_hyperparam_tuning" "${SCRIPT_DIR}/3_hyperparameter_tuning
   --train_X "${TRAIN_X}" \
   --train_y "${TRAIN_Y}" \
   --params "${TUNED_PARAMS}"
+  --trials 150
 
 HPARAM_PARAMS="${HPT_OUTDIR}/params_post_hyperparam_tuning.jl"
 if [ ! -f "${HPARAM_PARAMS}" ]; then
