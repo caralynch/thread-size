@@ -52,7 +52,10 @@ Threshold tuning
     * evaluation subset.
 - A scalar optimiser finds the threshold in [0, 1] that maximises the primary
   scorer (via a negative scoring wrapper).
-- Metrics before and after threshold tuning are recorded.
+- Metrics with a fixed 0.5 probability threshold and with the tuned threshold
+  are recorded for the same models and validation splits, allowing a direct
+  comparison of the impact of threshold optimisation.
+
 
 Outputs
 -------
@@ -589,6 +592,7 @@ def main():
 
     foldwise_thresholds = {}
     foldwise_score_thresholds = {}
+    foldwise_score_baseline = {}
     print("[INFO] Training data with optimized model")
     for fold, (cal_idx, val_idx) in enumerate(outer_cv.split(X, y)):
         print(f"[INFO] [Fold {fold + 1}]")
@@ -625,26 +629,31 @@ def main():
                     clf, method="isotonic", cv="prefit"
                 )
                 calibrated_clf.fit(X_calib[top_feats], y_calib)
-                proba = calibrated_clf.predict_proba(X_thresh_cal[top_feats])[:, 1]
+                proba_cal = calibrated_clf.predict_proba(X_thresh_cal[top_feats])[:, 1]
 
             else:
-                proba = clf.predict_proba(X_thresh_cal[top_feats])[:, 1]
+                proba_cal = clf.predict_proba(X_thresh_cal[top_feats])[:, 1]
 
             result = minimize_scalar(
-                neg_scorer, bounds=(0, 1), method="bounded", args=(proba, y_thresh_cal)
+                neg_scorer, bounds=(0, 1), method="bounded", args=(proba_cal, y_thresh_cal)
             )
             best_thresh = result.x
             foldwise_thresholds[n_feats].append(best_thresh)
 
-            proba = (
+            proba_val = (
                 calibrated_clf.predict_proba(X_val[top_feats])[:, 1]
                 if calibrate
                 else clf.predict_proba(X_val[top_feats])[:, 1]
             )
-            preds = (proba >= best_thresh).astype(int)
-            foldwise_score_thresholds[n_feats].append(
-                SCORERS[args.scorer](y_val, preds)
-            )
+            # baseline: fixed 0.5 threshold
+            baseline_preds = (proba_val >= 0.5).astype(int)
+            baseline_score = SCORERS[args.scorer](y_val, baseline_preds)
+            foldwise_score_baseline[n_feats].append(baseline_score)
+            # after optimisation: tuned threshold
+            tuned_preds = (proba_val >= best_thresh).astype(int)
+            tuned_score = SCORERS[args.scorer](y_val, tuned_preds)
+            foldwise_score_thresholds[n_feats].append(tuned_score)
+
 
     params = {}
     for n_feats in model_feats:
@@ -652,12 +661,18 @@ def main():
         class_weight = class_weights[n_feats]
         params[n_feats] = {
             "n_feats": n_feats,
-            f"{args.scorer}_before_thresh": np.mean(foldwise_best_scores[n_feats]),
+            # baseline: fixed 0.5 threshold on the same model/split
+            f"{args.scorer}_before_thresh": np.mean(foldwise_score_baseline[n_feats]),
+            # tuned scalar probability threshold
             "final_threshold": np.mean(foldwise_thresholds[n_feats]),
-            f"{args.scorer}_after_thresh": np.mean(foldwise_score_thresholds[n_feats]),
+            # after: optimised threshold on the same model/split
+            f"{args.scorer}_after_thresh": np.mean(
+                foldwise_score_thresholds[n_feats]
+            ),
             "final_class_weights": class_weight,
             "features": ranked_features[:n_feats],
         }
+
 
     end = dt.datetime.now()
 
