@@ -2,7 +2,7 @@
 # Copyright (c) 2025 Cara Lynch
 # See the LICENSE file for details.
 """
-Stage 2.2 – class-weight and threshold tuning for thread-size classification.
+Stage 2.2 – class-weight tuning for thread-size classification.
 
 This script implements the second tuning stage for the thread-size (Stage 2)
 classifier. Given:
@@ -10,12 +10,7 @@ classifier. Given:
     * a fixed discretisation of log(thread_size) into K ordinal bins, and
     * a ranked list of feature subsets of size n_feats,
 
-it searches over:
-
-    (i)  class-weighting schemes (balanced vs. custom per-class weights), and
-    (ii) per-class decision thresholds applied to predicted class probabilities,
-
-to maximise the Matthews correlation coefficient (MCC) under stratified
+it searches over class-weighting schemes (balanced vs. custom per-class weights) to maximise the Matthews correlation coefficient (MCC) under stratified
 cross-validation.
 
 High-level procedure
@@ -35,12 +30,6 @@ High-level procedure
           - Evaluate MCC (and macro F1) on the validation subset.
 4. Aggregate best parameters across folds for each n_feats by taking the mode
    of categorical / integer parameters and the mean of numeric parameters.
-5. With aggregated class weights fixed, run a second CV loop to:
-     a. Refit models on a calibration/validation split.
-     b. Optionally apply sigmoid calibration to predicted probabilities.
-     c. Optimise a vector of per-class thresholds by maximising MCC via
-        L-BFGS-B over [0, 1]^K using the calibration subset.
-     d. Evaluate MCC on the validation subset using the tuned thresholds.
 
 Outputs
 -------
@@ -51,9 +40,7 @@ Written to --outdir:
           - "features"            : top-n_feats features,
           - "bins"                : list of bin edges used for discretisation,
           - "final_class_weights" : aggregated per-class weights,
-          - "final_threshold"     : per-class decision thresholds,
-          - "mcc_before_thresh"   : mean MCC before threshold tuning,
-          - "mcc_after_thresh"    : mean MCC after threshold tuning.
+          - "mean_mcc"            : mean MCC across folds.
       This file is used as --params input to Stage 2.3.
 
   * optuna_params.jl
@@ -74,7 +61,7 @@ Written to --outdir:
           - "params"               (final per-n_feats configs)
           - "all_configs"          (all trials)
           - "feature_importances"  (foldwise + aggregated importances)
-          - "flattened_features"   (feature ranks + final weights/thresholds).
+          - "flattened_features"   (feature ranks + final weights).
 
 Reproducibility
 ---------------
@@ -114,7 +101,6 @@ from sklearn.metrics import (
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import StratifiedKFold, train_test_split
 from sklearn.utils import compute_class_weight
-from scipy.optimize import minimize
 
 import optuna
 import optuna.visualization as vis
@@ -168,62 +154,9 @@ def check_bin_balance(y_bins):
     proportions = counts / counts.sum()
     return proportions
 
-
-def get_preds(thresholds, y_probas):
-    """
-    Convert multiclass probabilities and per-class thresholds into hard labels.
-
-    For each sample, probabilities below their class-specific thresholds are
-    masked; the predicted class is then:
-        - the argmax among classes that pass their threshold, or
-        - the argmax over all classes if none pass.
-
-    Parameters
-    ----------
-    thresholds : array-like of shape (n_classes,)
-        Per-class probability thresholds in [0, 1].
-    y_probas : array-like of shape (n_samples, n_classes)
-        Predicted class probabilities.
-
-    Returns
-    -------
-    list of int
-        Predicted class indices for each sample.
-    """
-    preds = []
-    for row in y_probas:
-        passed = [
-            row[i] if row[i] >= thresholds[i] else -1 for i in range(len(thresholds))
-        ]
-        preds.append(np.argmax(passed) if max(passed) != -1 else np.argmax(row))
-    return preds
-
-
-def neg_mcc(thresholds, y_probas, y_true):
-    """
-    Negative MCC objective for threshold optimisation.
-
-    Parameters
-    ----------
-    thresholds : array-like of shape (n_classes,)
-        Per-class probability thresholds.
-    y_probas : array-like of shape (n_samples, n_classes)
-        Predicted class probabilities.
-    y_true : array-like of shape (n_samples,)
-        True class labels.
-
-    Returns
-    -------
-    float
-        Negative Matthews correlation coefficient.
-    """
-    preds = get_preds(thresholds, y_probas)
-    return -matthews_corrcoef(y_true, preds)
-
-
 def main():
     """
-    Main entry point for Stage 2 class weight and threshold tuning.
+    Main entry point for Stage 2 class weighttuning.
     
     Optimizes per-class weights and probability thresholds for multiclass
     thread-size prediction using Optuna and cross-validation.
@@ -385,16 +318,12 @@ def main():
 
     model_info.update(vars(args))
     model_info["cw_range"] = (1, 10) if not debug else (1, 1)
-    model_info["threshold_range"] = (0.1, 0.9) if not debug else (0.4, 0.6)
     model_info["python_version"] = sys.version
     model_info["pandas_version"] = pd.__version__
     model_info["numpy_version"] = np.__version__
     model_info["lightgbm_version"] = lgb.__version__
     model_info["sklearn_version"] = sklearn.__version__
     model_info["optuna_version"] = optuna.__version__
-
-    bounds = [(0.0, 1.0)] * args.classes
-    initial_guess = [0.5] * args.classes
 
     print("[INFO] Defining bins")
 
@@ -672,89 +601,15 @@ def main():
     joblib.dump(optuna_params, f"{args.outdir}/optuna_params.jl")
     joblib.dump(importance_dfs, f"{args.outdir}/foldwise_importances.jl")
 
-    foldwise_thresholds = {}
-    foldwise_mcc_thresholds = {}
-
-    print("[INFO] Training data on folds")
-    for fold, (cal_idx, val_idx) in enumerate(outer_cv.split(X, y_bins_for_cv)):
-        print(f"[INFO][{fold + 1}/{args.splits}]")
-        X_train, X_val = X.iloc[cal_idx], X.iloc[val_idx]
-        y_train, y_val = y_bins_for_cv.iloc[cal_idx], y_bins_for_cv.iloc[val_idx]
-
-        if calibrate:
-            X_train, X_calib, y_train, y_calib = train_test_split(
-                X_train, y_train, train_size=0.8, stratify=y_train
-            )
-
-        X_thresh_cal, X_val, y_thresh_cal, y_val = train_test_split(
-            X_val, y_val, train_size=0.5, stratify=y_val
-        )
-
-        for n_feats in model_feats:
-            print(f"[INFO][{fold + 1}/{args.splits}][{n_feats} feats]")
-            if n_feats not in foldwise_thresholds:
-                foldwise_thresholds[n_feats] = []
-                foldwise_mcc_thresholds[n_feats] = []
-            top_feats = ranked_features[:n_feats]
-            best_params = optuna_params[n_feats]["best_params"]
-            class_weight = class_weights[n_feats]
-
-            clf = lgb.LGBMClassifier(
-                objective="multiclass",
-                num_class=args.classes,
-                class_weight=class_weight,
-                random_state=args.rs,
-                verbosity=-1,
-            )
-            clf.fit(X_train[top_feats], y_train)
-
-            if calibrate:
-                calibrated_clf = CalibratedClassifierCV(
-                    clf, method=args.cal, cv="prefit"
-                )
-                calibrated_clf.fit(X_calib[top_feats], y_calib)
-                proba = calibrated_clf.predict_proba(X_thresh_cal[top_feats])
-
-            else:
-                proba = clf.predict_proba(X_thresh_cal[top_feats])
-
-            result = minimize(
-                neg_mcc,
-                x0=initial_guess,
-                bounds=bounds,
-                args=(proba, y_thresh_cal),
-                method="L-BFGS-B",
-            )
-
-            best_thresholds = result.x
-            best_mcc = -result.fun
-            foldwise_thresholds[n_feats].append(best_thresholds)
-
-            proba = (
-                calibrated_clf.predict_proba(X_val[top_feats])
-                if calibrate
-                else clf.predict_proba(X_val[top_feats])
-            )
-            preds = get_preds(best_thresholds, proba)
-            foldwise_mcc_thresholds[n_feats].append(matthews_corrcoef(y_val, preds))
 
     for n_feats in model_feats:
         best_params = optuna_params[n_feats]["best_params"]
         class_weight = class_weights[n_feats]
-        threshold_vals = []
-        threshold_stds = []
-        for i in range(args.classes):
-            class_i_threshold = [t[i] for t in foldwise_thresholds[n_feats]]
-            threshold_vals.append(np.mean(class_i_threshold))
-            threshold_stds.append(np.std(class_i_threshold))
 
         params[n_feats] = {
             "n_feats": n_feats,
             "bins": bin_edges,
-            "mcc_before_thresh": np.mean(foldwise_best_mccs[n_feats]),
-            "final_threshold": threshold_vals,
-            "threshold_stds": threshold_stds,
-            "mcc_after_thresh": np.mean(foldwise_mcc_thresholds[n_feats]),
+            "mean_mcc": np.mean(foldwise_best_mccs[n_feats]),
             "final_class_weights": class_weight,
             "features": ranked_features[:n_feats],
         }
@@ -777,7 +632,6 @@ def main():
             to_append.update(
                 {
                     "class_weights": params[n_feats]["final_class_weights"],
-                    "threshold": params[n_feats]["final_threshold"],
                 }
             )
             flat_params.append(to_append)

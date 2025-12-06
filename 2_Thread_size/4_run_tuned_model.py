@@ -525,13 +525,7 @@ def main():
 
         x_cols = config["features"]
         cw = config["final_class_weights"]
-        initial_guess = config["final_threshold"]
-        if isinstance(initial_guess, dict):
-            initial_guess = list(initial_guess.values())
-        if len(initial_guess) != args.classes:
-            raise ValueError(
-                f"[ERROR][{n_feats} feats] Initial guess is wrong length: {initial_guess}. Expected {args.classes} values."
-            )
+        initial_guess = [0.4,0.5,0.6,0.7]
         bounds = [(0.0, 1.0)] * args.classes
         if y_test_data.max() > y_train_data.max():
             # have final bin edge be adjusted if test data has larger bin size

@@ -8,7 +8,7 @@ This script refines LightGBM hyperparameters for the multiclass
 thread-size model, conditional on:
 
     * a fixed discretisation of log(thread_size) into K ordinal bins, and
-    * a fixed set of class weights and per-class decision thresholds, and
+    * a fixed set of class weights, and
     * a set of feature subsets (indexed by n_feats).
 
 Given a precomputed parameter dictionary (from the Stage 2.2 tuning script)
@@ -16,8 +16,7 @@ containing, for each n_feats:
 
     - `features`           : list of feature names to use,
     - `bins`               : bin edges for discretising log_thread_size,
-    - `final_class_weights`: LightGBM class_weight mapping,
-    - `final_threshold`    : per-class probability thresholds,
+    - `final_class_weights`: LightGBM class_weight mapping.
 
 this script:
 
@@ -31,7 +30,7 @@ this script:
          c. Runs an Optuna/TPE search over LightGBM tree hyperparameters
             (num_leaves, max_depth, learning_rate, etc.), maximising a chosen
             scorer (MCC or macro F1) computed on the evaluation split, using
-            fixed class weights and per-class thresholds.
+            fixed class weights.
     4. Aggregates per-fold best hyperparameters across folds (mode for integer
        / categorical params, mean for continuous params) to obtain a single
        configuration per n_feats.
@@ -339,7 +338,6 @@ def main():
             print(f"[INFO][{fold + 1}/{args.splits}][{n_feats} feats]")
             x_cols = config["features"]
             cw = config["final_class_weights"]
-            thresh = config["final_threshold"]
             config["final_n_features"] = n_feats
             bins = config["bins"]
 
@@ -349,17 +347,12 @@ def main():
                     f"[ERROR] For n_feats={n_feats}, len(bins)-1={len(bins)-1} "
                     f"but args.classes={args.classes}"
                 )
-            if len(thresh) != args.classes:
-                raise ValueError(
-                    f"[ERROR] For n_feats={n_feats}, len(final_threshold)={len(thresh)} "
-                    f"but args.classes={args.classes}"
-                )
 
             print(
                 f"[INFO][{fold + 1}/{args.splits}][{n_feats} feats] Selected features: {x_cols}"
             )
             print(
-                f"[INFO][{fold + 1}/{args.splits}][{n_feats} feats] Class weights: {cw}, Threshold: {thresh}"
+                f"[INFO][{fold + 1}/{args.splits}][{n_feats} feats] Class weights: {cw}"
             )
 
             # Load training data
@@ -418,18 +411,10 @@ def main():
                         clf, method=args.cal, cv="prefit"
                     )
                     calibrated_clf.fit(X_calib, y_calib)
-                    proba = calibrated_clf.predict_proba(X_eval)
+                    preds = calibrated_clf.predict(X_eval)
                 else:
-                    proba = clf.predict_proba(X_eval)
-                preds = []
-                for row in proba:
-                    passed = [
-                        row[i] if row[i] >= thresh[i] else -1
-                        for i in range(args.classes)
-                    ]
-                    preds.append(
-                        np.argmax(passed) if max(passed) != -1 else np.argmax(row)
-                    )
+                    preds = clf.predict(X_eval)
+               
 
                 score = SCORERS[args.scorer](y_eval, preds)
                 return score
