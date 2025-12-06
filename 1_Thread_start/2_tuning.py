@@ -2,87 +2,64 @@
 # Copyright (c) 2025 Cara Lynch
 # See the LICENSE file for details.
 """
-Stage 1.2 - class-weight and threshold tuning for thread-start classification.
+Stage 1 – Class-weight tuning and scalar decision-threshold optimisation
+for binary thread-start prediction.
 
-This script tunes LightGBM classifiers that predict whether a thread starts
-(thread_size > 1) using cross-validated Optuna searches over class weights,
-and then tunes a decision threshold per model to maximise a chosen metric.
+This script performs the second tuning stage for the Stage-1 (thread-start)
+classifier. For each feature subset size n_feats, the procedure is:
 
-Inputs
-------
-- --train_X : Training feature matrix (parquet).
-- --train_y : Training target data (parquet) containing --y-col.
-- --subreddit : Key in LABEL_LOOKUP (e.g. 'conspiracy', 'crypto', 'politics').
+1. Class-weight optimisation (via Optuna)
+   --------------------------------------
+   A stratified K-fold cross-validation is used. Within each fold:
+       * A LightGBM classifier with the top-n_feats features is trained.
+       * Optuna searches over the space of class-weight configurations
+         ('balanced' or custom per-class weights).
+       * The trial objective is the chosen scorer (e.g., MCC) evaluated
+         on the fold's validation split.
 
-Target construction
--------------------
-- --y-col (default: 'log_thread_size') is thresholded at --y_thresh
-  (default: log(1) == 0) to define a binary label:
-      y = 1  ⇔  log_thread_size > y_thresh  (thread started)
-      y = 0  ⇔  log_thread_size ≤ y_thresh  (thread stalled).
+   For each n_feats, the best class-weight settings are aggregated across folds
+   (mean for continuous parameters; mode for categorical parameters).
 
-Cross-validation & feature ranking
-----------------------------------
-- StratifiedKFold with --splits folds (default 5, or 2 in debug mode), using
-  a fixed random seed (--rs).
-- Within each outer fold, a LightGBM classifier is fitted with
-  class_weight="balanced" to obtain split- and gain-based feature importances;
-  these are min–max scaled and averaged to yield a combined importance score
-  per feature.
-- For each n_feats in the feature grid (from --feats or --feats-file), models
-  are restricted to the top-n_feats ranked features.
+2. Scalar probability-threshold optimisation (grid search)
+   -------------------------------------------------------
+   Given the aggregated class weights, a second CV loop refits a classifier
+   within each fold using the top-n_feats features.
 
-Optuna tuning
--------------
-- For each fold and each n_feats:
-    - An Optuna study maximises the chosen scorer (--scorer: MCC, F-beta, F1,
-      or balanced accuracy).
-    - The search space includes:
-        * class-weight type: "balanced" vs custom weighted,
-        * positive-class weight ratio cw_ratio within cw_ratio_range.
-    - If calibration is enabled (default), probabilities are calibrated via
-      isotonic regression on a held-out calibration set (50% of the val fold).
+   Each fold’s validation data is split into:
+       * a threshold-calibration subset, and
+       * an evaluation subset.
 
-Threshold tuning
-----------------
-- After aggregating best parameters and class weights across folds, models
-  are re-trained.
-- Validation data are split into:
-    * threshold-calibration subset, and
-    * evaluation subset.
-- A scalar optimiser finds the threshold in [0, 1] that maximises the primary
-  scorer (via a negative scoring wrapper).
-- Metrics with a fixed 0.5 probability threshold and with the tuned threshold
-  are recorded for the same models and validation splits, allowing a direct
-  comparison of the impact of threshold optimisation.
+   On the calibration subset, predicted probabilities are obtained, and an
+   *exhaustive 1-D grid search* over thresholds in [0, 1] (default step 0.001)
+   identifies the threshold that maximises the chosen scorer.
 
+   On the evaluation subset, two scores are computed:
+       * baseline score: fixed threshold = 0.5,
+       * tuned score: using the optimised threshold.
 
-Outputs
--------
-Written to --outdir:
+   Since both scores come from the same model and data split, they allow a
+   direct, unbiased comparison of threshold effects.
 
-- tuned_params.jl:
-    joblib dict with {"info": model_info, "params": per-n_feats configs}
-    (used as --params input to Stage 1.3).
-- optuna_params.jl:
-    cross-fold aggregated best params & scores per n_feats.
-- tuning_outputs.xlsx:
-    * model_info
-    * params (per n_feats: scores, thresholds, class weights, features)
-    * feature_importances (cross-fold importances)
-    * flattened_features (feature-by-feature)
-    * all_configs (all Optuna trial configurations).
-- optuna_fold*_convergence.png:
-    convergence plots per fold and n_feats.
+3. Outputs
+   -------
+   For each n_feats, the script stores:
+       * final_class_weights        : cross-validated class-weight configuration
+       * final_threshold            : mean tuned threshold across folds
+       * <scorer>_before_thresh     : mean baseline score (t = 0.5)
+       * <scorer>_after_thresh      : mean tuned-threshold score
+       * features                   : the top-n_feats feature subset
+       * optuna_params              : best Optuna parameters and trial scores
+
+   These outputs serve as inputs to Stage 1 hyperparameter tuning and final
+   model evaluation.
 
 Reproducibility
 ---------------
-- All randomised operations use the --rs seed (CV, Optuna sampler, splits
-  for calibration/threshold tuning).
-- Command-line arguments and library versions are stored in model_info.
-- Debug mode (--debug) reduces folds, trials, feature counts, and (optionally)
-  search ranges for quick iteration.
+All randomised components (CV splits, LightGBM training, and grid-search
+evaluation) are controlled by the provided random seed. Library versions are
+implicitly recorded via the environment.
 """
+
 
 
 import sys
@@ -101,7 +78,6 @@ from functools import partial
 import pandas as pd
 import numpy as np
 import lightgbm as lgb
-from scipy.optimize import minimize_scalar
 
 import sklearn
 from sklearn.calibration import CalibratedClassifierCV
@@ -151,6 +127,61 @@ CLASS_NAMES = {
     0: "Stalled",
     1: "Started",
 }
+
+def tune_threshold_grid(proba, y_true, scorer=matthews_corrcoef, grid=None):
+    """
+    Perform exhaustive 1-D grid search to identify the probability threshold
+    that maximises the classification performance on a calibration subset.
+
+    Parameters
+    ----------
+    y_proba : array-like of shape (n_samples,)
+        Predicted positive-class probabilities for the calibration subset.
+        These probabilities must come from a model fitted *only* on the
+        training portion of the fold (i.e., not on the threshold-calibration
+        or evaluation subsets).
+
+    y_true : array-like of shape (n_samples,)
+        Ground-truth binary labels for the calibration subset.
+
+    scorer : callable
+        A scoring function of the form scorer(y_true, y_pred) returning a
+        scalar performance metric (e.g. Matthews correlation coefficient,
+        F1-score, balanced accuracy). Higher scores are assumed better.
+
+    grid : array-like of floats in [0, 1], optional
+        Candidate thresholds to evaluate. If None, a default grid of
+        1001 points (step size 0.001) on [0, 1] is used. The grid need not
+        be uniformly spaced.
+
+    Returns
+    -------
+    best_threshold : float
+        The threshold in the provided grid that maximises the scorer.
+
+    best_score : float
+        The maximal scorer value achieved among all thresholds in the grid.
+
+    Notes
+    -----
+    Unlike continuous optimisers, this method is robust for metrics such as
+    MCC whose values change only at probability cut points. The function does
+    not assume differentiability or smoothness of the objective. It provides a
+    transparent and reproducible way to tune decision thresholds within each
+    fold of cross-validation.
+    """
+    if grid is None:
+        grid = np.linspace(0.0, 1.0, 1001)  # step = 0.001
+
+    best_score = -np.inf
+    best_t = 0.5
+    for t in grid:
+        preds = (proba >= t).astype(int)
+        score = scorer(y_true, preds)
+        if score > best_score:
+            best_score = score
+            best_t = t
+    return best_t, best_score
 
 
 def main():
@@ -564,32 +595,6 @@ def main():
     print(f"[INFO] Saving optuna parameters")
     joblib.dump(optuna_params, f"{args.outdir}/optuna_params.jl")
 
-    def neg_scorer(threshold, y_proba, y_true):
-        """
-        Negative primary score as a function of decision threshold.
-
-        Used with scipy.optimize.minimize_scalar to find the threshold in [0, 1]
-        that maximises the selected scorer (MCC, F1, F-beta, etc.) on a
-        calibration subset.
-
-        Parameters
-        ----------
-        threshold : float
-            Candidate probability threshold in [0, 1].
-        y_proba : array-like, shape (n_samples,)
-            Predicted positive-class probabilities.
-        y_true : array-like, shape (n_samples,)
-            True binary labels.
-
-        Returns
-        -------
-        float
-            Negative value of the chosen scorer at this threshold (so that
-            minimisation corresponds to maximisation).
-        """
-        y_pred = (y_proba >= threshold).astype(int)
-        return -SCORERS[args.scorer](y_true, y_pred)
-
     foldwise_thresholds = {}
     foldwise_score_thresholds = {}
     foldwise_score_baseline = {}
@@ -634,10 +639,7 @@ def main():
             else:
                 proba_cal = clf.predict_proba(X_thresh_cal[top_feats])[:, 1]
 
-            result = minimize_scalar(
-                neg_scorer, bounds=(0, 1), method="bounded", args=(proba_cal, y_thresh_cal)
-            )
-            best_thresh = result.x
+            best_thresh, _ = tune_threshold_grid(proba_cal, y_thresh_cal, scorer=SCORERS[args.scorer])
             foldwise_thresholds[n_feats].append(best_thresh)
 
             proba_val = (
@@ -665,7 +667,7 @@ def main():
             f"{args.scorer}_before_thresh": np.mean(foldwise_score_baseline[n_feats]),
             # tuned scalar probability threshold
             "final_threshold": np.mean(foldwise_thresholds[n_feats]),
-            # after: optimised threshold on the same model/split
+            # after: tuned threshold on the same model/split
             f"{args.scorer}_after_thresh": np.mean(
                 foldwise_score_thresholds[n_feats]
             ),
