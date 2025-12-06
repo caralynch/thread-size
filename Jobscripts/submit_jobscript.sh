@@ -4,6 +4,7 @@
 SUBREDDITS=("conspiracy" "crypto" "politics")
 
 JOBSCRIPT=$1
+SUFFIX=$2
 
 # Make sure the jobscript exists
 if [ ! -f "$JOBSCRIPT" ]; then
@@ -11,11 +12,16 @@ if [ ! -f "$JOBSCRIPT" ]; then
     exit 1
 fi
 
+if [ ! -f "$SUFFIX" ]; then
+    echo "ERROR: Jobscript not found: $SUFFIX"
+    exit 1
+fi
+
 for SUB in "${SUBREDDITS[@]}"; do
     echo "Submitting thread start job for: $SUB"
 
     # Submit job AND pass subreddit as the first argument
-    qsub -N ${SUB:0:3}_1 -o "${SUB:0:3}_1.out" -e "${SUB:0:3}_1.err" "$JOBSCRIPT" "$SUB"
+    qsub -N ${SUB:0:3}_${SUFFIX} -o "${SUB:0:3}_${SUFFIX}.out" -e "${SUB:0:3}_${SUFFIX}.err" "$JOBSCRIPT" "$SUB"
 
     echo ""
 done
