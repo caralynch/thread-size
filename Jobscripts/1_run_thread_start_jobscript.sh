@@ -50,7 +50,7 @@ for f in "${TRAIN_X}" "${TEST_X}" "${TRAIN_Y}" "${TEST_Y}"; do
 done
 
 # Main output directory
-OUTDIR="/home/ucabcpl/Scratch/thread_size/Outputs/1_thread_start/${SUBREDDIT}"
+OUTDIR="/home/ucabcpl/Scratch/thread_size/Outputs/1_thread_start_v2/${SUBREDDIT}"
 mkdir -p "${OUTDIR}"
 
 LOGDIR="${OUTDIR}/logs"
