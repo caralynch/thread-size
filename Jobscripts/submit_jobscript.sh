@@ -15,7 +15,7 @@ for SUB in "${SUBREDDITS[@]}"; do
     echo "Submitting thread start job for: $SUB"
 
     # Submit job AND pass subreddit as the first argument
-    qsub -N ${SUB}_1 -o "${SUB}_1.out" -e "${SUB}_1.err" "$JOBSCRIPT" "$SUB"
+    qsub -N ${SUB:0:3}_1 -o "${SUB:0:3}_1.out" -e "${SUB:0:3}_1.err" "$JOBSCRIPT" "$SUB"
 
     echo ""
 done
