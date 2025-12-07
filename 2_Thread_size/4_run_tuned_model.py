@@ -533,6 +533,7 @@ def main():
         fold_idx = 1
 
         oof_probas = np.zeros((len(X_tr), args.classes))
+        oof_preds = np.zeros(len(X_tr))
         for train_idx, val_idx in outer_cv.split(X_tr, y_tr):
             print(f"[INFO][{n_feats} feats] Fold {fold_idx}/{args.splits}")
             X_fold_tr, X_fold_val = X_tr.iloc[train_idx], X_tr.iloc[val_idx]
@@ -566,14 +567,18 @@ def main():
                 )
                 calibrated_clf.fit(X_calib, y_calib)
                 proba = calibrated_clf.predict_proba(X_fold_val)
+                preds = calibrated_clf.predict(X_fold_val)
             else:
                 proba = model.predict_proba(X_fold_val)
+                preds = model.predict(X_fold_val)
 
             oof_probas[val_idx] = proba
+            oof_preds[val_idx] = preds
+            
             fold_idx += 1
 
 
-        oof_preds = np.argmax(oof_probas, axis=1)
+        #oof_preds = np.argmax(oof_probas, axis=1)
 
 
         print(f"[INFO][{n_feats} feats] Creating and fitting model")
