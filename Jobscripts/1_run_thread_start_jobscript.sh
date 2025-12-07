@@ -25,7 +25,7 @@ if [ -z "${1-}" ]; then
 fi
 
 SUBREDDIT="$1"  # e.g. conspiracy, crypto, politics
-OUTDIR="$2"
+OUTNAME="$2"
 
 # ===== Activate environment =====
 source ~/.bashrc
@@ -51,7 +51,7 @@ for f in "${TRAIN_X}" "${TEST_X}" "${TRAIN_Y}" "${TEST_Y}"; do
 done
 
 # Main output directory
-OUTDIR="/home/ucabcpl/Scratch/thread_size/Outputs/${OUTDIR}/${SUBREDDIT}"
+OUTDIR="/home/ucabcpl/Scratch/thread_size/Outputs/${OUTNAME}/${SUBREDDIT}"
 mkdir -p "${OUTDIR}"
 
 LOGDIR="${OUTDIR}/logs"
