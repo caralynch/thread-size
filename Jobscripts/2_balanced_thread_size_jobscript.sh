@@ -90,7 +90,7 @@ echo "===================================="
 
 mkdir -p "${HPT_OUTDIR}"
 
-run_step "${SUBREDDIT}_hyperparam_tuning" "${SCRIPT_DIR}/3_hyperparameter_tuning.py" \
+run_step "${SUBREDDIT}_hyperparam_tuning_balanced" "${SCRIPT_DIR}/3_hyperparameter_tuning.py" \
   --subreddit "${SUBREDDIT}" \
   --outdir "${HPT_OUTDIR}" \
   --train_X "${TRAIN_X}" \
@@ -128,7 +128,7 @@ for f in "${TFIDF_MODEL}" "${SVD_MODEL}"; do
 done
 echo "[OK] TF-IDF and SVD models present."
 
-run_step "${SUBREDDIT}_model" "${SCRIPT_DIR}/4_run_tuned_model.py" \
+run_step "${SUBREDDIT}_model_balanced" "${SCRIPT_DIR}/4_run_tuned_model.py" \
   --subreddit "${SUBREDDIT}" \
   --outdir "${MODEL_OUTDIR}" \
   --train_X "${TRAIN_X}" \

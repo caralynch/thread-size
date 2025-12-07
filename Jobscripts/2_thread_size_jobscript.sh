@@ -71,7 +71,7 @@ run_step () {
 }
 
 # ===== Stage 1.2 – feature + weight + threshold tuning =====
-# TUNING_OUTDIR="${OUTDIR}/2_tuning"
+TUNING_OUTDIR="${OUTDIR}/2_tuning"
 # echo "===================================="
 # echo "[INFO] Stage 2.2 – feature + weight + threshold tuning"
 # echo "[INFO] Output directory: ${TUNING_OUTDIR}"
@@ -86,12 +86,12 @@ run_step () {
 #   --train_y "${TRAIN_Y}" \
 #   --feats "${MAX_FEATS}"
 
-# TUNED_PARAMS="${TUNING_OUTDIR}/tuned_params.jl"
-# if [ ! -f "${TUNED_PARAMS}" ]; then
-#     echo "ERROR: Expected tuned params not found: ${TUNED_PARAMS}"
-#     exit 1
-# fi
-# echo "[OK] Found tuned params: ${TUNED_PARAMS}"
+TUNED_PARAMS="${TUNING_OUTDIR}/tuned_params.jl"
+if [ ! -f "${TUNED_PARAMS}" ]; then
+    echo "ERROR: Expected tuned params not found: ${TUNED_PARAMS}"
+    exit 1
+fi
+echo "[OK] Found tuned params: ${TUNED_PARAMS}"
 
 # ===== Stage 1.3 – tree hyperparameter tuning =====
 HPT_OUTDIR="${OUTDIR}/3_h_tuning"
@@ -103,7 +103,7 @@ echo "===================================="
 
 mkdir -p "${HPT_OUTDIR}"
 
-run_step "${SUBREDDIT}_hyperparam_tuning" "${SCRIPT_DIR}/3_hyperparameter_tuning.py" \
+run_step "${SUBREDDIT}_hyperparam_tuning_a" "${SCRIPT_DIR}/3_hyperparameter_tuning.py" \
   --subreddit "${SUBREDDIT}" \
   --outdir "${HPT_OUTDIR}" \
   --train_X "${TRAIN_X}" \
@@ -140,7 +140,7 @@ for f in "${TFIDF_MODEL}" "${SVD_MODEL}"; do
 done
 echo "[OK] TF-IDF and SVD models present."
 
-run_step "${SUBREDDIT}_model" "${SCRIPT_DIR}/4_run_tuned_model.py" \
+run_step "${SUBREDDIT}_model_a" "${SCRIPT_DIR}/4_run_tuned_model.py" \
   --subreddit "${SUBREDDIT}" \
   --outdir "${MODEL_OUTDIR}" \
   --train_X "${TRAIN_X}" \
