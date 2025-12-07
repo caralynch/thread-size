@@ -570,10 +570,6 @@ def main():
                 proba = model.predict_proba(X_fold_val)
 
             oof_probas[val_idx] = proba
-            print(
-                f"[INFO][{n_feats} feats][{fold_idx}/{args.splits}] "
-                "Optimising per-class thresholds with L-BFGS-B"
-            )
             fold_idx += 1
 
 
