@@ -403,9 +403,9 @@ def main():
     y_train_data = pd.read_parquet(args.train_y)[args.y_col]
     y_test_data = pd.read_parquet(args.test_y)[args.y_col]
 
-    if not balanced:
-        print(f"[INFO] Loading tuned model params from {args.params}.")
-        params = joblib.load(args.params)
+
+    print(f"[INFO] Loading tuned model params from {args.params}.")
+    params = joblib.load(args.params)
 
     # run data for outfile
     model_info = {

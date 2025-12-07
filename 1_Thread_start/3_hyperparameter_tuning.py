@@ -210,6 +210,9 @@ def main():
         "--debug", action="store_true", help="Run the script in debug mode."
     )
     ap.add_argument(
+        "--balanced", action="store_true", help="Run the models for balanced class weights."
+    )
+    ap.add_argument(
         "-nc", "--no-cal", action="store_true", help="Deactivate model calibration."
     )
 
@@ -260,6 +263,11 @@ def main():
     if args.debug:
         debug = True
         print("[INFO] DEBUG MODE ENGAGED")
+
+    balanced = False
+    if args.balanced:
+        class_weights = "balanced"
+        balanced = True
 
     calibrate = True
     if args.no_cal:
@@ -331,7 +339,7 @@ def main():
             config = params[n_feats]
             print(f"[INFO][{fold + 1}/{args.splits}][{n_feats} feats]")
             x_cols = config["features"]
-            cw = config["final_class_weights"]
+            cw = config["final_class_weights"] if not balanced else class_weights
             thresh = config["final_threshold"]
 
             # Sanity check on threshold from Stage 1.2

@@ -617,6 +617,7 @@ def main():
             if n_feats not in foldwise_thresholds:
                 foldwise_thresholds[n_feats] = []
                 foldwise_score_thresholds[n_feats] = []
+                foldwise_score_baseline[n_feats] = []
             top_feats = ranked_features[:n_feats]
             best_params = optuna_params[n_feats]["best_params"]
             class_weight = class_weights[n_feats]

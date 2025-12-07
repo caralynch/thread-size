@@ -327,6 +327,8 @@ def main():
     ap.add_argument(
         "--debug", action="store_true", help="Run the script in debug mode."
     )
+
+    ap.add_argument("--balanced", action="store_true", help="Run the models for balanced class weights.")
     ap.add_argument(
         "-nc", "--no-cal", action="store_true", help="Deactivate model calibration."
     )
@@ -380,6 +382,11 @@ def main():
     if args.debug:
         debug = True
         print("[INFO] DEBUG MODE ENGAGED")
+    
+    balanced = False
+    if args.balanced:
+        class_weights = "balanced"
+        balanced = True
 
     calibrate = True
     if args.no_cal:
@@ -486,7 +493,7 @@ def main():
         os.makedirs(model_data_outdir, exist_ok=True)
         print(f"[INFO] [{n_feats} feats]")
         x_cols = config["features"]
-        cw = config["final_class_weights"]
+        cw = config["final_class_weights"] if not balanced else class_weights
         # thresh = config["final_threshold"]
         best_hyperparams = (
             config.get("best_hyperparams", {}) if "best_hyperparams" in config else {}
