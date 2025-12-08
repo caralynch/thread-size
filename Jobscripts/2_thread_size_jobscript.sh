@@ -108,7 +108,7 @@ run_step "${SUBREDDIT}_hyperparam_tuning_a" "${SCRIPT_DIR}/3_hyperparameter_tuni
   --outdir "${HPT_OUTDIR}" \
   --train_X "${TRAIN_X}" \
   --train_y "${TRAIN_Y}" \
-  --params "${TUNED_PARAMS}"
+  --params "${TUNED_PARAMS}" \
   --trials 150
 
 HPARAM_PARAMS="${HPT_OUTDIR}/params_post_hyperparam_tuning.jl"

@@ -95,7 +95,7 @@ run_step "${SUBREDDIT}_hyperparam_tuning_balanced" "${SCRIPT_DIR}/3_hyperparamet
   --outdir "${HPT_OUTDIR}" \
   --train_X "${TRAIN_X}" \
   --train_y "${TRAIN_Y}" \
-  --params "${TUNED_PARAMS}"
+  --params "${TUNED_PARAMS}" \
   --balanced
 
 HPARAM_PARAMS="${HPT_OUTDIR}/params_post_hyperparam_tuning.jl"
@@ -136,7 +136,7 @@ run_step "${SUBREDDIT}_model_balanced" "${SCRIPT_DIR}/4_run_tuned_model.py" \
   --test_y "${TEST_Y}" \
   --params "${HPARAM_PARAMS}" \
   --tfidf "${TFIDF_MODEL}" \
-  --svd "${SVD_MODEL}"
+  --svd "${SVD_MODEL}" \
   --balanced
 
 EXIT_CODE=$?
