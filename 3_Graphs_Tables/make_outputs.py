@@ -1449,7 +1449,7 @@ def main() -> None:
         plt.close()
     else:
         output_s2_feature_importances(
-            selected_model_dirs, f"{args.outdir}/feat_importances.xlsx"
+            selected_model_dirs, f"{shap_outdir}/feat_importances.xlsx"
         )
         # output shap vals
         plot_s2_shap_vals(selected_model_dirs, shap_outdir, class_names)
