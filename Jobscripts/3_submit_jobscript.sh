@@ -3,10 +3,11 @@
 # List of subreddits to process
 SUBREDDITS=("conspiracy" "crypto")
 
+STAGE=$1
+SUFFIX=$2
 
-SUFFIX=$1
 
-JOBSCRIPT="/home/ucabcpl/Scratch/thread_size/thread-size/Jobscripts/3_run_pol_model.sh"
+JOBSCRIPT="/home/ucabcpl/Scratch/thread_size/thread-size/Jobscripts/3_run_pol_${STAGE}_model.sh"
 
 # Make sure the jobscript exists
 if [ ! -f "$JOBSCRIPT" ]; then
