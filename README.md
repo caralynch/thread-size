@@ -1,5 +1,7 @@
 # Thread Prediction Model Pipeline
 
+[![DOI](https://zenodo.org/badge/1095888905.svg)](https://doi.org/10.5281/zenodo.19050680)
+
 A comprehensive machine learning pipeline for predicting Reddit thread outcomes using LightGBM classifiers. This repository contains code for two-stage modeling: binary classification of thread initiation (started vs. stalled) and multiclass prediction of thread size categories.
 
 ## Overview
@@ -303,6 +305,7 @@ If you use this code or data, please cite:
   author = {Lynch, Cara},
   year = {2025},
   url = {https://github.com/caralynch/thread-size}
+  doi = {10.5281/zenodo.19050680}
 }
 
 @dataset{reddit_thread_data,
