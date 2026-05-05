@@ -571,6 +571,24 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="If set, regenerate outputs even if summary files already exist.",
     )
+    parser.add_argument(
+        "--only",
+        choices=["all", "shap-summary"],
+        default="all",
+        help="Limit outputs to a specific group.",
+    )
+    parser.add_argument(
+        "--png-dpi",
+        type=int,
+        default=600,
+        help="DPI to use when saving PNG figures.",
+    )
+    parser.add_argument(
+        "--combined-scale",
+        type=float,
+        default=1.0,
+        help="Scale factor for combined PNG figures.",
+    )
     return parser.parse_args()
 
 
@@ -773,7 +791,7 @@ def get_ratio_max_metric(df, metrics):
     return new_df
 
 
-def get_sub_shap_plot(sub_shap_dict, outfile, title):
+def get_sub_shap_plot(sub_shap_dict, outfile, title, png_dpi=600):
     """
     Generate SHAP summary plot for a single subreddit.
     
@@ -785,6 +803,8 @@ def get_sub_shap_plot(sub_shap_dict, outfile, title):
         Output file path (without extension).
     title : str
         Plot title.
+    png_dpi : int, optional
+        DPI to use when saving the PNG output.
     """
     plt.figure(figsize=(10, 6))
     shap.summary_plot(
@@ -815,11 +835,11 @@ def get_sub_shap_plot(sub_shap_dict, outfile, title):
 
     plt.tight_layout()
     plt.savefig(f"{outfile}.eps", dpi=350, format="eps")
-    plt.savefig(f"{outfile}.png", dpi=100, format="png")
+    plt.savefig(f"{outfile}.png", dpi=png_dpi, format="png")
     plt.close()
 
 
-def combine_plots_vertical(png_filenames, outfile):
+def combine_plots_vertical(png_filenames, outfile, png_dpi=600, scale=1.0):
     """
     Stack multiple PNG images vertically into single output.
     
@@ -829,6 +849,10 @@ def combine_plots_vertical(png_filenames, outfile):
         List of PNG file paths to combine.
     outfile : str
         Output file path (without extension).
+    png_dpi : int, optional
+        DPI metadata to save with the PNG output.
+    scale : float, optional
+        Scale factor for the combined PNG dimensions.
     """
     # Load saved plots
     imgs = [Image.open(f) for f in png_filenames]
@@ -849,12 +873,11 @@ def combine_plots_vertical(png_filenames, outfile):
         #combined.save(f"{outfile}.{ext}", dpi=(400, 400))
     combined.save(f"{outfile}.eps", dpi=(400, 400))
 
-    # pngs smaller for easy viewing
-    scale = 0.4
-    new_size = (int(combined.width * scale), int(combined.height * scale))
-    combined_small = combined.resize(new_size, Image.LANCZOS)
+    if scale != 1.0:
+        new_size = (int(combined.width * scale), int(combined.height * scale))
+        combined = combined.resize(new_size, Image.LANCZOS)
 
-    combined_small.save(f"{outfile}.png")
+    combined.save(f"{outfile}.png", dpi=(png_dpi, png_dpi))
 
 
 def combine_plots_square(png_filenames, outfile):
@@ -899,7 +922,7 @@ def combine_plots_square(png_filenames, outfile):
     combined_small.save(f"{outfile}.png")
 
 
-def plot_s1_shap_vals(selected_model_dirs, outdir):
+def plot_s1_shap_vals(selected_model_dirs, outdir, png_dpi=600, combined_scale=1.0):
     """
     Generate Stage 1 SHAP visualizations for all subreddits.
     
@@ -909,6 +932,10 @@ def plot_s1_shap_vals(selected_model_dirs, outdir):
         Mapping from subreddit to model directory.
     outdir : str
         Output directory for plots.
+    png_dpi : int, optional
+        DPI to use when saving PNG outputs.
+    combined_scale : float, optional
+        Scale factor for the combined SHAP PNG.
     """
     shap_vals = {}
     shap_outfiles = []
@@ -919,11 +946,21 @@ def plot_s1_shap_vals(selected_model_dirs, outdir):
         shap_vals[sub] = joblib.load(f"{mod_dir}/shap_plot_data.jl")
         outfile_name = f"{outdir}/{sub}_shap"
         shap_outfiles.append(f"{outfile_name}.png")
-        get_sub_shap_plot(shap_vals[sub], outfile_name, f"{LETTER_LOOKUP[i]} {SUBREDDIT_LABELS[sub]}")
+        get_sub_shap_plot(
+            shap_vals[sub],
+            outfile_name,
+            f"{LETTER_LOOKUP[i]} {SUBREDDIT_LABELS[sub]}",
+            png_dpi=png_dpi,
+        )
         i += 1
 
     print("[INFO] Combining SHAP plots")
-    combine_plots_vertical(shap_outfiles, f"{outdir}/combined_shap")
+    combine_plots_vertical(
+        shap_outfiles,
+        f"{outdir}/combined_shap",
+        png_dpi=png_dpi,
+        scale=combined_scale,
+    )
 
     print("[INFO] Saving SHAP plot data")
     with pd.ExcelWriter(f"{outdir}/shap_plot_data.xlsx") as writer:
@@ -932,7 +969,9 @@ def plot_s1_shap_vals(selected_model_dirs, outdir):
                 pd.DataFrame(data=np_array).to_excel(writer, sheet_name=f"{sub}_{k}")
 
 
-def plot_s2_shap_vals(selected_model_dirs, outdir, class_names):
+def plot_s2_shap_vals(
+    selected_model_dirs, outdir, class_names, png_dpi=600, combined_scale=1.0
+):
     """
     Generate Stage 2 SHAP visualizations for all classes and subreddits.
     
@@ -944,6 +983,10 @@ def plot_s2_shap_vals(selected_model_dirs, outdir, class_names):
         Output directory for plots.
     class_names : list of str
         Class label names.
+    png_dpi : int, optional
+        DPI to use when saving PNG outputs.
+    combined_scale : float, optional
+        Scale factor for each combined SHAP PNG.
     """
     class_shap_dicts = {}
     shap_outfiles = {}
@@ -963,14 +1006,22 @@ def plot_s2_shap_vals(selected_model_dirs, outdir, class_names):
             }
             shap_dfs[sub][class_idx] = pd.DataFrame(data=vals[:,:,class_idx], columns=x_test.columns)
             get_sub_shap_plot(
-                shap_dict, outfile_name, f"{LETTER_LOOKUP[class_idx]} {label}"
+                shap_dict,
+                outfile_name,
+                f"{LETTER_LOOKUP[class_idx]} {label}",
+                png_dpi=png_dpi,
             )
             shap_outfiles[sub].append(f"{outfile_name}.png")
             class_shap_dicts[sub][class_idx] = shap_dict
 
     print("[INFO] Combining SHAP plots")
     for sub, outfile_list in shap_outfiles.items():
-        combine_plots_vertical(outfile_list, f"{outdir}/{sub}_SHAP")
+        combine_plots_vertical(
+            outfile_list,
+            f"{outdir}/{sub}_SHAP",
+            png_dpi=png_dpi,
+            scale=combined_scale,
+        )
 
     print("[INFO] Saving SHAP plot data")
     with pd.ExcelWriter(f"{outdir}/shap_plot_data.xlsx") as writer:
@@ -1424,6 +1475,28 @@ def main() -> None:
         model_dirs[sub] = f"{args.root}/{sub}/4_model"
         selected_model_dirs[sub] = f"{model_dirs[sub]}/model_{i}/model_data"
 
+    if args.only == "shap-summary":
+        if args.stage == 1:
+            plot_s1_shap_vals(
+                selected_model_dirs,
+                shap_outdir,
+                png_dpi=args.png_dpi,
+                combined_scale=args.combined_scale,
+            )
+        else:
+            plot_s2_shap_vals(
+                selected_model_dirs,
+                shap_outdir,
+                class_names,
+                png_dpi=args.png_dpi,
+                combined_scale=args.combined_scale,
+            )
+        plt.close()
+        end = dt.datetime.now()
+        print(f"[OK] Saved SHAP summary outputs to: {shap_outdir}")
+        print(f"[OK] Finished. Total runtime {end-start}.")
+        return
+
     # handle confusion matrices
     confusion_matrices(selected_model_dirs, cm_outdir, class_names)
 
@@ -1440,7 +1513,12 @@ def main() -> None:
             selected_model_dirs, f"{shap_outdir}/feat_importances.xlsx"
         )
         # output shap vals
-        plot_s1_shap_vals(selected_model_dirs, shap_outdir)
+        plot_s1_shap_vals(
+            selected_model_dirs,
+            shap_outdir,
+            png_dpi=args.png_dpi,
+            combined_scale=args.combined_scale,
+        )
 
         plt.close()
 
@@ -1452,7 +1530,13 @@ def main() -> None:
             selected_model_dirs, f"{shap_outdir}/feat_importances.xlsx"
         )
         # output shap vals
-        plot_s2_shap_vals(selected_model_dirs, shap_outdir, class_names)
+        plot_s2_shap_vals(
+            selected_model_dirs,
+            shap_outdir,
+            class_names,
+            png_dpi=args.png_dpi,
+            combined_scale=args.combined_scale,
+        )
 
         plt.close()
 
