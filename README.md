@@ -38,6 +38,23 @@ account labels, or text.
 
 To reproduce the results, download the data from Zenodo and place files in the appropriate directories as specified in the Usage section below.
 
+## Development environment and remote data access
+
+Large study data and frozen artefacts are hosted on `linuxbox`. For checksums,
+archive streaming, recursive scans, and other data-intensive work, run commands
+natively through the configured `ssh linuxbox` connection rather than reading
+the same files through the Windows `L:` SSHFS mount. The main path mapping is:
+
+```text
+L:\Documents\reddit_analyses
+/home/cara/Documents/reddit_analyses
+```
+
+Keep source data and frozen artefacts read only. Do not copy large raw archives
+to Windows merely to process them; return only the required aggregate or
+derived outputs to the writable repository. The repository-wide Codex rules and
+exceptions are recorded in [`AGENTS.md`](AGENTS.md).
+
 ## Repository Structure
 ```
 .
