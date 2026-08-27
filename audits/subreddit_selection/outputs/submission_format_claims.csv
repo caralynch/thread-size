@@ -1,0 +1,7 @@
+subreddit,classification_rule,root_submissions,definite_media_percent_lower_bound,unknown_percent,media_percent_upper_bound_if_all_unknown_are_media,definite_nonmedia_percent_lower_bound,predominantly_not_image_or_video_even_if_unknown_is_media,conclusion_class
+conspiracy,url_domain_only,11436,33.919202518363065,3.8912207065407487,37.810423224903815,62.189576775096185,True,sensitivity analysis under a newly defined rule
+conspiracy,metadata_inclusive,11436,33.919202518363065,3.60265827212312,37.52186079048619,62.47813920951381,True,sensitivity analysis under a newly defined rule
+crypto,url_domain_only,14842,11.88519067511117,0.7007141894623367,12.585904864573507,87.41409513542649,True,sensitivity analysis under a newly defined rule
+crypto,metadata_inclusive,14842,11.88519067511117,0.633337825090958,12.518528500202128,87.48147149979788,True,sensitivity analysis under a newly defined rule
+politics,url_domain_only,67920,6.366313309776207,0.5050058892815077,6.871319199057715,93.12868080094229,True,sensitivity analysis under a newly defined rule
+politics,metadata_inclusive,67920,6.366313309776207,0.5050058892815077,6.871319199057715,93.12868080094229,True,sensitivity analysis under a newly defined rule

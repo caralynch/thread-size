@@ -1,0 +1,25 @@
+{
+  "account_labels_or_text_written": false,
+  "missing_author_rows": 0,
+  "schema": [
+    "thread_id",
+    "id",
+    "timestamp",
+    "body",
+    "subject",
+    "author",
+    "image_file",
+    "domain",
+    "url",
+    "image_md5",
+    "subreddit",
+    "parent",
+    "score"
+  ],
+  "source_bytes": 1738930605,
+  "source_modified_local": "2022-04-07T10:25:21.110859+01:00",
+  "source_path": "Z:\\thread_size_prediction\\politics_cleaned_data.csv",
+  "source_sha256": "5769e3907eda597a135fec45207022f3845de0569cec187bbe29dfe4250273a8",
+  "workbook_path": "C:\\Users\\snuzz\\OneDrive\\Documents\\PhD\\reddit_analyses\\thread_size_prediction\\dataset_summaries.xlsx",
+  "workbook_sha256": "38b3a00ce3e31c07da2c89927640de795c836ddc33c2cc7781e918b93752daec"
+}

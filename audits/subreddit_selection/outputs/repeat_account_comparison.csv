@@ -1,0 +1,15 @@
+subreddit,source_population,variant,observed_percent_repeat_accounts,workbook_implied_percent_repeat_accounts,difference_percentage_points,reproduces_workbook_within_0_01pp,published_over_50_percent_holds,conclusion_class
+conspiracy,raw_export,observable_nonblank_unfiltered,57.30402394126639,57.6789730134932,-0.37494907222681206,False,True,sensitivity analysis under a newly defined rule
+conspiracy,raw_export,literal_placeholders_excluded,57.30402394126639,57.6789730134932,-0.37494907222681206,False,True,sensitivity analysis under a newly defined rule
+conspiracy,raw_export,documented_deleted_placeholder_excluded,57.30402394126639,57.6789730134932,-0.37494907222681206,False,True,sensitivity analysis under a newly defined rule
+conspiracy,raw_export,documented_2023_cleaning_rules,57.30310468070447,57.6789730134932,-0.3758683327887269,False,True,sensitivity analysis under a newly defined rule
+crypto,raw_export,observable_nonblank_unfiltered,53.34901141015591,53.0981304121661,0.25088099798981034,False,True,sensitivity analysis under a newly defined rule
+crypto,raw_export,literal_placeholders_excluded,53.34901141015591,53.0981304121661,0.25088099798981034,False,True,sensitivity analysis under a newly defined rule
+crypto,raw_export,documented_deleted_placeholder_excluded,53.34901141015591,53.0981304121661,0.25088099798981034,False,True,sensitivity analysis under a newly defined rule
+crypto,raw_export,documented_2023_cleaning_rules,53.3463023721727,53.0981304121661,0.24817196000660147,False,True,sensitivity analysis under a newly defined rule
+politics,raw_export,observable_nonblank_unfiltered,59.14100649090745,56.685095471447,2.4559110194604514,False,True,sensitivity analysis under a newly defined rule
+politics,raw_export,literal_placeholders_excluded,59.14100649090745,56.685095471447,2.4559110194604514,False,True,sensitivity analysis under a newly defined rule
+politics,raw_export,documented_deleted_placeholder_excluded,,56.685095471447,,unresolved,unresolved,unresolved
+politics,raw_export,documented_2023_cleaning_rules,,56.685095471447,,unresolved,unresolved,unresolved
+politics,prepared_study_csv,observable_nonblank_unfiltered,59.14079771633346,56.685095471447,2.45570224488646,False,True,retrospective validation using later study data
+politics,prepared_study_csv,literal_placeholders_excluded,59.14079771633346,56.685095471447,2.45570224488646,False,True,retrospective validation using later study data

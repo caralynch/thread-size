@@ -1,0 +1,13 @@
+date,evidence,implication
+2021-11-18,r/politics raw ZIP entry,Earlier separate politics collection supported
+2022-04-07,Cleaned r/politics CSV,Prepared politics data existed before October 2022
+2022-05-09,Executed r/politics activity notebook,Preliminary account-activity calculation recovered; selection use unresolved
+2022-06-15,r/politics account aggregate CSVs,Saved aggregates reproduce the 59.14% full-period result
+2022-10-13/18,4CAT source tree and installation note,Collection capability established; job date not recovered
+2022-10-01/30,Conspiracy and Crypto export periods,Observation window only; retrieval date unresolved
+2022-12-07,Crypto ZIP entry and Docker archive,Crypto export existed; archived Docker state has no surviving job metadata
+2023-01-16,First comparative Git summary,Four candidates; politics absent
+2023-02-07,Git: added r/politics to datasets,First recovered combined state
+2023-08-01,First workbook with Author thresholds,Threshold artifact postdates collection
+2023-09-25,Research note asks which thresholds were used,Original handling remained uncertain
+2024-09-17,First located prose containing all criteria,Claim appears well after collection

@@ -1,0 +1,6 @@
+subreddit,calendar_month_utc,root_submissions,coverage_status,month_start_utc,month_end_exclusive_utc
+conspiracy,2022-10,11436,partial,2022-10-01T00:00:00+00:00,2022-11-01T00:00:00+00:00
+crypto,2022-10,14842,partial,2022-10-01T00:00:00+00:00,2022-11-01T00:00:00+00:00
+politics,2020-09,57,partial,2020-09-01T00:00:00+00:00,2020-10-01T00:00:00+00:00
+politics,2020-10,37724,complete_inferred_from_timestamps,2020-10-01T00:00:00+00:00,2020-11-01T00:00:00+00:00
+politics,2020-11,30139,partial,2020-11-01T00:00:00+00:00,2020-12-01T00:00:00+00:00

@@ -1,0 +1,25 @@
+{
+  "analysis_version": "1.0.0",
+  "archives": {
+    "conspiracy": "Z:\\conspiracy_oct2022.zip",
+    "crypto": "Z:\\cryptocurrency_oct2022.zip",
+    "politics": "Z:\\politics_nov2020.zip"
+  },
+  "exclusions_commit": "f44ea082d097f4f23974b0eef9a41ed63de5bc7b",
+  "hash_inputs": true,
+  "historical_repo": "C:\\Users\\snuzz\\OneDrive\\Documents\\PhD\\reddit_analyses\\thread_size_prediction",
+  "outputs": [
+    "dataset_coverage.csv",
+    "monthly_submission_summary.csv",
+    "monthly_submissions.csv",
+    "repeat_account_summary.csv",
+    "source_inventory_computed.csv",
+    "submission_format_claims.csv",
+    "submission_format_counts.csv",
+    "validation_checks.csv"
+  ],
+  "python": "3.12.13",
+  "root_definition": "parent empty AND id equals thread_id",
+  "timezone_for_metrics": "UTC",
+  "workbook": "C:\\Users\\snuzz\\OneDrive\\Documents\\PhD\\reddit_analyses\\thread_size_prediction\\dataset_summaries.xlsx"
+}

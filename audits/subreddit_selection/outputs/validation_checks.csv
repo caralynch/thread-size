@@ -1,0 +1,22 @@
+subreddit,check,status,observed,expected
+conspiracy,required_schema_present,PASS,,no missing columns
+conspiracy,all_rows_have_valid_unix_timestamp,PASS,0,0
+conspiracy,root_definition_parent_and_id_agree,PASS,parent_blank_not_self_id=0;self_id_with_parent=0,both mismatch counts 0
+conspiracy,format_totals_equal_root_total_url_domain_only,PASS,11436,11436
+conspiracy,format_totals_equal_root_total_metadata_inclusive,PASS,11436,11436
+conspiracy,root_month_counts_equal_root_total,PASS,11436,11436
+conspiracy,account_denominator_not_greater_than_contributions,PASS,46447,<= 455437
+crypto,required_schema_present,PASS,,no missing columns
+crypto,all_rows_have_valid_unix_timestamp,PASS,0,0
+crypto,root_definition_parent_and_id_agree,PASS,parent_blank_not_self_id=0;self_id_with_parent=0,both mismatch counts 0
+crypto,format_totals_equal_root_total_url_domain_only,PASS,14842,14842
+crypto,format_totals_equal_root_total_metadata_inclusive,PASS,14842,14842
+crypto,root_month_counts_equal_root_total,PASS,14842,14842
+crypto,account_denominator_not_greater_than_contributions,PASS,34443,<= 476948
+politics,required_schema_present,PASS,,no missing columns
+politics,all_rows_have_valid_unix_timestamp,PASS,0,0
+politics,root_definition_parent_and_id_agree,PASS,parent_blank_not_self_id=0;self_id_with_parent=0,both mismatch counts 0
+politics,format_totals_equal_root_total_url_domain_only,PASS,67920,67920
+politics,format_totals_equal_root_total_metadata_inclusive,PASS,67920,67920
+politics,root_month_counts_equal_root_total,PASS,67920,67920
+politics,account_denominator_not_greater_than_contributions,PASS,587129,<= 7124674

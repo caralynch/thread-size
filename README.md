@@ -26,6 +26,16 @@ The Zenodo repository contains:
 - **Model predictions**: Out-of-fold and test set probability predictions
 - **Evaluation results**: Performance metrics, SHAP analyses, and confusion matrices
 
+## Provenance audit
+
+The aggregate-only audit of the Study 1 subreddit-selection claims is in
+[`audits/subreddit_selection/`](audits/subreddit_selection/). Its
+[`report.html`](audits/subreddit_selection/report.html) is the concise entry
+point; `provenance.md`, `source_inventory.csv`, the metric definitions,
+deterministic scripts, and aggregate validation outputs provide the audit trail.
+The audit does not modify the modelling results or redistribute Reddit records,
+account labels, or text.
+
 To reproduce the results, download the data from Zenodo and place files in the appropriate directories as specified in the Usage section below.
 
 ## Repository Structure

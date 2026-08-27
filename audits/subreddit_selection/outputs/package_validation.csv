@@ -1,0 +1,11 @@
+check,status,observed,expected
+all_source_level_checks_pass,PASS,21,21
+monthly_root_sums_match_coverage,PASS,"{'conspiracy': 11436, 'crypto': 14842, 'politics': 67920}","{'conspiracy': 11436, 'crypto': 14842, 'politics': 67920}"
+all_format_rules_support_nonmedia_majority,PASS,6,6
+all_observed_repeat_variants_exceed_50_percent,PASS,53.3463023721727,> 50
+no_observed_repeat_variant_claims_workbook_reproduction,PASS,12,12
+source_inventory_has_candidate_coverage,PASS,28,>= 20
+source_inventory_rows_have_consistent_schema,PASS,28,28
+aggregate_outputs_have_no_raw_record_columns,PASS,[],[]
+artifact_uses_relative_source_paths,PASS,relative,relative
+portable_report_exists,PASS,True,True

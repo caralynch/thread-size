@@ -1,0 +1,4 @@
+subreddit,total_contributions,strict_root_submissions,earliest_contribution_utc,latest_contribution_utc,earliest_root_utc,latest_root_utc,invalid_unix_timestamp_rows,display_timestamp_mode_offset_seconds_from_utc,rows_with_mode_offset,display_timestamp_unparseable_rows,missing_author_rows,literal_placeholder_author_rows
+conspiracy,455437,11436,2022-10-01T00:00:02+00:00,2022-10-30T23:59:58+00:00,2022-10-01T00:01:50+00:00,2022-10-30T23:55:25+00:00,0,0,455437,0,0,0
+crypto,476948,14842,2022-10-01T00:00:04+00:00,2022-10-30T23:59:50+00:00,2022-10-01T00:00:13+00:00,2022-10-30T23:52:09+00:00,0,0,476948,0,0,0
+politics,7124674,67920,2020-09-30T23:00:02+00:00,2020-11-19T23:59:58+00:00,2020-09-30T23:00:16+00:00,2020-11-19T23:59:04+00:00,0,0,7124674,0,0,0

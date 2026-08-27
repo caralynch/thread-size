@@ -1,0 +1,4 @@
+subreddit,complete_months,complete_month_test,definite_nonmedia_lower_pct,media_upper_pct,repeat_accounts_raw_pct,classification
+conspiracy,0,unresolved_no_complete_month,62.478,37.522,57.304,retrospective/sensitivity; not original selection reproduction
+crypto,0,unresolved_no_complete_month,87.481,12.519,53.349,retrospective/sensitivity; not original selection reproduction
+politics,1,holds,93.129,6.871,59.141,retrospective/sensitivity; not original selection reproduction

@@ -1,0 +1,1337 @@
+{
+  "surface": "report",
+  "manifest": {
+    "version": 1,
+    "surface": "report",
+    "title": "Study 1 subreddit-selection provenance audit",
+    "description": "A provenance-first audit of the selection chronology and three published subreddit criteria.",
+    "generatedAt": "2026-08-27T00:00:00Z",
+    "cards": [],
+    "charts": [
+      {
+        "id": "format_composition_chart",
+        "title": "Worst-case submission-format composition",
+        "subtitle": "Share of historical root submissions; the media upper bound treats every unknown as image/video.",
+        "type": "bar",
+        "dataset": "format_composition",
+        "source": {
+          "id": "format_chart_source",
+          "label": "Submission-format chart transformation",
+          "path": "outputs/submission_format_claims.csv",
+          "query": {
+            "engine": "duckdb",
+            "language": "sql",
+            "description": "Materialise two complementary worst-case format components per subreddit.",
+            "sql": "SELECT subreddit, 'Definite non-media lower bound' AS component, definite_nonmedia_percent_lower_bound AS percent_of_roots, root_submissions, unknown_percent, classification_rule, 'Self-text plus external article/link' AS bound_interpretation FROM read_csv_auto('outputs/submission_format_claims.csv', header=true) WHERE classification_rule = 'metadata_inclusive' UNION ALL SELECT subreddit, 'Media upper bound' AS component, media_percent_upper_bound_if_all_unknown_are_media AS percent_of_roots, root_submissions, unknown_percent, classification_rule, 'Definite image/video plus every unknown' AS bound_interpretation FROM read_csv_auto('outputs/submission_format_claims.csv', header=true) WHERE classification_rule = 'metadata_inclusive'",
+            "tables_used": [
+              "outputs/submission_format_claims.csv"
+            ],
+            "filters": [
+              "classification_rule = metadata_inclusive",
+              "No raw Reddit records"
+            ]
+          }
+        },
+        "encodings": {
+          "x": {
+            "field": "subreddit",
+            "type": "nominal",
+            "label": "Subreddit"
+          },
+          "y": {
+            "field": "percent_of_roots",
+            "type": "quantitative",
+            "label": "Share of roots (%)",
+            "format": "number"
+          },
+          "color": {
+            "field": "component",
+            "type": "nominal",
+            "label": "Bound"
+          }
+        },
+        "options": {
+          "grouping": "stacked100"
+        },
+        "yAxisTitle": "Share of root submissions (%)",
+        "valueFormat": "number",
+        "layout": "full"
+      }
+    ],
+    "tables": [
+      {
+        "id": "chronology_table",
+        "title": "Recovered chronology",
+        "dataset": "chronology",
+        "sourceId": "chronology_output",
+        "defaultSort": {
+          "field": "date",
+          "direction": "asc"
+        },
+        "columns": [
+          {
+            "field": "date",
+            "label": "Date",
+            "type": "text"
+          },
+          {
+            "field": "evidence",
+            "label": "Evidence",
+            "type": "text"
+          },
+          {
+            "field": "implication",
+            "label": "Implication",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "id": "claim_summary_table",
+        "title": "Claim audit at a glance",
+        "dataset": "claim_summary",
+        "sourceId": "claim_summary_output",
+        "defaultSort": {
+          "field": "subreddit",
+          "direction": "asc"
+        },
+        "columns": [
+          {
+            "field": "subreddit",
+            "label": "Subreddit",
+            "type": "text"
+          },
+          {
+            "field": "complete_months",
+            "label": "Complete UTC months",
+            "format": "number"
+          },
+          {
+            "field": "complete_month_test",
+            "label": ">1,000 every complete month",
+            "type": "text"
+          },
+          {
+            "field": "definite_nonmedia_lower_pct",
+            "label": "Non-media lower bound (%)",
+            "format": "number"
+          },
+          {
+            "field": "media_upper_pct",
+            "label": "Media upper bound (%)",
+            "format": "number"
+          },
+          {
+            "field": "repeat_accounts_raw_pct",
+            "label": "Repeat accounts, raw (%)",
+            "format": "number"
+          }
+        ]
+      },
+      {
+        "id": "monthly_table",
+        "title": "Every observed UTC month",
+        "dataset": "monthly_detail",
+        "sourceId": "monthly_output",
+        "defaultSort": {
+          "field": "month_utc",
+          "direction": "asc"
+        },
+        "columns": [
+          {
+            "field": "subreddit",
+            "label": "Subreddit",
+            "type": "text"
+          },
+          {
+            "field": "month_utc",
+            "label": "UTC month",
+            "type": "text"
+          },
+          {
+            "field": "root_submissions",
+            "label": "Root submissions",
+            "format": "number"
+          },
+          {
+            "field": "coverage",
+            "label": "Coverage",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "id": "monthly_summary_table",
+        "title": "Monthly interpretation checks",
+        "dataset": "monthly_summary",
+        "sourceId": "monthly_output",
+        "defaultSort": {
+          "field": "subreddit",
+          "direction": "asc"
+        },
+        "columns": [
+          {
+            "field": "subreddit",
+            "label": "Subreddit",
+            "type": "text"
+          },
+          {
+            "field": "minimum_observed",
+            "label": "Minimum",
+            "format": "number"
+          },
+          {
+            "field": "median_observed",
+            "label": "Median",
+            "format": "number"
+          },
+          {
+            "field": "mean_observed",
+            "label": "Mean",
+            "format": "number"
+          },
+          {
+            "field": "complete_months",
+            "label": "Complete months",
+            "format": "number"
+          },
+          {
+            "field": "every_complete_month_over_1000",
+            "label": "Every complete month >1,000",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "id": "format_table",
+        "title": "Format bounds under metadata-inclusive rule",
+        "dataset": "format_summary",
+        "sourceId": "format_output",
+        "defaultSort": {
+          "field": "subreddit",
+          "direction": "asc"
+        },
+        "columns": [
+          {
+            "field": "subreddit",
+            "label": "Subreddit",
+            "type": "text"
+          },
+          {
+            "field": "definite_media_lower_pct",
+            "label": "Definite media (%)",
+            "format": "number"
+          },
+          {
+            "field": "unknown_pct",
+            "label": "Unknown (%)",
+            "format": "number"
+          },
+          {
+            "field": "media_upper_pct",
+            "label": "Media upper bound (%)",
+            "format": "number"
+          },
+          {
+            "field": "definite_nonmedia_lower_pct",
+            "label": "Definite non-media (%)",
+            "format": "number"
+          },
+          {
+            "field": "robust_nonmedia_majority",
+            "label": "Non-media majority robust",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "id": "repeat_table",
+        "title": "Repeat-account comparison",
+        "dataset": "repeat_summary",
+        "sourceId": "repeat_output",
+        "defaultSort": {
+          "field": "subreddit",
+          "direction": "asc"
+        },
+        "columns": [
+          {
+            "field": "subreddit",
+            "label": "Subreddit",
+            "type": "text"
+          },
+          {
+            "field": "source_population",
+            "label": "Population",
+            "type": "text"
+          },
+          {
+            "field": "variant",
+            "label": "Rule",
+            "type": "text"
+          },
+          {
+            "field": "observed_repeat_pct",
+            "label": "Observed repeat (%)",
+            "format": "number"
+          },
+          {
+            "field": "workbook_repeat_pct",
+            "label": "Workbook implied (%)",
+            "format": "number"
+          },
+          {
+            "field": "difference_pp",
+            "label": "Difference (pp)",
+            "format": "number"
+          },
+          {
+            "field": "over_50",
+            "label": ">50%",
+            "type": "text"
+          },
+          {
+            "field": "reproduces_workbook",
+            "label": "Reproduces workbook",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "id": "classification_table",
+        "title": "Required conclusion labels",
+        "dataset": "classifications",
+        "sourceId": "classification_output",
+        "defaultSort": {
+          "field": "claim",
+          "direction": "asc"
+        },
+        "columns": [
+          {
+            "field": "claim",
+            "label": "Claim",
+            "type": "text"
+          },
+          {
+            "field": "classification",
+            "label": "Classification",
+            "type": "text"
+          },
+          {
+            "field": "finding",
+            "label": "Finding",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "id": "inventory_table",
+        "title": "Source inventory summary",
+        "dataset": "inventory",
+        "sourceId": "inventory_output",
+        "defaultSort": {
+          "field": "strongest_date",
+          "direction": "asc"
+        },
+        "columns": [
+          {
+            "field": "source_id",
+            "label": "Source",
+            "type": "text"
+          },
+          {
+            "field": "kind",
+            "label": "Kind",
+            "type": "text"
+          },
+          {
+            "field": "strongest_date",
+            "label": "Strongest date",
+            "type": "text"
+          },
+          {
+            "field": "processing_status",
+            "label": "Processing status",
+            "type": "text"
+          },
+          {
+            "field": "audit_use",
+            "label": "Audit use",
+            "type": "text"
+          },
+          {
+            "field": "access",
+            "label": "Access/safety",
+            "type": "text"
+          }
+        ]
+      }
+    ],
+    "sources": [
+      {
+        "id": "provenance_record",
+        "label": "Dated provenance record",
+        "path": "provenance.md"
+      },
+      {
+        "id": "chronology_output",
+        "label": "Recovered chronology table",
+        "path": "outputs/report_chronology.csv",
+        "query": {
+          "engine": "duckdb",
+          "language": "sql",
+          "sql": "SELECT * FROM read_csv_auto('outputs/report_chronology.csv', header=true)",
+          "description": "Bounded chronology rows assembled from the dated provenance record.",
+          "tables_used": [
+            "outputs/report_chronology.csv"
+          ],
+          "filters": []
+        }
+      },
+      {
+        "id": "claim_summary_output",
+        "label": "Claim audit summary",
+        "path": "outputs/report_claim_summary.csv",
+        "query": {
+          "engine": "duckdb",
+          "language": "sql",
+          "sql": "SELECT * FROM read_csv_auto('outputs/report_claim_summary.csv', header=true)",
+          "description": "Bounded join of monthly, format, and repeat-account aggregate findings.",
+          "tables_used": [
+            "outputs/report_claim_summary.csv"
+          ],
+          "filters": []
+        }
+      },
+      {
+        "id": "classification_output",
+        "label": "Conclusion classification table",
+        "path": "outputs/report_classifications.csv",
+        "query": {
+          "engine": "duckdb",
+          "language": "sql",
+          "sql": "SELECT * FROM read_csv_auto('outputs/report_classifications.csv', header=true)",
+          "description": "Required provenance classification for each substantive conclusion.",
+          "tables_used": [
+            "outputs/report_classifications.csv"
+          ],
+          "filters": []
+        }
+      },
+      {
+        "id": "monthly_output",
+        "label": "UTC monthly submission counts",
+        "path": "outputs/monthly_submissions.csv",
+        "query": {
+          "engine": "duckdb",
+          "language": "sql",
+          "sql": "SELECT * FROM read_csv_auto('outputs/monthly_submissions.csv', header=true)",
+          "description": "Root submissions counted by UTC calendar month from historical ZIP exports.",
+          "tables_used": [
+            "outputs/monthly_submissions.csv"
+          ],
+          "filters": [
+            "Root: parent empty and id equals thread_id",
+            "No current Reddit data",
+            "Partial months retained and labelled"
+          ]
+        }
+      },
+      {
+        "id": "format_output",
+        "label": "Submission-format sensitivity",
+        "path": "outputs/submission_format_claims.csv",
+        "query": {
+          "engine": "duckdb",
+          "language": "sql",
+          "sql": "SELECT * FROM read_csv_auto('outputs/submission_format_claims.csv', header=true)",
+          "description": "URL/domain and metadata-inclusive classification of historical root submissions.",
+          "tables_used": [
+            "outputs/submission_format_claims.csv"
+          ],
+          "filters": [
+            "External links are not equated with media",
+            "Unknowns retained",
+            "No i.redd.it/v.redd.it-only shortcut"
+          ]
+        }
+      },
+      {
+        "id": "repeat_output",
+        "label": "Repeat-account sensitivity",
+        "path": "outputs/repeat_account_comparison.csv",
+        "query": {
+          "engine": "duckdb",
+          "language": "sql",
+          "sql": "SELECT * FROM read_csv_auto('outputs/repeat_account_comparison.csv', header=true)",
+          "description": "Full-period account contribution counts compared with the recovered workbook.",
+          "tables_used": [
+            "outputs/repeat_account_comparison.csv"
+          ],
+          "filters": [
+            "Unique observable non-empty account labels",
+            "At least two total contributions",
+            "No account labels emitted"
+          ]
+        }
+      },
+      {
+        "id": "inventory_output",
+        "label": "Comprehensive source inventory",
+        "path": "source_inventory.csv",
+        "query": {
+          "engine": "duckdb",
+          "language": "sql",
+          "sql": "SELECT * FROM read_csv_auto('source_inventory.csv', header=true)",
+          "description": "Candidate sources, dates, checksums, schemas/status, and safe-handling decisions.",
+          "tables_used": [
+            "source_inventory.csv"
+          ],
+          "filters": []
+        }
+      },
+      {
+        "id": "definitions",
+        "label": "Metric definitions",
+        "path": "metric_definitions.md"
+      }
+    ],
+    "blocks": [
+      {
+        "id": "title",
+        "type": "markdown",
+        "body": "# Study 1 subreddit-selection provenance audit"
+      },
+      {
+        "id": "answer",
+        "type": "markdown",
+        "body": "## Answer\n\nThe evidence supports an earlier, separate r/politics collection and preliminary analysis. An executed May 2022 notebook recovers a repeat-account calculation for r/politics, but it does **not** document a three-subreddit selection exercise. No pre-collection artifact applying all three criteria to all three selected subreddits, and no external-statistics source, was recovered.\n\nThe historical exports do retrospectively support high activity, a robust non-image/video majority, and more than 50% repeat accounts under the audit's newly defined full-period rule. Those results are validation and sensitivity findings—not reproduction of the original selection calculation."
+      },
+      {
+        "id": "chronology_heading",
+        "type": "markdown",
+        "sourceId": "provenance_record",
+        "body": "## Preliminary politics analysis predates the later 4CAT setup\n\nr/politics was raw by November 2021, cleaned by April 2022, and analysed for account activity by May 2022. A 4CAT installation note records successful setup on 18 October 2022. The Conspiracy and Crypto exports cover 1–30 October, but the exact retrieval/job dates were not recovered; the Crypto export existed by 7 December. The first combined summary is January 2023, the first threshold sheet August 2023, and the first located paper wording September 2024."
+      },
+      {
+        "id": "chronology",
+        "type": "table",
+        "tableId": "chronology_table",
+        "layout": "full"
+      },
+      {
+        "id": "claims_heading",
+        "type": "markdown",
+        "body": "## Retrospective metrics support the concepts, with material qualifications\n\nOnly r/politics contains an inferred-complete UTC calendar month. Format classification remains robust even if every unknown is treated as media. Every full-period raw-export repeat-account estimate exceeds 50%, but none reproduces the workbook percentage exactly."
+      },
+      {
+        "id": "claims",
+        "type": "table",
+        "tableId": "claim_summary_table",
+        "layout": "full"
+      },
+      {
+        "id": "monthly_heading",
+        "type": "markdown",
+        "sourceId": "monthly_output",
+        "body": "## Monthly submissions\n\nThe r/Conspiracy and r/CryptoCurrency exports stop on 30 October 2022 and therefore contain no complete UTC calendar month. r/politics has two partial months and one inferred-complete month; its complete October count is 37,724. The partial September count of 57 is why an 'every observed month' interpretation fails for politics while the median and mean interpretations pass."
+      },
+      {
+        "id": "monthly_detail",
+        "type": "table",
+        "tableId": "monthly_table",
+        "layout": "full"
+      },
+      {
+        "id": "monthly_summary",
+        "type": "table",
+        "tableId": "monthly_summary_table",
+        "layout": "full"
+      },
+      {
+        "id": "format_heading",
+        "type": "markdown",
+        "sourceId": "format_output",
+        "body": "## Submission format\n\nThe intended concept is better described as **not image- or video-based**, not simply 'text-based'. External article/link submissions remain non-media links rather than being counted as images or videos. Under the metadata-inclusive sensitivity, definite non-media lower bounds are 62.48% for r/Conspiracy, 87.48% for r/CryptoCurrency, and 93.13% for r/politics."
+      },
+      {
+        "id": "format_chart",
+        "type": "chart",
+        "chartId": "format_composition_chart",
+        "layout": "full"
+      },
+      {
+        "id": "format",
+        "type": "table",
+        "tableId": "format_table",
+        "layout": "full"
+      },
+      {
+        "id": "repeat_heading",
+        "type": "markdown",
+        "sourceId": "repeat_output",
+        "body": "## Repeat-account participation\n\nUsing unique observable accounts over each full export period, raw repeat-account shares are 57.30% (Conspiracy), 53.35% (Crypto), and 59.14% (politics). The May 2022 politics notebook and June aggregate file also yield 59.14%, establishing an early preliminary calculation. The later workbook implies 56.69%, so its activity/window/denominator rule remains unrecovered. Politics-specific documented bot/moderator handling for this metric is unavailable."
+      },
+      {
+        "id": "repeat",
+        "type": "table",
+        "tableId": "repeat_table",
+        "layout": "full"
+      },
+      {
+        "id": "classification_heading",
+        "type": "markdown",
+        "sourceId": "provenance_record",
+        "body": "## What each conclusion is—and is not\n\nThe May 2022 notebook is a recovered original preliminary r/politics calculation, but no result qualifies as a recovered original subreddit-selection calculation. The workbook is a recovered later summary artifact, while the audit's all-subreddit raw-data calculations are retrospective validation or newly defined sensitivities."
+      },
+      {
+        "id": "classification",
+        "type": "table",
+        "tableId": "classification_table",
+        "layout": "full"
+      },
+      {
+        "id": "safe_claims",
+        "type": "markdown",
+        "body": "## Recommended thesis-safe claims\n\n- Historical study records show that r/politics was collected, prepared and analysed for account activity before the later 4CAT setup used for the other study exports.\n- Retrospective checks of the archived study exports show high submission volumes during the observed windows, although only r/politics contains a complete UTC calendar month.\n- Under transparent URL/domain and media-metadata rules, all three datasets are predominantly not image- or video-based; external links are treated separately from media.\n- Under a newly defined full-period account rule, more than 50% of observable accounts contributed at least twice in each dataset.\n- A 2023 workbook records similar above-50% complements for the selected subreddits, but its original calculation and pre-collection use could not be recovered.\n\nClaims that the three criteria were applied to all three subreddits before collection, that the preliminary politics analysis determined final selection, that external statistics were used, or that 'monthly' meant every complete month should remain qualified as unresolved."
+      },
+      {
+        "id": "viva",
+        "type": "markdown",
+        "body": "## Viva questions arising from unresolved provenance\n\n1. Was there a pre-October-2022 spreadsheet, screenshot, SubredditStats page, Pushshift query, or handwritten candidate list?\n2. Did 'over 1,000 monthly posts' mean a single observed window, every month, a median month, or a mean?\n3. Why does the May 2022 politics calculation yield 59.14% repeat accounts while the later workbook implies 56.69%?\n4. Which deleted, bot, moderator, or service accounts were excluded for r/politics?\n5. Did 'text-based' mean self-text only, or the broader concept 'not image/video', including external article links?\n6. Were r/books and r/TheDonald collected for screening, and when was the five-subreddit candidate pool first decided?\n7. Why do some later methods drafts describe the October datasets as 2021 when the exports contain October 2022 timestamps?\n8. Were external statistics consulted informally even though no citation, screenshot or query record survives?"
+      },
+      {
+        "id": "inventory_heading",
+        "type": "markdown",
+        "sourceId": "inventory_output",
+        "body": "## Source inventory and missing evidence\n\nThe package inventories raw exports, cleaned data, historical Git blobs, workbooks, notebooks, paper drafts, thesis notes, collection setup records, recovered L-drive preliminary-analysis files, the bounded Docker archive inspection, and untrusted pickle families. Exact paths, checksums, schemas/contents, periods, and handling decisions are retained in the CSV inventory."
+      },
+      {
+        "id": "inventory",
+        "type": "table",
+        "tableId": "inventory_table",
+        "layout": "full"
+      },
+      {
+        "id": "methods",
+        "type": "markdown",
+        "sourceId": "definitions",
+        "body": "## Methods, caveats, and reproducibility\n\nAll month assignment uses Unix epoch timestamps in UTC. A root requires empty `parent` and `id == thread_id`; these indicators agreed for every row. The three ZIP exports were streamed without copying records, and all 21 deterministic validation checks passed. Pickles were not opened. The Linux-side notebook was inspected as JSON without execution, and only aggregate account counts were retained. The archived Docker image was inspected through a temporary read-only-derived sparse partition copy; no Reddit records were extracted.\n\nThe package contains the deterministic scripts, SHA-256 archive identities, aggregate CSVs, run record, and exact missing-evidence list."
+      }
+    ]
+  },
+  "snapshot": {
+    "version": 1,
+    "generatedAt": "2026-08-27T00:00:00Z",
+    "status": "ready",
+    "datasets": {
+      "chronology": [
+        {
+          "date": "2021-11-18",
+          "evidence": "r/politics raw ZIP entry",
+          "implication": "Earlier separate politics collection supported"
+        },
+        {
+          "date": "2022-04-07",
+          "evidence": "Cleaned r/politics CSV",
+          "implication": "Prepared politics data existed before October 2022"
+        },
+        {
+          "date": "2022-05-09",
+          "evidence": "Executed r/politics activity notebook",
+          "implication": "Preliminary account-activity calculation recovered; selection use unresolved"
+        },
+        {
+          "date": "2022-06-15",
+          "evidence": "r/politics account aggregate CSVs",
+          "implication": "Saved aggregates reproduce the 59.14% full-period result"
+        },
+        {
+          "date": "2022-10-13/18",
+          "evidence": "4CAT source tree and installation note",
+          "implication": "Collection capability established; job date not recovered"
+        },
+        {
+          "date": "2022-10-01/30",
+          "evidence": "Conspiracy and Crypto export periods",
+          "implication": "Observation window only; retrieval date unresolved"
+        },
+        {
+          "date": "2022-12-07",
+          "evidence": "Crypto ZIP entry and Docker archive",
+          "implication": "Crypto export existed; archived Docker state has no surviving job metadata"
+        },
+        {
+          "date": "2023-01-16",
+          "evidence": "First comparative Git summary",
+          "implication": "Four candidates; politics absent"
+        },
+        {
+          "date": "2023-02-07",
+          "evidence": "Git: added r/politics to datasets",
+          "implication": "First recovered combined state"
+        },
+        {
+          "date": "2023-08-01",
+          "evidence": "First workbook with Author thresholds",
+          "implication": "Threshold artifact postdates collection"
+        },
+        {
+          "date": "2023-09-25",
+          "evidence": "Research note asks which thresholds were used",
+          "implication": "Original handling remained uncertain"
+        },
+        {
+          "date": "2024-09-17",
+          "evidence": "First located prose containing all criteria",
+          "implication": "Claim appears well after collection"
+        }
+      ],
+      "claim_summary": [
+        {
+          "subreddit": "conspiracy",
+          "complete_months": 0,
+          "complete_month_test": "unresolved_no_complete_month",
+          "definite_nonmedia_lower_pct": 62.478,
+          "media_upper_pct": 37.522,
+          "repeat_accounts_raw_pct": 57.304,
+          "classification": "retrospective/sensitivity; not original selection reproduction"
+        },
+        {
+          "subreddit": "crypto",
+          "complete_months": 0,
+          "complete_month_test": "unresolved_no_complete_month",
+          "definite_nonmedia_lower_pct": 87.481,
+          "media_upper_pct": 12.519,
+          "repeat_accounts_raw_pct": 53.349,
+          "classification": "retrospective/sensitivity; not original selection reproduction"
+        },
+        {
+          "subreddit": "politics",
+          "complete_months": 1,
+          "complete_month_test": "holds",
+          "definite_nonmedia_lower_pct": 93.129,
+          "media_upper_pct": 6.871,
+          "repeat_accounts_raw_pct": 59.141,
+          "classification": "retrospective/sensitivity; not original selection reproduction"
+        }
+      ],
+      "monthly_detail": [
+        {
+          "subreddit": "conspiracy",
+          "month_utc": "2022-10",
+          "root_submissions": 11436,
+          "coverage": "partial"
+        },
+        {
+          "subreddit": "crypto",
+          "month_utc": "2022-10",
+          "root_submissions": 14842,
+          "coverage": "partial"
+        },
+        {
+          "subreddit": "politics",
+          "month_utc": "2020-09",
+          "root_submissions": 57,
+          "coverage": "partial"
+        },
+        {
+          "subreddit": "politics",
+          "month_utc": "2020-10",
+          "root_submissions": 37724,
+          "coverage": "complete_inferred_from_timestamps"
+        },
+        {
+          "subreddit": "politics",
+          "month_utc": "2020-11",
+          "root_submissions": 30139,
+          "coverage": "partial"
+        }
+      ],
+      "monthly_summary": [
+        {
+          "subreddit": "conspiracy",
+          "observed_months": 1,
+          "complete_months": 0,
+          "minimum_observed": 11436,
+          "median_observed": 11436,
+          "mean_observed": 11436,
+          "every_complete_month_over_1000": "unresolved_no_complete_month"
+        },
+        {
+          "subreddit": "crypto",
+          "observed_months": 1,
+          "complete_months": 0,
+          "minimum_observed": 14842,
+          "median_observed": 14842,
+          "mean_observed": 14842,
+          "every_complete_month_over_1000": "unresolved_no_complete_month"
+        },
+        {
+          "subreddit": "politics",
+          "observed_months": 3,
+          "complete_months": 1,
+          "minimum_observed": 57,
+          "median_observed": 30139,
+          "mean_observed": 22640,
+          "every_complete_month_over_1000": "holds"
+        }
+      ],
+      "format_summary": [
+        {
+          "subreddit": "conspiracy",
+          "definite_media_lower_pct": 33.919,
+          "unknown_pct": 3.603,
+          "media_upper_pct": 37.522,
+          "definite_nonmedia_lower_pct": 62.478,
+          "robust_nonmedia_majority": "True"
+        },
+        {
+          "subreddit": "crypto",
+          "definite_media_lower_pct": 11.885,
+          "unknown_pct": 0.633,
+          "media_upper_pct": 12.519,
+          "definite_nonmedia_lower_pct": 87.481,
+          "robust_nonmedia_majority": "True"
+        },
+        {
+          "subreddit": "politics",
+          "definite_media_lower_pct": 6.366,
+          "unknown_pct": 0.505,
+          "media_upper_pct": 6.871,
+          "definite_nonmedia_lower_pct": 93.129,
+          "robust_nonmedia_majority": "True"
+        }
+      ],
+      "format_composition": [
+        {
+          "subreddit": "conspiracy",
+          "root_submissions": 11436,
+          "unknown_pct": 3.603,
+          "classification_rule": "metadata_inclusive",
+          "component": "Definite non-media lower bound",
+          "percent_of_roots": 62.478,
+          "bound_interpretation": "Self-text plus external article/link"
+        },
+        {
+          "subreddit": "conspiracy",
+          "root_submissions": 11436,
+          "unknown_pct": 3.603,
+          "classification_rule": "metadata_inclusive",
+          "component": "Media upper bound",
+          "percent_of_roots": 37.522,
+          "bound_interpretation": "Definite image/video plus every unknown"
+        },
+        {
+          "subreddit": "crypto",
+          "root_submissions": 14842,
+          "unknown_pct": 0.633,
+          "classification_rule": "metadata_inclusive",
+          "component": "Definite non-media lower bound",
+          "percent_of_roots": 87.481,
+          "bound_interpretation": "Self-text plus external article/link"
+        },
+        {
+          "subreddit": "crypto",
+          "root_submissions": 14842,
+          "unknown_pct": 0.633,
+          "classification_rule": "metadata_inclusive",
+          "component": "Media upper bound",
+          "percent_of_roots": 12.519,
+          "bound_interpretation": "Definite image/video plus every unknown"
+        },
+        {
+          "subreddit": "politics",
+          "root_submissions": 67920,
+          "unknown_pct": 0.505,
+          "classification_rule": "metadata_inclusive",
+          "component": "Definite non-media lower bound",
+          "percent_of_roots": 93.129,
+          "bound_interpretation": "Self-text plus external article/link"
+        },
+        {
+          "subreddit": "politics",
+          "root_submissions": 67920,
+          "unknown_pct": 0.505,
+          "classification_rule": "metadata_inclusive",
+          "component": "Media upper bound",
+          "percent_of_roots": 6.871,
+          "bound_interpretation": "Definite image/video plus every unknown"
+        }
+      ],
+      "repeat_summary": [
+        {
+          "subreddit": "conspiracy",
+          "source_population": "raw_export",
+          "variant": "observable_nonblank_unfiltered",
+          "observed_repeat_pct": 57.30402394126639,
+          "workbook_repeat_pct": 57.6789730134932,
+          "difference_pp": -0.37494907222681206,
+          "over_50": "True",
+          "reproduces_workbook": "False"
+        },
+        {
+          "subreddit": "conspiracy",
+          "source_population": "raw_export",
+          "variant": "documented_2023_cleaning_rules",
+          "observed_repeat_pct": 57.30310468070447,
+          "workbook_repeat_pct": 57.6789730134932,
+          "difference_pp": -0.3758683327887269,
+          "over_50": "True",
+          "reproduces_workbook": "False"
+        },
+        {
+          "subreddit": "crypto",
+          "source_population": "raw_export",
+          "variant": "observable_nonblank_unfiltered",
+          "observed_repeat_pct": 53.34901141015591,
+          "workbook_repeat_pct": 53.0981304121661,
+          "difference_pp": 0.25088099798981034,
+          "over_50": "True",
+          "reproduces_workbook": "False"
+        },
+        {
+          "subreddit": "crypto",
+          "source_population": "raw_export",
+          "variant": "documented_2023_cleaning_rules",
+          "observed_repeat_pct": 53.3463023721727,
+          "workbook_repeat_pct": 53.0981304121661,
+          "difference_pp": 0.24817196000660147,
+          "over_50": "True",
+          "reproduces_workbook": "False"
+        },
+        {
+          "subreddit": "politics",
+          "source_population": "raw_export",
+          "variant": "observable_nonblank_unfiltered",
+          "observed_repeat_pct": 59.14100649090745,
+          "workbook_repeat_pct": 56.685095471447,
+          "difference_pp": 2.4559110194604514,
+          "over_50": "True",
+          "reproduces_workbook": "False"
+        },
+        {
+          "subreddit": "politics",
+          "source_population": "raw_export",
+          "variant": "documented_2023_cleaning_rules",
+          "observed_repeat_pct": null,
+          "workbook_repeat_pct": 56.685095471447,
+          "difference_pp": null,
+          "over_50": "unresolved",
+          "reproduces_workbook": "unresolved"
+        },
+        {
+          "subreddit": "politics",
+          "source_population": "prepared_study_csv",
+          "variant": "observable_nonblank_unfiltered",
+          "observed_repeat_pct": 59.14079771633346,
+          "workbook_repeat_pct": 56.685095471447,
+          "difference_pp": 2.45570224488646,
+          "over_50": "True",
+          "reproduces_workbook": "False"
+        }
+      ],
+      "classifications": [
+        {
+          "claim": "Earlier separate r/politics collection and preparation",
+          "classification": "Recovered chronology evidence",
+          "finding": "Supported"
+        },
+        {
+          "claim": "Preliminary r/politics repeat-account calculation by May 2022",
+          "classification": "Recovered original preliminary calculation",
+          "finding": "59.14%; not documented as a selection calculation"
+        },
+        {
+          "claim": "All three criteria applied before study-specific collection",
+          "classification": "Unresolved",
+          "finding": "Not supported by recovered dates"
+        },
+        {
+          "claim": "Preliminary r/politics analysis used for final subreddit selection",
+          "classification": "Unresolved",
+          "finding": "Analysis recovered; decision link absent"
+        },
+        {
+          "claim": "External statistics used for screening",
+          "classification": "Unresolved",
+          "finding": "No positive evidence recovered"
+        },
+        {
+          "claim": "Workbook complements exceed 50% for selected three",
+          "classification": "Recovered original summary artifact",
+          "finding": "Values recovered; calculation not recovered"
+        },
+        {
+          "claim": "Full-period repeat-account rule exceeds 50%",
+          "classification": "Sensitivity analysis under a newly defined rule",
+          "finding": "Holds in all three raw exports"
+        },
+        {
+          "claim": "Predominantly not image/video",
+          "classification": "Sensitivity analysis under a newly defined rule",
+          "finding": "Holds under lower/upper-bound rules"
+        },
+        {
+          "claim": "Over 1,000 in every complete month",
+          "classification": "Retrospective validation using later study data",
+          "finding": "Holds for politics; unresolved for the two October exports"
+        }
+      ],
+      "inventory": [
+        {
+          "source_id": "raw_conspiracy_zip",
+          "kind": "ZIP containing raw 4CAT CSV",
+          "strongest_date": "2023-01-16T17:39:21+00:00",
+          "processing_status": "raw collected data",
+          "audit_use": "used for retrospective validation",
+          "access": "streamed from ZIP read-only"
+        },
+        {
+          "source_id": "raw_crypto_zip",
+          "kind": "ZIP containing raw 4CAT CSV",
+          "strongest_date": "2022-12-07T16:18:32+00:00",
+          "processing_status": "raw collected data",
+          "audit_use": "used for retrospective validation",
+          "access": "streamed from ZIP read-only"
+        },
+        {
+          "source_id": "raw_politics_zip",
+          "kind": "ZIP containing raw 4CAT CSV",
+          "strongest_date": "2021-11-18T14:23:14+00:00",
+          "processing_status": "raw collected data",
+          "audit_use": "used for retrospective validation",
+          "access": "streamed from ZIP read-only"
+        },
+        {
+          "source_id": "prepared_politics_csv",
+          "kind": "prepared CSV",
+          "strongest_date": "2022-04-07T10:25:21+01:00",
+          "processing_status": "cleaned study data",
+          "audit_use": "used for workbook comparison",
+          "access": "streamed read-only"
+        },
+        {
+          "source_id": "politics_author_aggregates",
+          "kind": "three prepared account-level CSVs",
+          "strongest_date": "2022-06-15",
+          "processing_status": "preliminary r/politics analysis",
+          "audit_use": "used as dated preliminary-analysis evidence and repeat-account cross-check",
+          "access": "read-only aggregate scan; account labels not emitted"
+        },
+        {
+          "source_id": "politics_activity_notebook",
+          "kind": "executed Jupyter notebook",
+          "strongest_date": "2022-05-09T18:39:53+01:00",
+          "processing_status": "preliminary r/politics analysis",
+          "audit_use": "recovered original preliminary account-activity calculation",
+          "access": "notebook JSON inspected without execution; code and aggregate output only"
+        },
+        {
+          "source_id": "local_october_csv_placeholders",
+          "kind": "OneDrive placeholder CSV copies",
+          "strongest_date": "2025-01-04",
+          "processing_status": "raw-data copies",
+          "audit_use": "not used",
+          "access": "offline/reparse placeholders"
+        },
+        {
+          "source_id": "corrupt_subreddit_archive",
+          "kind": "incomplete ZIP copy",
+          "strongest_date": "2025-02-20T14:09:04+00:00",
+          "processing_status": "unusable raw-data copy",
+          "audit_use": "not used",
+          "access": "safely inspected as container; not extracted"
+        },
+        {
+          "source_id": "initial_dataset_summary_csv",
+          "kind": "aggregate CSV",
+          "strongest_date": "2023-01-16T17:39:21+00:00",
+          "processing_status": "preliminary comparative analysis",
+          "audit_use": "used for chronology and count cross-check",
+          "access": "safe text read from Git"
+        },
+        {
+          "source_id": "initial_dataset_summary_ods",
+          "kind": "aggregate workbook",
+          "strongest_date": "2023-01-16T17:39:21+00:00",
+          "processing_status": "preliminary comparative analysis",
+          "audit_use": "used for chronology",
+          "access": "safe ODS structure inspected"
+        },
+        {
+          "source_id": "politics_combination_commit",
+          "kind": "Git commit and notebook state",
+          "strongest_date": "2023-02-07T15:06:51+00:00",
+          "processing_status": "early combined study data",
+          "audit_use": "used for chronology",
+          "access": "notebook JSON inspected without executing"
+        },
+        {
+          "source_id": "first_xlsx_summary",
+          "kind": "aggregate workbook",
+          "strongest_date": "2023-05-29T17:17:07+01:00",
+          "processing_status": "later study summary",
+          "audit_use": "used for chronology",
+          "access": "safe XLSX inspection"
+        },
+        {
+          "source_id": "threshold_workbook_git",
+          "kind": "aggregate workbook",
+          "strongest_date": "2023-08-01T17:24:21+01:00",
+          "processing_status": "later study summary",
+          "audit_use": "recovered threshold values only",
+          "access": "safe XLSX inspection; values not formulas"
+        },
+        {
+          "source_id": "threshold_workbook_current",
+          "kind": "current later workbook copy",
+          "strongest_date": "2025-08-08T15:21:23+01:00",
+          "processing_status": "later study/modelling summary",
+          "audit_use": "used only to read preserved threshold values",
+          "access": "safe XLSX inspection"
+        },
+        {
+          "source_id": "historical_author_exclusions",
+          "kind": "cleaning-rule CSV",
+          "strongest_date": "2023-01-16T17:39:21+00:00",
+          "processing_status": "cleaning rule record",
+          "audit_use": "used for repeat-account sensitivities",
+          "access": "parsed in memory; labels never output"
+        },
+        {
+          "source_id": "cleaning_notebook",
+          "kind": "notebook source",
+          "strongest_date": "2023-02-07T15:06:51+00:00",
+          "processing_status": "cleaning code",
+          "audit_use": "used to interpret exclusions",
+          "access": "JSON code cells inspected; notebook not executed"
+        },
+        {
+          "source_id": "threshold_named_notebook",
+          "kind": "notebook source",
+          "strongest_date": "2023-06-21T13:16:46+01:00",
+          "processing_status": "later modelling code",
+          "audit_use": "used as negative provenance evidence",
+          "access": "JSON code cells inspected; pickle calls not executed"
+        },
+        {
+          "source_id": "unsafe_pickle_family",
+          "kind": "pickle datasets and model inputs",
+          "strongest_date": "2023-01-10 onward",
+          "processing_status": "raw/prepared/later modelling data",
+          "audit_use": "not used",
+          "access": "not loaded because provenance and arbitrary-code risk were not justified"
+        },
+        {
+          "source_id": "uncertain_methods_note",
+          "kind": "research note",
+          "strongest_date": "2023-09-25T17:44:50+01:00",
+          "processing_status": "later research note",
+          "audit_use": "used for provenance assessment",
+          "access": "safe text read"
+        },
+        {
+          "source_id": "first_selection_prose",
+          "kind": "paper draft",
+          "strongest_date": "2024-09-17T20:05:29+01:00",
+          "processing_status": "later paper prose",
+          "audit_use": "used to date first recovered claim",
+          "access": "safe text read"
+        },
+        {
+          "source_id": "published_manuscript",
+          "kind": "paper source",
+          "strongest_date": "2025-02-11T20:32:42+00:00",
+          "processing_status": "published/later prose",
+          "audit_use": "claim under audit",
+          "access": "safe text read"
+        },
+        {
+          "source_id": "thesis_briefing",
+          "kind": "thesis briefing note",
+          "strongest_date": "2026-08-27T17:10:58+01:00",
+          "processing_status": "later thesis note",
+          "audit_use": "context and thesis-facing audit pointer",
+          "access": "safe text read"
+        },
+        {
+          "source_id": "thesis_selection_provenance_note",
+          "kind": "thesis author provenance note",
+          "strongest_date": "2026-08-27T17:10:38+01:00",
+          "processing_status": "later thesis note",
+          "audit_use": "thesis-facing interpretation of canonical audit",
+          "access": "safe text read"
+        },
+        {
+          "source_id": "primary_repository",
+          "kind": "Git repository",
+          "strongest_date": "2025-11-13T16:44:40+00:00",
+          "processing_status": "later modelling data/code",
+          "audit_use": "used to establish absence of study-era provenance",
+          "access": "read-only history audit"
+        },
+        {
+          "source_id": "later_media_flags",
+          "kind": "Python source",
+          "strongest_date": "2025-12-03T21:17:34+00:00",
+          "processing_status": "later modelling code",
+          "audit_use": "not used as sole format evidence",
+          "access": "safe source inspection"
+        },
+        {
+          "source_id": "fourcat_installation_note",
+          "kind": "installation note",
+          "strongest_date": "2022-10-18T18:37:59+01:00",
+          "processing_status": "collection setup record",
+          "audit_use": "used to bound 4CAT setup chronology",
+          "access": "read-only text inspection; no credentials present"
+        },
+        {
+          "source_id": "fourcat_code_tree",
+          "kind": "4CAT installation tree",
+          "strongest_date": "2022-10-13/2022-10-18",
+          "processing_status": "collection setup",
+          "audit_use": "used to identify expected job-record locations",
+          "access": "read-only source inspection; .env values not exposed"
+        },
+        {
+          "source_id": "fourcat_docker_archive",
+          "kind": "archived Docker Desktop raw disk image",
+          "strongest_date": "2022-12-07",
+          "processing_status": "collection environment archive",
+          "audit_use": "read-only bounded job-log recovery attempt",
+          "access": "temporary sparse partition copy inspected with debugfs and removed; source image unmodified"
+        }
+      ]
+    }
+  },
+  "sources": [
+    {
+      "id": "provenance_record",
+      "label": "Dated provenance record",
+      "path": "provenance.md"
+    },
+    {
+      "id": "chronology_output",
+      "label": "Recovered chronology table",
+      "path": "outputs/report_chronology.csv",
+      "query": {
+        "engine": "duckdb",
+        "language": "sql",
+        "sql": "SELECT * FROM read_csv_auto('outputs/report_chronology.csv', header=true)",
+        "description": "Bounded chronology rows assembled from the dated provenance record.",
+        "tables_used": [
+          "outputs/report_chronology.csv"
+        ],
+        "filters": []
+      }
+    },
+    {
+      "id": "claim_summary_output",
+      "label": "Claim audit summary",
+      "path": "outputs/report_claim_summary.csv",
+      "query": {
+        "engine": "duckdb",
+        "language": "sql",
+        "sql": "SELECT * FROM read_csv_auto('outputs/report_claim_summary.csv', header=true)",
+        "description": "Bounded join of monthly, format, and repeat-account aggregate findings.",
+        "tables_used": [
+          "outputs/report_claim_summary.csv"
+        ],
+        "filters": []
+      }
+    },
+    {
+      "id": "classification_output",
+      "label": "Conclusion classification table",
+      "path": "outputs/report_classifications.csv",
+      "query": {
+        "engine": "duckdb",
+        "language": "sql",
+        "sql": "SELECT * FROM read_csv_auto('outputs/report_classifications.csv', header=true)",
+        "description": "Required provenance classification for each substantive conclusion.",
+        "tables_used": [
+          "outputs/report_classifications.csv"
+        ],
+        "filters": []
+      }
+    },
+    {
+      "id": "monthly_output",
+      "label": "UTC monthly submission counts",
+      "path": "outputs/monthly_submissions.csv",
+      "query": {
+        "engine": "duckdb",
+        "language": "sql",
+        "sql": "SELECT * FROM read_csv_auto('outputs/monthly_submissions.csv', header=true)",
+        "description": "Root submissions counted by UTC calendar month from historical ZIP exports.",
+        "tables_used": [
+          "outputs/monthly_submissions.csv"
+        ],
+        "filters": [
+          "Root: parent empty and id equals thread_id",
+          "No current Reddit data",
+          "Partial months retained and labelled"
+        ]
+      }
+    },
+    {
+      "id": "format_output",
+      "label": "Submission-format sensitivity",
+      "path": "outputs/submission_format_claims.csv",
+      "query": {
+        "engine": "duckdb",
+        "language": "sql",
+        "sql": "SELECT * FROM read_csv_auto('outputs/submission_format_claims.csv', header=true)",
+        "description": "URL/domain and metadata-inclusive classification of historical root submissions.",
+        "tables_used": [
+          "outputs/submission_format_claims.csv"
+        ],
+        "filters": [
+          "External links are not equated with media",
+          "Unknowns retained",
+          "No i.redd.it/v.redd.it-only shortcut"
+        ]
+      }
+    },
+    {
+      "id": "repeat_output",
+      "label": "Repeat-account sensitivity",
+      "path": "outputs/repeat_account_comparison.csv",
+      "query": {
+        "engine": "duckdb",
+        "language": "sql",
+        "sql": "SELECT * FROM read_csv_auto('outputs/repeat_account_comparison.csv', header=true)",
+        "description": "Full-period account contribution counts compared with the recovered workbook.",
+        "tables_used": [
+          "outputs/repeat_account_comparison.csv"
+        ],
+        "filters": [
+          "Unique observable non-empty account labels",
+          "At least two total contributions",
+          "No account labels emitted"
+        ]
+      }
+    },
+    {
+      "id": "inventory_output",
+      "label": "Comprehensive source inventory",
+      "path": "source_inventory.csv",
+      "query": {
+        "engine": "duckdb",
+        "language": "sql",
+        "sql": "SELECT * FROM read_csv_auto('source_inventory.csv', header=true)",
+        "description": "Candidate sources, dates, checksums, schemas/status, and safe-handling decisions.",
+        "tables_used": [
+          "source_inventory.csv"
+        ],
+        "filters": []
+      }
+    },
+    {
+      "id": "definitions",
+      "label": "Metric definitions",
+      "path": "metric_definitions.md"
+    }
+  ]
+}

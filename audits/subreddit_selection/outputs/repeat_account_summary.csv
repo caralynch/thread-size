@@ -1,0 +1,13 @@
+subreddit,variant,denominator_unique_observable_accounts,numerator_accounts_with_at_least_two_contributions,percent_repeat_accounts,over_50_percent,treatment,conclusion_class
+conspiracy,observable_nonblank_unfiltered,46447,26616,57.30402394126639,True,Includes pseudonymous labels for deleted/service accounts when present,sensitivity analysis under a newly defined rule
+conspiracy,literal_placeholders_excluded,46447,26616,57.30402394126639,True,Excludes only literal deleted/removed account labels,sensitivity analysis under a newly defined rule
+conspiracy,documented_deleted_placeholder_excluded,46447,26616,57.30402394126639,True,Uses the 2023 documented dummy-label rule,sensitivity analysis under a newly defined rule
+conspiracy,documented_2023_cleaning_rules,46446,26615,57.30310468070447,True,Uses all applicable 2023 author-removal rules,sensitivity analysis under a newly defined rule
+crypto,observable_nonblank_unfiltered,34443,18375,53.34901141015591,True,Includes pseudonymous labels for deleted/service accounts when present,sensitivity analysis under a newly defined rule
+crypto,literal_placeholders_excluded,34443,18375,53.34901141015591,True,Excludes only literal deleted/removed account labels,sensitivity analysis under a newly defined rule
+crypto,documented_deleted_placeholder_excluded,34443,18375,53.34901141015591,True,Uses the 2023 documented dummy-label rule,sensitivity analysis under a newly defined rule
+crypto,documented_2023_cleaning_rules,34441,18373,53.3463023721727,True,Uses all applicable 2023 author-removal rules,sensitivity analysis under a newly defined rule
+politics,observable_nonblank_unfiltered,587129,347234,59.14100649090745,True,Includes pseudonymous labels for deleted/service accounts when present,sensitivity analysis under a newly defined rule
+politics,literal_placeholders_excluded,587129,347234,59.14100649090745,True,Excludes only literal deleted/removed account labels,sensitivity analysis under a newly defined rule
+politics,documented_deleted_placeholder_excluded,,,,unresolved_no_documented_rule_for_subreddit,Uses the 2023 documented dummy-label rule,unresolved
+politics,documented_2023_cleaning_rules,,,,unresolved_no_documented_rule_for_subreddit,Uses all applicable 2023 author-removal rules,unresolved

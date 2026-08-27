@@ -1,0 +1,4 @@
+subreddit,observed_months,complete_months_inferred,minimum_observed_month,median_observed_month,mean_observed_month,minimum_complete_month,median_complete_month,mean_complete_month,over_1000_every_observed_month,over_1000_typical_month_median,over_1000_mean_observed_month,over_1000_every_complete_month,conclusion_class
+conspiracy,1,0,11436,11436,11436,,,,True,True,True,unresolved_no_complete_month,retrospective validation using later study data
+crypto,1,0,14842,14842,14842,,,,True,True,True,unresolved_no_complete_month,retrospective validation using later study data
+politics,3,1,57,30139,22640,37724,37724,37724,False,True,True,holds,retrospective validation using later study data
