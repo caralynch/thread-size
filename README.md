@@ -36,6 +36,15 @@ deterministic scripts, and aggregate validation outputs provide the audit trail.
 The audit does not modify the modelling results or redistribute Reddit records,
 account labels, or text.
 
+The separate provenance audit of endpoint follow-up and possible right-censoring
+is in [`audits/endpoint_followup/`](audits/endpoint_followup/). Its
+[`report.md`](audits/endpoint_followup/report.md) and `provenance.md` reconcile
+the frozen final populations, labels and saved decisions without fitting models
+or regenerating predictions. The audit reports exposure relative to documented
+coverage-boundary proxies, not an inferred acquisition-completion time; its
+fixed-decision exclusion sensitivities therefore describe robustness of the
+observed labels rather than recovering unobserved replies.
+
 To reproduce the results, download the data from Zenodo and place files in the appropriate directories as specified in the Usage section below.
 
 ## Development environment and remote data access
