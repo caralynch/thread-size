@@ -1,0 +1,141 @@
+check,status,observed,expected,severity
+primary audit has no non-PASS validation checks,PASS,0,0,critical
+all existing file sources have SHA-256 checksums,PASS,36,36,critical
+final run did not skip hashes,PASS,False,False,critical
+no model fitting occurred,PASS,False,False,critical
+predictions were not regenerated,PASS,False,False,critical
+conspiracy: population partitions exactly,PASS,9116+2279=11395,floor(0.8*11395) plus remainder,critical
+crypto: population partitions exactly,PASS,11854+2964=14818,floor(0.8*14818) plus remainder,critical
+politics: population partitions exactly,PASS,52274+13069=65343,floor(0.8*65343) plus remainder,critical
+"exposure horizons complete for ('conspiracy', 'root_population', 'All held-out roots')",PASS,"[1, 6, 12, 24, 48, 72, 168]","[1, 6, 12, 24, 48, 72, 168]",critical
+"exposure counts monotone for ('conspiracy', 'root_population', 'All held-out roots')",PASS,"[21, 118, 214, 376, 768, 1152, 2279]",nondecreasing,critical
+"exposure denominators fixed for ('conspiracy', 'root_population', 'All held-out roots')",PASS,"[2279, 2279, 2279, 2279, 2279, 2279, 2279]",one denominator,critical
+"exposure percentages reconcile for ('conspiracy', 'root_population', 'All held-out roots')",PASS,True,True,critical
+"exposure horizons complete for ('conspiracy', 'stage1', 'All held-out roots')",PASS,"[1, 6, 12, 24, 48, 72, 168]","[1, 6, 12, 24, 48, 72, 168]",critical
+"exposure counts monotone for ('conspiracy', 'stage1', 'All held-out roots')",PASS,"[21, 118, 214, 376, 768, 1152, 2279]",nondecreasing,critical
+"exposure denominators fixed for ('conspiracy', 'stage1', 'All held-out roots')",PASS,"[2279, 2279, 2279, 2279, 2279, 2279, 2279]",one denominator,critical
+"exposure percentages reconcile for ('conspiracy', 'stage1', 'All held-out roots')",PASS,True,True,critical
+"exposure horizons complete for ('conspiracy', 'stage1', 'Stalled')",PASS,"[1, 6, 12, 24, 48, 72, 168]","[1, 6, 12, 24, 48, 72, 168]",critical
+"exposure counts monotone for ('conspiracy', 'stage1', 'Stalled')",PASS,"[6, 23, 37, 45, 97, 144, 316]",nondecreasing,critical
+"exposure denominators fixed for ('conspiracy', 'stage1', 'Stalled')",PASS,"[316, 316, 316, 316, 316, 316, 316]",one denominator,critical
+"exposure percentages reconcile for ('conspiracy', 'stage1', 'Stalled')",PASS,True,True,critical
+"exposure horizons complete for ('conspiracy', 'stage1', 'Started')",PASS,"[1, 6, 12, 24, 48, 72, 168]","[1, 6, 12, 24, 48, 72, 168]",critical
+"exposure counts monotone for ('conspiracy', 'stage1', 'Started')",PASS,"[15, 95, 177, 331, 671, 1008, 1963]",nondecreasing,critical
+"exposure denominators fixed for ('conspiracy', 'stage1', 'Started')",PASS,"[1963, 1963, 1963, 1963, 1963, 1963, 1963]",one denominator,critical
+"exposure percentages reconcile for ('conspiracy', 'stage1', 'Started')",PASS,True,True,critical
+"exposure horizons complete for ('conspiracy', 'stage2', 'All held-out roots')",PASS,"[1, 6, 12, 24, 48, 72, 168]","[1, 6, 12, 24, 48, 72, 168]",critical
+"exposure counts monotone for ('conspiracy', 'stage2', 'All held-out roots')",PASS,"[21, 118, 214, 376, 768, 1152, 2279]",nondecreasing,critical
+"exposure denominators fixed for ('conspiracy', 'stage2', 'All held-out roots')",PASS,"[2279, 2279, 2279, 2279, 2279, 2279, 2279]",one denominator,critical
+"exposure percentages reconcile for ('conspiracy', 'stage2', 'All held-out roots')",PASS,True,True,critical
+"exposure horizons complete for ('conspiracy', 'stage2', 'Stalled')",PASS,"[1, 6, 12, 24, 48, 72, 168]","[1, 6, 12, 24, 48, 72, 168]",critical
+"exposure counts monotone for ('conspiracy', 'stage2', 'Stalled')",PASS,"[6, 23, 37, 45, 97, 144, 316]",nondecreasing,critical
+"exposure denominators fixed for ('conspiracy', 'stage2', 'Stalled')",PASS,"[316, 316, 316, 316, 316, 316, 316]",one denominator,critical
+"exposure percentages reconcile for ('conspiracy', 'stage2', 'Stalled')",PASS,True,True,critical
+"exposure horizons complete for ('conspiracy', 'stage2', 'Small')",PASS,"[1, 6, 12, 24, 48, 72, 168]","[1, 6, 12, 24, 48, 72, 168]",critical
+"exposure counts monotone for ('conspiracy', 'stage2', 'Small')",PASS,"[8, 36, 66, 122, 250, 374, 706]",nondecreasing,critical
+"exposure denominators fixed for ('conspiracy', 'stage2', 'Small')",PASS,"[706, 706, 706, 706, 706, 706, 706]",one denominator,critical
+"exposure percentages reconcile for ('conspiracy', 'stage2', 'Small')",PASS,True,True,critical
+"exposure horizons complete for ('conspiracy', 'stage2', 'Medium')",PASS,"[1, 6, 12, 24, 48, 72, 168]","[1, 6, 12, 24, 48, 72, 168]",critical
+"exposure counts monotone for ('conspiracy', 'stage2', 'Medium')",PASS,"[7, 40, 63, 107, 216, 318, 631]",nondecreasing,critical
+"exposure denominators fixed for ('conspiracy', 'stage2', 'Medium')",PASS,"[631, 631, 631, 631, 631, 631, 631]",one denominator,critical
+"exposure percentages reconcile for ('conspiracy', 'stage2', 'Medium')",PASS,True,True,critical
+"exposure horizons complete for ('conspiracy', 'stage2', 'Large')",PASS,"[1, 6, 12, 24, 48, 72, 168]","[1, 6, 12, 24, 48, 72, 168]",critical
+"exposure counts monotone for ('conspiracy', 'stage2', 'Large')",PASS,"[0, 19, 48, 102, 205, 316, 626]",nondecreasing,critical
+"exposure denominators fixed for ('conspiracy', 'stage2', 'Large')",PASS,"[626, 626, 626, 626, 626, 626, 626]",one denominator,critical
+"exposure percentages reconcile for ('conspiracy', 'stage2', 'Large')",PASS,True,True,critical
+"exposure horizons complete for ('crypto', 'root_population', 'All held-out roots')",PASS,"[1, 6, 12, 24, 48, 72, 168]","[1, 6, 12, 24, 48, 72, 168]",critical
+"exposure counts monotone for ('crypto', 'root_population', 'All held-out roots')",PASS,"[15, 121, 268, 426, 907, 1439, 2964]",nondecreasing,critical
+"exposure denominators fixed for ('crypto', 'root_population', 'All held-out roots')",PASS,"[2964, 2964, 2964, 2964, 2964, 2964, 2964]",one denominator,critical
+"exposure percentages reconcile for ('crypto', 'root_population', 'All held-out roots')",PASS,True,True,critical
+"exposure horizons complete for ('crypto', 'stage1', 'All held-out roots')",PASS,"[1, 6, 12, 24, 48, 72, 168]","[1, 6, 12, 24, 48, 72, 168]",critical
+"exposure counts monotone for ('crypto', 'stage1', 'All held-out roots')",PASS,"[15, 121, 268, 426, 907, 1439, 2964]",nondecreasing,critical
+"exposure denominators fixed for ('crypto', 'stage1', 'All held-out roots')",PASS,"[2964, 2964, 2964, 2964, 2964, 2964, 2964]",one denominator,critical
+"exposure percentages reconcile for ('crypto', 'stage1', 'All held-out roots')",PASS,True,True,critical
+"exposure horizons complete for ('crypto', 'stage1', 'Stalled')",PASS,"[1, 6, 12, 24, 48, 72, 168]","[1, 6, 12, 24, 48, 72, 168]",critical
+"exposure counts monotone for ('crypto', 'stage1', 'Stalled')",PASS,"[10, 74, 157, 259, 541, 832, 1692]",nondecreasing,critical
+"exposure denominators fixed for ('crypto', 'stage1', 'Stalled')",PASS,"[1692, 1692, 1692, 1692, 1692, 1692, 1692]",one denominator,critical
+"exposure percentages reconcile for ('crypto', 'stage1', 'Stalled')",PASS,True,True,critical
+"exposure horizons complete for ('crypto', 'stage1', 'Started')",PASS,"[1, 6, 12, 24, 48, 72, 168]","[1, 6, 12, 24, 48, 72, 168]",critical
+"exposure counts monotone for ('crypto', 'stage1', 'Started')",PASS,"[5, 47, 111, 167, 366, 607, 1272]",nondecreasing,critical
+"exposure denominators fixed for ('crypto', 'stage1', 'Started')",PASS,"[1272, 1272, 1272, 1272, 1272, 1272, 1272]",one denominator,critical
+"exposure percentages reconcile for ('crypto', 'stage1', 'Started')",PASS,True,True,critical
+"exposure horizons complete for ('crypto', 'stage2', 'All held-out roots')",PASS,"[1, 6, 12, 24, 48, 72, 168]","[1, 6, 12, 24, 48, 72, 168]",critical
+"exposure counts monotone for ('crypto', 'stage2', 'All held-out roots')",PASS,"[15, 121, 268, 426, 907, 1439, 2964]",nondecreasing,critical
+"exposure denominators fixed for ('crypto', 'stage2', 'All held-out roots')",PASS,"[2964, 2964, 2964, 2964, 2964, 2964, 2964]",one denominator,critical
+"exposure percentages reconcile for ('crypto', 'stage2', 'All held-out roots')",PASS,True,True,critical
+"exposure horizons complete for ('crypto', 'stage2', 'Stalled')",PASS,"[1, 6, 12, 24, 48, 72, 168]","[1, 6, 12, 24, 48, 72, 168]",critical
+"exposure counts monotone for ('crypto', 'stage2', 'Stalled')",PASS,"[10, 74, 157, 259, 541, 832, 1692]",nondecreasing,critical
+"exposure denominators fixed for ('crypto', 'stage2', 'Stalled')",PASS,"[1692, 1692, 1692, 1692, 1692, 1692, 1692]",one denominator,critical
+"exposure percentages reconcile for ('crypto', 'stage2', 'Stalled')",PASS,True,True,critical
+"exposure horizons complete for ('crypto', 'stage2', 'Small')",PASS,"[1, 6, 12, 24, 48, 72, 168]","[1, 6, 12, 24, 48, 72, 168]",critical
+"exposure counts monotone for ('crypto', 'stage2', 'Small')",PASS,"[3, 16, 39, 57, 124, 229, 510]",nondecreasing,critical
+"exposure denominators fixed for ('crypto', 'stage2', 'Small')",PASS,"[510, 510, 510, 510, 510, 510, 510]",one denominator,critical
+"exposure percentages reconcile for ('crypto', 'stage2', 'Small')",PASS,True,True,critical
+"exposure horizons complete for ('crypto', 'stage2', 'Medium')",PASS,"[1, 6, 12, 24, 48, 72, 168]","[1, 6, 12, 24, 48, 72, 168]",critical
+"exposure counts monotone for ('crypto', 'stage2', 'Medium')",PASS,"[2, 15, 35, 46, 107, 177, 386]",nondecreasing,critical
+"exposure denominators fixed for ('crypto', 'stage2', 'Medium')",PASS,"[386, 386, 386, 386, 386, 386, 386]",one denominator,critical
+"exposure percentages reconcile for ('crypto', 'stage2', 'Medium')",PASS,True,True,critical
+"exposure horizons complete for ('crypto', 'stage2', 'Large')",PASS,"[1, 6, 12, 24, 48, 72, 168]","[1, 6, 12, 24, 48, 72, 168]",critical
+"exposure counts monotone for ('crypto', 'stage2', 'Large')",PASS,"[0, 16, 37, 64, 135, 201, 376]",nondecreasing,critical
+"exposure denominators fixed for ('crypto', 'stage2', 'Large')",PASS,"[376, 376, 376, 376, 376, 376, 376]",one denominator,critical
+"exposure percentages reconcile for ('crypto', 'stage2', 'Large')",PASS,True,True,critical
+"exposure horizons complete for ('politics', 'root_population', 'All held-out roots')",PASS,"[1, 6, 12, 24, 48, 72, 168]","[1, 6, 12, 24, 48, 72, 168]",critical
+"exposure counts monotone for ('politics', 'root_population', 'All held-out roots')",PASS,"[102, 526, 957, 1298, 2567, 3771, 9005]",nondecreasing,critical
+"exposure denominators fixed for ('politics', 'root_population', 'All held-out roots')",PASS,"[13069, 13069, 13069, 13069, 13069, 13069, 13069]",one denominator,critical
+"exposure percentages reconcile for ('politics', 'root_population', 'All held-out roots')",PASS,True,True,critical
+"exposure horizons complete for ('politics', 'stage1', 'All held-out roots')",PASS,"[1, 6, 12, 24, 48, 72, 168]","[1, 6, 12, 24, 48, 72, 168]",critical
+"exposure counts monotone for ('politics', 'stage1', 'All held-out roots')",PASS,"[102, 526, 957, 1298, 2567, 3771, 9005]",nondecreasing,critical
+"exposure denominators fixed for ('politics', 'stage1', 'All held-out roots')",PASS,"[13069, 13069, 13069, 13069, 13069, 13069, 13069]",one denominator,critical
+"exposure percentages reconcile for ('politics', 'stage1', 'All held-out roots')",PASS,True,True,critical
+"exposure horizons complete for ('politics', 'stage1', 'Stalled')",PASS,"[1, 6, 12, 24, 48, 72, 168]","[1, 6, 12, 24, 48, 72, 168]",critical
+"exposure counts monotone for ('politics', 'stage1', 'Stalled')",PASS,"[30, 119, 221, 308, 596, 881, 2675]",nondecreasing,critical
+"exposure denominators fixed for ('politics', 'stage1', 'Stalled')",PASS,"[3876, 3876, 3876, 3876, 3876, 3876, 3876]",one denominator,critical
+"exposure percentages reconcile for ('politics', 'stage1', 'Stalled')",PASS,True,True,critical
+"exposure horizons complete for ('politics', 'stage1', 'Started')",PASS,"[1, 6, 12, 24, 48, 72, 168]","[1, 6, 12, 24, 48, 72, 168]",critical
+"exposure counts monotone for ('politics', 'stage1', 'Started')",PASS,"[72, 407, 736, 990, 1971, 2890, 6330]",nondecreasing,critical
+"exposure denominators fixed for ('politics', 'stage1', 'Started')",PASS,"[9193, 9193, 9193, 9193, 9193, 9193, 9193]",one denominator,critical
+"exposure percentages reconcile for ('politics', 'stage1', 'Started')",PASS,True,True,critical
+"exposure horizons complete for ('politics', 'stage2', 'All held-out roots')",PASS,"[1, 6, 12, 24, 48, 72, 168]","[1, 6, 12, 24, 48, 72, 168]",critical
+"exposure counts monotone for ('politics', 'stage2', 'All held-out roots')",PASS,"[102, 526, 957, 1298, 2567, 3771, 9005]",nondecreasing,critical
+"exposure denominators fixed for ('politics', 'stage2', 'All held-out roots')",PASS,"[13069, 13069, 13069, 13069, 13069, 13069, 13069]",one denominator,critical
+"exposure percentages reconcile for ('politics', 'stage2', 'All held-out roots')",PASS,True,True,critical
+"exposure horizons complete for ('politics', 'stage2', 'Stalled')",PASS,"[1, 6, 12, 24, 48, 72, 168]","[1, 6, 12, 24, 48, 72, 168]",critical
+"exposure counts monotone for ('politics', 'stage2', 'Stalled')",PASS,"[30, 119, 221, 308, 596, 881, 2675]",nondecreasing,critical
+"exposure denominators fixed for ('politics', 'stage2', 'Stalled')",PASS,"[3876, 3876, 3876, 3876, 3876, 3876, 3876]",one denominator,critical
+"exposure percentages reconcile for ('politics', 'stage2', 'Stalled')",PASS,True,True,critical
+"exposure horizons complete for ('politics', 'stage2', 'Small')",PASS,"[1, 6, 12, 24, 48, 72, 168]","[1, 6, 12, 24, 48, 72, 168]",critical
+"exposure counts monotone for ('politics', 'stage2', 'Small')",PASS,"[46, 164, 291, 358, 667, 962, 2021]",nondecreasing,critical
+"exposure denominators fixed for ('politics', 'stage2', 'Small')",PASS,"[2921, 2921, 2921, 2921, 2921, 2921, 2921]",one denominator,critical
+"exposure percentages reconcile for ('politics', 'stage2', 'Small')",PASS,True,True,critical
+"exposure horizons complete for ('politics', 'stage2', 'Medium')",PASS,"[1, 6, 12, 24, 48, 72, 168]","[1, 6, 12, 24, 48, 72, 168]",critical
+"exposure counts monotone for ('politics', 'stage2', 'Medium')",PASS,"[24, 149, 257, 331, 667, 977, 2101]",nondecreasing,critical
+"exposure denominators fixed for ('politics', 'stage2', 'Medium')",PASS,"[3121, 3121, 3121, 3121, 3121, 3121, 3121]",one denominator,critical
+"exposure percentages reconcile for ('politics', 'stage2', 'Medium')",PASS,True,True,critical
+"exposure horizons complete for ('politics', 'stage2', 'Large')",PASS,"[1, 6, 12, 24, 48, 72, 168]","[1, 6, 12, 24, 48, 72, 168]",critical
+"exposure counts monotone for ('politics', 'stage2', 'Large')",PASS,"[2, 94, 188, 301, 637, 951, 2208]",nondecreasing,critical
+"exposure denominators fixed for ('politics', 'stage2', 'Large')",PASS,"[3151, 3151, 3151, 3151, 3151, 3151, 3151]",one denominator,critical
+"exposure percentages reconcile for ('politics', 'stage2', 'Large')",PASS,True,True,critical
+"sensitivity subsets complete for ('conspiracy', 'stage1')",PASS,5,5,critical
+"sensitivity retained counts monotone for ('conspiracy', 'stage1')",PASS,"[2279, 1903, 1511, 1127, 0]",nonincreasing,critical
+"sensitivity counts partition for ('conspiracy', 'stage1')",PASS,"[(2279, 0), (1903, 376), (1511, 768), (1127, 1152), (0, 2279)]",2279,critical
+"sensitivity subsets complete for ('conspiracy', 'stage2')",PASS,5,5,critical
+"sensitivity retained counts monotone for ('conspiracy', 'stage2')",PASS,"[2279, 1903, 1511, 1127, 0]",nonincreasing,critical
+"sensitivity counts partition for ('conspiracy', 'stage2')",PASS,"[(2279, 0), (1903, 376), (1511, 768), (1127, 1152), (0, 2279)]",2279,critical
+"sensitivity subsets complete for ('crypto', 'stage1')",PASS,5,5,critical
+"sensitivity retained counts monotone for ('crypto', 'stage1')",PASS,"[2964, 2538, 2057, 1525, 0]",nonincreasing,critical
+"sensitivity counts partition for ('crypto', 'stage1')",PASS,"[(2964, 0), (2538, 426), (2057, 907), (1525, 1439), (0, 2964)]",2964,critical
+"sensitivity subsets complete for ('crypto', 'stage2')",PASS,5,5,critical
+"sensitivity retained counts monotone for ('crypto', 'stage2')",PASS,"[2964, 2538, 2057, 1525, 0]",nonincreasing,critical
+"sensitivity counts partition for ('crypto', 'stage2')",PASS,"[(2964, 0), (2538, 426), (2057, 907), (1525, 1439), (0, 2964)]",2964,critical
+"sensitivity subsets complete for ('politics', 'stage1')",PASS,5,5,critical
+"sensitivity retained counts monotone for ('politics', 'stage1')",PASS,"[13069, 11771, 10502, 9298, 4064]",nonincreasing,critical
+"sensitivity counts partition for ('politics', 'stage1')",PASS,"[(13069, 0), (11771, 1298), (10502, 2567), (9298, 3771), (4064, 9005)]",13069,critical
+"sensitivity subsets complete for ('politics', 'stage2')",PASS,5,5,critical
+"sensitivity retained counts monotone for ('politics', 'stage2')",PASS,"[13069, 11771, 10502, 9298, 4064]",nonincreasing,critical
+"sensitivity counts partition for ('politics', 'stage2')",PASS,"[(13069, 0), (11771, 1298), (10502, 2567), (9298, 3771), (4064, 9005)]",13069,critical
+all confusion-matrix counts sum to retained N,PASS,0,0,critical
+class counts and prevalence reconcile,PASS,True,True,critical
+reply-timing numerators and percentages are bounded,PASS,True,True,critical
+raw row types partition exactly,PASS,True,True,critical
+raw validation has no FAIL status,PASS,0,0,critical
+aggregate CSV headers contain no Reddit identifier/text fields,PASS,18,all aggregate CSV files,critical

@@ -1,0 +1,4 @@
+subreddit,final_cleaned_roots,reconstructed_train_roots,reconstructed_heldout_roots,split_index,train_fraction_realized,heldout_start_utc,heldout_end_utc,coverage_boundary_utc,endpoint_kind,stage1_stalled_n,stage1_started_n,stage2_stalled_n,stage2_small_n,stage2_medium_n,stage2_large_n
+conspiracy,11395,9116,2279,9116,0.8,2022-10-25T04:43:36Z,2022-10-30T23:55:25Z,2022-10-31T00:00:00Z,documented_coverage_boundary_proxy,316,1963,316,706,631,626
+crypto,14818,11854,2964,11854,0.7999730058037522,2022-10-25T14:13:07Z,2022-10-30T23:52:09Z,2022-10-31T00:00:00Z,documented_coverage_boundary_proxy,1692,1272,1692,510,386,376
+politics,65343,52274,13069,52274,0.799993878456759,2020-11-10T23:19:02Z,2020-11-19T23:59:04Z,2020-11-20T00:00:00Z,documented_coverage_boundary_proxy,3876,9193,3876,2921,3121,3151

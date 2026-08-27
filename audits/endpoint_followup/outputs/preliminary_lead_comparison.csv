@@ -1,0 +1,10 @@
+subreddit,lead_metric,preliminary_pct,reproduced_pct,population_used,status
+conspiracy,raw roots in final 24 hours,3.29,,not computed here; raw archive diagnostic is separate,requires_raw_archive_output
+conspiracy,final cleaned roots in final 24 hours,3.29,3.299692847740237,final_cleaned_all_roots,not_directly_comparable_to_raw_lead
+conspiracy,matched observed comments within 24 hours,94.0,93.8269906298525,final_cleaned_horizon_specific_24h_eligible_roots,rejected_at_0.1pp_tolerance
+crypto,raw roots in final 24 hours,2.88,,not computed here; raw archive diagnostic is separate,requires_raw_archive_output
+crypto,final cleaned roots in final 24 hours,2.88,2.874881900391416,final_cleaned_all_roots,not_directly_comparable_to_raw_lead
+crypto,matched observed comments within 24 hours,97.8,98.01544934999686,final_cleaned_horizon_specific_24h_eligible_roots,rejected_at_0.1pp_tolerance
+politics,raw roots in final 24 hours,2.2,,not computed here; raw archive diagnostic is separate,requires_raw_archive_output
+politics,final cleaned roots in final 24 hours,2.2,1.986440781721072,final_cleaned_all_roots,not_directly_comparable_to_raw_lead
+politics,matched observed comments within 24 hours,98.8,98.5947069815464,final_cleaned_horizon_specific_24h_eligible_roots,rejected_at_0.1pp_tolerance

@@ -1,0 +1,4 @@
+subreddit,cleaned_root_rows,cleaned_root_min_utc,cleaned_root_max_utc,cleaned_comment_rows,cleaned_comment_min_utc,cleaned_comment_max_utc,coverage_boundary_utc,endpoint_kind
+conspiracy,11395,2022-10-01T00:01:50Z,2022-10-30T23:55:25Z,365990,2022-10-01T00:03:50Z,2022-10-30T23:59:58Z,2022-10-31T00:00:00Z,documented_coverage_boundary_proxy
+crypto,14818,2022-10-01T00:00:13Z,2022-10-30T23:52:09Z,392671,2022-10-01T00:02:41Z,2022-10-30T23:59:50Z,2022-10-31T00:00:00Z,documented_coverage_boundary_proxy
+politics,65343,2020-09-30T23:00:16Z,2020-11-19T23:59:04Z,3574447,2020-09-30T23:02:58Z,2020-11-19T23:59:58Z,2020-11-20T00:00:00Z,documented_coverage_boundary_proxy

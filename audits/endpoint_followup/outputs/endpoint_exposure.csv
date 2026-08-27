@@ -1,0 +1,190 @@
+subreddit,classification_stage,observed_class,horizon_hours,heldout_roots,limited_followup_roots,limited_followup_pct,endpoint_kind
+conspiracy,root_population,All held-out roots,1,2279,21,0.9214567792891618,documented_coverage_boundary_proxy
+conspiracy,root_population,All held-out roots,6,2279,118,5.177709521720052,documented_coverage_boundary_proxy
+conspiracy,root_population,All held-out roots,12,2279,214,9.390083369899079,documented_coverage_boundary_proxy
+conspiracy,root_population,All held-out roots,24,2279,376,16.498464238701185,documented_coverage_boundary_proxy
+conspiracy,root_population,All held-out roots,48,2279,768,33.69899078543221,documented_coverage_boundary_proxy
+conspiracy,root_population,All held-out roots,72,2279,1152,50.54848617814831,documented_coverage_boundary_proxy
+conspiracy,root_population,All held-out roots,168,2279,2279,100.0,documented_coverage_boundary_proxy
+conspiracy,stage1,All held-out roots,1,2279,21,0.9214567792891618,documented_coverage_boundary_proxy
+conspiracy,stage1,All held-out roots,6,2279,118,5.177709521720052,documented_coverage_boundary_proxy
+conspiracy,stage1,All held-out roots,12,2279,214,9.390083369899079,documented_coverage_boundary_proxy
+conspiracy,stage1,All held-out roots,24,2279,376,16.498464238701185,documented_coverage_boundary_proxy
+conspiracy,stage1,All held-out roots,48,2279,768,33.69899078543221,documented_coverage_boundary_proxy
+conspiracy,stage1,All held-out roots,72,2279,1152,50.54848617814831,documented_coverage_boundary_proxy
+conspiracy,stage1,All held-out roots,168,2279,2279,100.0,documented_coverage_boundary_proxy
+conspiracy,stage1,Stalled,1,316,6,1.89873417721519,documented_coverage_boundary_proxy
+conspiracy,stage1,Stalled,6,316,23,7.2784810126582276,documented_coverage_boundary_proxy
+conspiracy,stage1,Stalled,12,316,37,11.708860759493671,documented_coverage_boundary_proxy
+conspiracy,stage1,Stalled,24,316,45,14.240506329113925,documented_coverage_boundary_proxy
+conspiracy,stage1,Stalled,48,316,97,30.69620253164557,documented_coverage_boundary_proxy
+conspiracy,stage1,Stalled,72,316,144,45.56962025316456,documented_coverage_boundary_proxy
+conspiracy,stage1,Stalled,168,316,316,100.0,documented_coverage_boundary_proxy
+conspiracy,stage1,Started,1,1963,15,0.7641365257259297,documented_coverage_boundary_proxy
+conspiracy,stage1,Started,6,1963,95,4.839531329597555,documented_coverage_boundary_proxy
+conspiracy,stage1,Started,12,1963,177,9.016811003565971,documented_coverage_boundary_proxy
+conspiracy,stage1,Started,24,1963,331,16.86194600101885,documented_coverage_boundary_proxy
+conspiracy,stage1,Started,48,1963,671,34.18237391747326,documented_coverage_boundary_proxy
+conspiracy,stage1,Started,72,1963,1008,51.34997452878247,documented_coverage_boundary_proxy
+conspiracy,stage1,Started,168,1963,1963,100.0,documented_coverage_boundary_proxy
+conspiracy,stage2,All held-out roots,1,2279,21,0.9214567792891618,documented_coverage_boundary_proxy
+conspiracy,stage2,All held-out roots,6,2279,118,5.177709521720052,documented_coverage_boundary_proxy
+conspiracy,stage2,All held-out roots,12,2279,214,9.390083369899079,documented_coverage_boundary_proxy
+conspiracy,stage2,All held-out roots,24,2279,376,16.498464238701185,documented_coverage_boundary_proxy
+conspiracy,stage2,All held-out roots,48,2279,768,33.69899078543221,documented_coverage_boundary_proxy
+conspiracy,stage2,All held-out roots,72,2279,1152,50.54848617814831,documented_coverage_boundary_proxy
+conspiracy,stage2,All held-out roots,168,2279,2279,100.0,documented_coverage_boundary_proxy
+conspiracy,stage2,Stalled,1,316,6,1.89873417721519,documented_coverage_boundary_proxy
+conspiracy,stage2,Stalled,6,316,23,7.2784810126582276,documented_coverage_boundary_proxy
+conspiracy,stage2,Stalled,12,316,37,11.708860759493671,documented_coverage_boundary_proxy
+conspiracy,stage2,Stalled,24,316,45,14.240506329113925,documented_coverage_boundary_proxy
+conspiracy,stage2,Stalled,48,316,97,30.69620253164557,documented_coverage_boundary_proxy
+conspiracy,stage2,Stalled,72,316,144,45.56962025316456,documented_coverage_boundary_proxy
+conspiracy,stage2,Stalled,168,316,316,100.0,documented_coverage_boundary_proxy
+conspiracy,stage2,Small,1,706,8,1.13314447592068,documented_coverage_boundary_proxy
+conspiracy,stage2,Small,6,706,36,5.099150141643059,documented_coverage_boundary_proxy
+conspiracy,stage2,Small,12,706,66,9.34844192634561,documented_coverage_boundary_proxy
+conspiracy,stage2,Small,24,706,122,17.280453257790366,documented_coverage_boundary_proxy
+conspiracy,stage2,Small,48,706,250,35.41076487252124,documented_coverage_boundary_proxy
+conspiracy,stage2,Small,72,706,374,52.97450424929179,documented_coverage_boundary_proxy
+conspiracy,stage2,Small,168,706,706,100.0,documented_coverage_boundary_proxy
+conspiracy,stage2,Medium,1,631,7,1.109350237717908,documented_coverage_boundary_proxy
+conspiracy,stage2,Medium,6,631,40,6.3391442155309035,documented_coverage_boundary_proxy
+conspiracy,stage2,Medium,12,631,63,9.984152139461171,documented_coverage_boundary_proxy
+conspiracy,stage2,Medium,24,631,107,16.957210776545168,documented_coverage_boundary_proxy
+conspiracy,stage2,Medium,48,631,216,34.23137876386688,documented_coverage_boundary_proxy
+conspiracy,stage2,Medium,72,631,318,50.396196513470684,documented_coverage_boundary_proxy
+conspiracy,stage2,Medium,168,631,631,100.0,documented_coverage_boundary_proxy
+conspiracy,stage2,Large,1,626,0,0.0,documented_coverage_boundary_proxy
+conspiracy,stage2,Large,6,626,19,3.035143769968051,documented_coverage_boundary_proxy
+conspiracy,stage2,Large,12,626,48,7.667731629392971,documented_coverage_boundary_proxy
+conspiracy,stage2,Large,24,626,102,16.293929712460063,documented_coverage_boundary_proxy
+conspiracy,stage2,Large,48,626,205,32.74760383386581,documented_coverage_boundary_proxy
+conspiracy,stage2,Large,72,626,316,50.47923322683706,documented_coverage_boundary_proxy
+conspiracy,stage2,Large,168,626,626,100.0,documented_coverage_boundary_proxy
+crypto,root_population,All held-out roots,1,2964,15,0.5060728744939271,documented_coverage_boundary_proxy
+crypto,root_population,All held-out roots,6,2964,121,4.082321187584345,documented_coverage_boundary_proxy
+crypto,root_population,All held-out roots,12,2964,268,9.041835357624832,documented_coverage_boundary_proxy
+crypto,root_population,All held-out roots,24,2964,426,14.37246963562753,documented_coverage_boundary_proxy
+crypto,root_population,All held-out roots,48,2964,907,30.600539811066124,documented_coverage_boundary_proxy
+crypto,root_population,All held-out roots,72,2964,1439,48.549257759784076,documented_coverage_boundary_proxy
+crypto,root_population,All held-out roots,168,2964,2964,100.0,documented_coverage_boundary_proxy
+crypto,stage1,All held-out roots,1,2964,15,0.5060728744939271,documented_coverage_boundary_proxy
+crypto,stage1,All held-out roots,6,2964,121,4.082321187584345,documented_coverage_boundary_proxy
+crypto,stage1,All held-out roots,12,2964,268,9.041835357624832,documented_coverage_boundary_proxy
+crypto,stage1,All held-out roots,24,2964,426,14.37246963562753,documented_coverage_boundary_proxy
+crypto,stage1,All held-out roots,48,2964,907,30.600539811066124,documented_coverage_boundary_proxy
+crypto,stage1,All held-out roots,72,2964,1439,48.549257759784076,documented_coverage_boundary_proxy
+crypto,stage1,All held-out roots,168,2964,2964,100.0,documented_coverage_boundary_proxy
+crypto,stage1,Stalled,1,1692,10,0.5910165484633569,documented_coverage_boundary_proxy
+crypto,stage1,Stalled,6,1692,74,4.373522458628842,documented_coverage_boundary_proxy
+crypto,stage1,Stalled,12,1692,157,9.278959810874705,documented_coverage_boundary_proxy
+crypto,stage1,Stalled,24,1692,259,15.307328605200945,documented_coverage_boundary_proxy
+crypto,stage1,Stalled,48,1692,541,31.97399527186761,documented_coverage_boundary_proxy
+crypto,stage1,Stalled,72,1692,832,49.1725768321513,documented_coverage_boundary_proxy
+crypto,stage1,Stalled,168,1692,1692,100.0,documented_coverage_boundary_proxy
+crypto,stage1,Started,1,1272,5,0.39308176100628933,documented_coverage_boundary_proxy
+crypto,stage1,Started,6,1272,47,3.6949685534591192,documented_coverage_boundary_proxy
+crypto,stage1,Started,12,1272,111,8.726415094339622,documented_coverage_boundary_proxy
+crypto,stage1,Started,24,1272,167,13.128930817610062,documented_coverage_boundary_proxy
+crypto,stage1,Started,48,1272,366,28.77358490566038,documented_coverage_boundary_proxy
+crypto,stage1,Started,72,1272,607,47.72012578616352,documented_coverage_boundary_proxy
+crypto,stage1,Started,168,1272,1272,100.0,documented_coverage_boundary_proxy
+crypto,stage2,All held-out roots,1,2964,15,0.5060728744939271,documented_coverage_boundary_proxy
+crypto,stage2,All held-out roots,6,2964,121,4.082321187584345,documented_coverage_boundary_proxy
+crypto,stage2,All held-out roots,12,2964,268,9.041835357624832,documented_coverage_boundary_proxy
+crypto,stage2,All held-out roots,24,2964,426,14.37246963562753,documented_coverage_boundary_proxy
+crypto,stage2,All held-out roots,48,2964,907,30.600539811066124,documented_coverage_boundary_proxy
+crypto,stage2,All held-out roots,72,2964,1439,48.549257759784076,documented_coverage_boundary_proxy
+crypto,stage2,All held-out roots,168,2964,2964,100.0,documented_coverage_boundary_proxy
+crypto,stage2,Stalled,1,1692,10,0.5910165484633569,documented_coverage_boundary_proxy
+crypto,stage2,Stalled,6,1692,74,4.373522458628842,documented_coverage_boundary_proxy
+crypto,stage2,Stalled,12,1692,157,9.278959810874705,documented_coverage_boundary_proxy
+crypto,stage2,Stalled,24,1692,259,15.307328605200945,documented_coverage_boundary_proxy
+crypto,stage2,Stalled,48,1692,541,31.97399527186761,documented_coverage_boundary_proxy
+crypto,stage2,Stalled,72,1692,832,49.1725768321513,documented_coverage_boundary_proxy
+crypto,stage2,Stalled,168,1692,1692,100.0,documented_coverage_boundary_proxy
+crypto,stage2,Small,1,510,3,0.5882352941176471,documented_coverage_boundary_proxy
+crypto,stage2,Small,6,510,16,3.1372549019607843,documented_coverage_boundary_proxy
+crypto,stage2,Small,12,510,39,7.647058823529412,documented_coverage_boundary_proxy
+crypto,stage2,Small,24,510,57,11.176470588235295,documented_coverage_boundary_proxy
+crypto,stage2,Small,48,510,124,24.313725490196077,documented_coverage_boundary_proxy
+crypto,stage2,Small,72,510,229,44.90196078431373,documented_coverage_boundary_proxy
+crypto,stage2,Small,168,510,510,100.0,documented_coverage_boundary_proxy
+crypto,stage2,Medium,1,386,2,0.5181347150259068,documented_coverage_boundary_proxy
+crypto,stage2,Medium,6,386,15,3.8860103626943006,documented_coverage_boundary_proxy
+crypto,stage2,Medium,12,386,35,9.067357512953368,documented_coverage_boundary_proxy
+crypto,stage2,Medium,24,386,46,11.917098445595855,documented_coverage_boundary_proxy
+crypto,stage2,Medium,48,386,107,27.72020725388601,documented_coverage_boundary_proxy
+crypto,stage2,Medium,72,386,177,45.854922279792746,documented_coverage_boundary_proxy
+crypto,stage2,Medium,168,386,386,100.0,documented_coverage_boundary_proxy
+crypto,stage2,Large,1,376,0,0.0,documented_coverage_boundary_proxy
+crypto,stage2,Large,6,376,16,4.25531914893617,documented_coverage_boundary_proxy
+crypto,stage2,Large,12,376,37,9.840425531914894,documented_coverage_boundary_proxy
+crypto,stage2,Large,24,376,64,17.02127659574468,documented_coverage_boundary_proxy
+crypto,stage2,Large,48,376,135,35.90425531914894,documented_coverage_boundary_proxy
+crypto,stage2,Large,72,376,201,53.45744680851063,documented_coverage_boundary_proxy
+crypto,stage2,Large,168,376,376,100.0,documented_coverage_boundary_proxy
+politics,root_population,All held-out roots,1,13069,102,0.7804728747417553,documented_coverage_boundary_proxy
+politics,root_population,All held-out roots,6,13069,526,4.024791491315327,documented_coverage_boundary_proxy
+politics,root_population,All held-out roots,12,13069,957,7.322671971841762,documented_coverage_boundary_proxy
+politics,root_population,All held-out roots,24,13069,1298,9.931899915831357,documented_coverage_boundary_proxy
+politics,root_population,All held-out roots,48,13069,2567,19.64190068100084,documented_coverage_boundary_proxy
+politics,root_population,All held-out roots,72,13069,3771,28.85454128089372,documented_coverage_boundary_proxy
+politics,root_population,All held-out roots,168,13069,9005,68.90351212793634,documented_coverage_boundary_proxy
+politics,stage1,All held-out roots,1,13069,102,0.7804728747417553,documented_coverage_boundary_proxy
+politics,stage1,All held-out roots,6,13069,526,4.024791491315327,documented_coverage_boundary_proxy
+politics,stage1,All held-out roots,12,13069,957,7.322671971841762,documented_coverage_boundary_proxy
+politics,stage1,All held-out roots,24,13069,1298,9.931899915831357,documented_coverage_boundary_proxy
+politics,stage1,All held-out roots,48,13069,2567,19.64190068100084,documented_coverage_boundary_proxy
+politics,stage1,All held-out roots,72,13069,3771,28.85454128089372,documented_coverage_boundary_proxy
+politics,stage1,All held-out roots,168,13069,9005,68.90351212793634,documented_coverage_boundary_proxy
+politics,stage1,Stalled,1,3876,30,0.7739938080495357,documented_coverage_boundary_proxy
+politics,stage1,Stalled,6,3876,119,3.070175438596491,documented_coverage_boundary_proxy
+politics,stage1,Stalled,12,3876,221,5.701754385964912,documented_coverage_boundary_proxy
+politics,stage1,Stalled,24,3876,308,7.946336429308566,documented_coverage_boundary_proxy
+politics,stage1,Stalled,48,3876,596,15.376676986584107,documented_coverage_boundary_proxy
+politics,stage1,Stalled,72,3876,881,22.729618163054695,documented_coverage_boundary_proxy
+politics,stage1,Stalled,168,3876,2675,69.01444788441692,documented_coverage_boundary_proxy
+politics,stage1,Started,1,9193,72,0.7832046122049385,documented_coverage_boundary_proxy
+politics,stage1,Started,6,9193,407,4.427281627325138,documented_coverage_boundary_proxy
+politics,stage1,Started,12,9193,736,8.00609159142826,documented_coverage_boundary_proxy
+politics,stage1,Started,24,9193,990,10.769063417817906,documented_coverage_boundary_proxy
+politics,stage1,Started,48,9193,1971,21.440226259110194,documented_coverage_boundary_proxy
+politics,stage1,Started,72,9193,2890,31.43696290655934,documented_coverage_boundary_proxy
+politics,stage1,Started,168,9193,6330,68.85673882301752,documented_coverage_boundary_proxy
+politics,stage2,All held-out roots,1,13069,102,0.7804728747417553,documented_coverage_boundary_proxy
+politics,stage2,All held-out roots,6,13069,526,4.024791491315327,documented_coverage_boundary_proxy
+politics,stage2,All held-out roots,12,13069,957,7.322671971841762,documented_coverage_boundary_proxy
+politics,stage2,All held-out roots,24,13069,1298,9.931899915831357,documented_coverage_boundary_proxy
+politics,stage2,All held-out roots,48,13069,2567,19.64190068100084,documented_coverage_boundary_proxy
+politics,stage2,All held-out roots,72,13069,3771,28.85454128089372,documented_coverage_boundary_proxy
+politics,stage2,All held-out roots,168,13069,9005,68.90351212793634,documented_coverage_boundary_proxy
+politics,stage2,Stalled,1,3876,30,0.7739938080495357,documented_coverage_boundary_proxy
+politics,stage2,Stalled,6,3876,119,3.070175438596491,documented_coverage_boundary_proxy
+politics,stage2,Stalled,12,3876,221,5.701754385964912,documented_coverage_boundary_proxy
+politics,stage2,Stalled,24,3876,308,7.946336429308566,documented_coverage_boundary_proxy
+politics,stage2,Stalled,48,3876,596,15.376676986584107,documented_coverage_boundary_proxy
+politics,stage2,Stalled,72,3876,881,22.729618163054695,documented_coverage_boundary_proxy
+politics,stage2,Stalled,168,3876,2675,69.01444788441692,documented_coverage_boundary_proxy
+politics,stage2,Small,1,2921,46,1.574803149606299,documented_coverage_boundary_proxy
+politics,stage2,Small,6,2921,164,5.614515576857241,documented_coverage_boundary_proxy
+politics,stage2,Small,12,2921,291,9.962341663813762,documented_coverage_boundary_proxy
+politics,stage2,Small,24,2921,358,12.256076686066415,documented_coverage_boundary_proxy
+politics,stage2,Small,48,2921,667,22.83464566929134,documented_coverage_boundary_proxy
+politics,stage2,Small,72,2921,962,32.93392673741869,documented_coverage_boundary_proxy
+politics,stage2,Small,168,2921,2021,69.18863402944197,documented_coverage_boundary_proxy
+politics,stage2,Medium,1,3121,24,0.768984299903877,documented_coverage_boundary_proxy
+politics,stage2,Medium,6,3121,149,4.774110861903236,documented_coverage_boundary_proxy
+politics,stage2,Medium,12,3121,257,8.234540211470682,documented_coverage_boundary_proxy
+politics,stage2,Medium,24,3121,331,10.605575136174302,documented_coverage_boundary_proxy
+politics,stage2,Medium,48,3121,667,21.371355334828582,documented_coverage_boundary_proxy
+politics,stage2,Medium,72,3121,977,31.304069208586995,documented_coverage_boundary_proxy
+politics,stage2,Medium,168,3121,2101,67.31816725408522,documented_coverage_boundary_proxy
+politics,stage2,Large,1,3151,2,0.06347191367819739,documented_coverage_boundary_proxy
+politics,stage2,Large,6,3151,94,2.9831799428752777,documented_coverage_boundary_proxy
+politics,stage2,Large,12,3151,188,5.966359885750555,documented_coverage_boundary_proxy
+politics,stage2,Large,24,3151,301,9.55252300856871,documented_coverage_boundary_proxy
+politics,stage2,Large,48,3151,637,20.215804506505872,documented_coverage_boundary_proxy
+politics,stage2,Large,72,3151,951,30.18089495398286,documented_coverage_boundary_proxy
+politics,stage2,Large,168,3151,2208,70.07299270072993,documented_coverage_boundary_proxy

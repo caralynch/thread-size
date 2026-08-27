@@ -1,0 +1,9 @@
+{
+  "created_utc": "2026-08-27T19:19:02.837338+00:00",
+  "archives": {
+    "conspiracy": "/home/cara/Documents/reddit_analyses/conspiracy_oct2022.zip",
+    "crypto": "/home/cara/Documents/reddit_analyses/cryptocurrency_oct2022.zip",
+    "politics": "/home/cara/Documents/reddit_analyses/politics_nov2020.zip"
+  },
+  "outputs_contain_identifiers_or_text": false
+}

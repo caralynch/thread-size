@@ -1,0 +1,13 @@
+subreddit,stage,class_index,observed_class,lower_log_edge,upper_log_edge,right_closed,observed_heldout_min_thread_size,observed_heldout_max_thread_size
+conspiracy,stage2,0,Stalled,-0.001,0.6921471805599453,True,1,1
+conspiracy,stage2,1,Small,0.6921471805599453,1.791759469228055,True,2,6
+conspiracy,stage2,2,Medium,1.791759469228055,2.9444389791664403,True,7,19
+conspiracy,stage2,3,Large,2.9444389791664403,7.729415779841042,True,20,1214
+crypto,stage2,0,Stalled,-0.001,0.6921471805599453,True,1,1
+crypto,stage2,1,Small,0.6921471805599453,2.302585092994046,True,2,10
+crypto,stage2,2,Medium,2.302585092994046,3.4657359027997265,True,11,32
+crypto,stage2,3,Large,3.4657359027997265,8.38283155348556,True,33,4022
+politics,stage2,0,Stalled,-0.001,0.6921471805599453,True,1,1
+politics,stage2,1,Small,0.6921471805599453,2.1972245773362196,True,2,9
+politics,stage2,2,Medium,2.1972245773362196,3.4011973816621555,True,10,30
+politics,stage2,3,Large,3.4011973816621555,9.620332585860503,True,31,5250

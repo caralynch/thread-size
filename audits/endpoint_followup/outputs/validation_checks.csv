@@ -1,0 +1,85 @@
+subreddit,check,status,observed,expected,severity,blocking_for_population_reproduction
+conspiracy,root thread_id non-null,PASS,0,0,critical,False
+conspiracy,root thread_id unique,PASS,0,0,critical,False
+conspiracy,feature output preserves final cleaned roots exactly,PASS,True,True,critical,True
+conspiracy,reconstructed chronological test IDs and order match frozen enriched test,PASS,True,True,critical,True
+conspiracy,reconstructed test targets match frozen test_Y,PASS,True,True,critical,True
+conspiracy,held-out row counts reconcile across frozen artefacts,PASS,2279|2279|2279|2279,all equal,critical,True
+conspiracy,all cleaned root timestamps precede coverage boundary,PASS,0,0,critical,False
+conspiracy,Stage 1 saved predictions join one-to-one by held-out row index,PASS,True,True,critical,True
+conspiracy,Stage 2 saved predictions join one-to-one by held-out row index,PASS,True,True,critical,True
+conspiracy,Stage 2 CSV labels match saved y_test,PASS,True,True,critical,True
+conspiracy,Stage 2 labels reproduce from frozen bin edges,PASS,True,True,critical,True
+conspiracy,stage1 full held-out mcc matches frozen workbook,PASS,5.551115123125783e-17,<1e-12,critical,False
+conspiracy,stage1 full held-out balanced_accuracy matches frozen workbook,PASS,0.0,<1e-12,critical,False
+conspiracy,stage1 full held-out recall class 0 matches frozen workbook,PASS,2.7755575615628914e-17,<1e-12,critical,False
+conspiracy,stage1 full held-out recall class 1 matches frozen workbook,PASS,0.0,<1e-12,critical,False
+conspiracy,stage2 full held-out mcc matches frozen workbook,PASS,5.551115123125783e-17,<1e-12,critical,False
+conspiracy,stage2 full held-out balanced_accuracy matches frozen workbook,PASS,0.0,<1e-12,critical,False
+conspiracy,stage2 full held-out recall class 0 matches frozen workbook,PASS,0.0,<1e-12,critical,False
+conspiracy,stage2 full held-out recall class 1 matches frozen workbook,PASS,0.0,<1e-12,critical,False
+conspiracy,stage2 full held-out recall class 2 matches frozen workbook,PASS,0.0,<1e-12,critical,False
+conspiracy,stage2 full held-out recall class 3 matches frozen workbook,PASS,5.551115123125783e-17,<1e-12,critical,False
+conspiracy,comment id non-null,PASS,0,0,high,False
+conspiracy,comment id unique,PASS,0,0,high,False
+conspiracy,comment-to-root join coverage,PASS,0,0,critical,False
+conspiracy,thread_size equals root plus linked descendant comments,PASS,0,0,high,False
+conspiracy,all observed-started roots have linked comments,PASS,0,0,high,False
+conspiracy,comment delays are non-negative,PASS,0,0,high,False
+conspiracy,cleaned comments precede coverage boundary,PASS,0,0,high,False
+crypto,root thread_id non-null,PASS,0,0,critical,False
+crypto,root thread_id unique,PASS,0,0,critical,False
+crypto,feature output preserves final cleaned roots exactly,PASS,True,True,critical,True
+crypto,reconstructed chronological test IDs and order match frozen enriched test,PASS,True,True,critical,True
+crypto,reconstructed test targets match frozen test_Y,PASS,True,True,critical,True
+crypto,held-out row counts reconcile across frozen artefacts,PASS,2964|2964|2964|2964,all equal,critical,True
+crypto,all cleaned root timestamps precede coverage boundary,PASS,0,0,critical,False
+crypto,Stage 1 saved predictions join one-to-one by held-out row index,PASS,True,True,critical,True
+crypto,Stage 2 saved predictions join one-to-one by held-out row index,PASS,True,True,critical,True
+crypto,Stage 2 CSV labels match saved y_test,PASS,True,True,critical,True
+crypto,Stage 2 labels reproduce from frozen bin edges,PASS,True,True,critical,True
+crypto,stage1 full held-out mcc matches frozen workbook,PASS,0.0,<1e-12,critical,False
+crypto,stage1 full held-out balanced_accuracy matches frozen workbook,PASS,0.0,<1e-12,critical,False
+crypto,stage1 full held-out recall class 0 matches frozen workbook,PASS,0.0,<1e-12,critical,False
+crypto,stage1 full held-out recall class 1 matches frozen workbook,PASS,0.0,<1e-12,critical,False
+crypto,stage2 full held-out mcc matches frozen workbook,PASS,0.0,<1e-12,critical,False
+crypto,stage2 full held-out balanced_accuracy matches frozen workbook,PASS,0.0,<1e-12,critical,False
+crypto,stage2 full held-out recall class 0 matches frozen workbook,PASS,0.0,<1e-12,critical,False
+crypto,stage2 full held-out recall class 1 matches frozen workbook,PASS,0.0,<1e-12,critical,False
+crypto,stage2 full held-out recall class 2 matches frozen workbook,PASS,5.551115123125783e-17,<1e-12,critical,False
+crypto,stage2 full held-out recall class 3 matches frozen workbook,PASS,2.7755575615628914e-17,<1e-12,critical,False
+crypto,comment id non-null,PASS,0,0,high,False
+crypto,comment id unique,PASS,0,0,high,False
+crypto,comment-to-root join coverage,PASS,0,0,critical,False
+crypto,thread_size equals root plus linked descendant comments,PASS,0,0,high,False
+crypto,all observed-started roots have linked comments,PASS,0,0,high,False
+crypto,comment delays are non-negative,PASS,0,0,high,False
+crypto,cleaned comments precede coverage boundary,PASS,0,0,high,False
+politics,root thread_id non-null,PASS,0,0,critical,False
+politics,root thread_id unique,PASS,0,0,critical,False
+politics,feature output preserves final cleaned roots exactly,PASS,True,True,critical,True
+politics,reconstructed chronological test IDs and order match frozen enriched test,PASS,True,True,critical,True
+politics,reconstructed test targets match frozen test_Y,PASS,True,True,critical,True
+politics,held-out row counts reconcile across frozen artefacts,PASS,13069|13069|13069|13069,all equal,critical,True
+politics,all cleaned root timestamps precede coverage boundary,PASS,0,0,critical,False
+politics,Stage 1 saved predictions join one-to-one by held-out row index,PASS,True,True,critical,True
+politics,Stage 2 saved predictions join one-to-one by held-out row index,PASS,True,True,critical,True
+politics,Stage 2 CSV labels match saved y_test,PASS,True,True,critical,True
+politics,Stage 2 labels reproduce from frozen bin edges,PASS,True,True,critical,True
+politics,stage1 full held-out mcc matches frozen workbook,PASS,0.0,<1e-12,critical,False
+politics,stage1 full held-out balanced_accuracy matches frozen workbook,PASS,0.0,<1e-12,critical,False
+politics,stage1 full held-out recall class 0 matches frozen workbook,PASS,0.0,<1e-12,critical,False
+politics,stage1 full held-out recall class 1 matches frozen workbook,PASS,0.0,<1e-12,critical,False
+politics,stage2 full held-out mcc matches frozen workbook,PASS,0.0,<1e-12,critical,False
+politics,stage2 full held-out balanced_accuracy matches frozen workbook,PASS,5.551115123125783e-17,<1e-12,critical,False
+politics,stage2 full held-out recall class 0 matches frozen workbook,PASS,0.0,<1e-12,critical,False
+politics,stage2 full held-out recall class 1 matches frozen workbook,PASS,0.0,<1e-12,critical,False
+politics,stage2 full held-out recall class 2 matches frozen workbook,PASS,5.551115123125783e-17,<1e-12,critical,False
+politics,stage2 full held-out recall class 3 matches frozen workbook,PASS,0.0,<1e-12,critical,False
+politics,comment id non-null,PASS,0,0,high,False
+politics,comment id unique,PASS,0,0,high,False
+politics,comment-to-root join coverage,PASS,0,0,critical,False
+politics,thread_size equals root plus linked descendant comments,PASS,0,0,high,False
+politics,all observed-started roots have linked comments,PASS,0,0,high,False
+politics,comment delays are non-negative,PASS,0,0,high,False
+politics,cleaned comments precede coverage boundary,PASS,0,0,high,False

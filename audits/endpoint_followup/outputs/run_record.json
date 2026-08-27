@@ -1,0 +1,14 @@
+{
+  "completed_utc": "2026-08-27T19:40:14.187723+00:00",
+  "script": "C:\\Users\\snuzz\\OneDrive\\Documents\\PhD\\reddit_analyses\\thread-size-1\\audits\\endpoint_followup\\audit_endpoint_followup.py",
+  "data_root": "\\\\sshfs\\cara@192.168.1.7\\Documents\\reddit_analyses\\thread-size",
+  "output_dir": "C:\\Users\\snuzz\\OneDrive\\Documents\\PhD\\reddit_analyses\\thread-size-1\\audits\\endpoint_followup\\outputs",
+  "repository_git_head": "1051e881a2d0fe4a9ae7886d2d3b2985d0da610a",
+  "python_version": "3.12.13 (main, Aug  7 2026, 02:26:41) [MSC v.1944 64 bit (AMD64)]",
+  "pandas_version": "3.0.1",
+  "numpy_version": "2.3.5",
+  "pyarrow_version": "21.0.0",
+  "hashes_skipped": false,
+  "models_loaded_or_fitted": false,
+  "predictions_regenerated": false
+}
