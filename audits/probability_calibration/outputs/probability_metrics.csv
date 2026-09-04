@@ -1,0 +1,61 @@
+subreddit,task,split,scope,metric,value,definition
+r/Conspiracy,thread initiation,chronological test,overall,Brier score,0.10449539619331151,mean((p-y)^2); lower is better
+r/Conspiracy,thread initiation,chronological test,overall,log loss,0.367931029109807,mean negative log probability of true label
+r/Conspiracy,thread initiation,chronological test,overall,AUC,0.7130901100743502,"ROC area; discrimination, not calibration"
+r/Conspiracy,thread initiation,chronological test,overall,ECE,0.026614831937954535,count-weighted absolute gap; 10 quantile bins
+r/Conspiracy,thread initiation,chronological test,overall,MCE,0.07459335169140091,maximum absolute gap; 10 quantile bins
+r/Conspiracy,four-class thread size,chronological test,overall,multiclass Brier score,0.69215380336032,mean row-wise sum of four squared errors; range 0-2
+r/Conspiracy,four-class thread size,chronological test,overall,normalized multiclass Brier,0.17303845084008,multiclass Brier divided by 4; mean per class
+r/Conspiracy,four-class thread size,chronological test,overall,log loss,1.2691668153795523,mean negative log probability of true class
+r/Conspiracy,four-class thread size,chronological test,class 0: Stalled,one-vs-rest Brier score,0.10780815285044341,mean((p_k-I[y=k])^2)
+r/Conspiracy,four-class thread size,chronological test,class 0: Stalled,ECE,0.03143162115998434,count-weighted absolute gap; 10 quantile bins
+r/Conspiracy,four-class thread size,chronological test,class 0: Stalled,MCE,0.06645321378673871,maximum absolute gap; 10 quantile bins
+r/Conspiracy,four-class thread size,chronological test,class 1: Small,one-vs-rest Brier score,0.2001534485180752,mean((p_k-I[y=k])^2)
+r/Conspiracy,four-class thread size,chronological test,class 1: Small,ECE,0.02555742035898339,count-weighted absolute gap; 10 quantile bins
+r/Conspiracy,four-class thread size,chronological test,class 1: Small,MCE,0.05139895655304361,maximum absolute gap; 10 quantile bins
+r/Conspiracy,four-class thread size,chronological test,class 2: Medium,one-vs-rest Brier score,0.19846993848979716,mean((p_k-I[y=k])^2)
+r/Conspiracy,four-class thread size,chronological test,class 2: Medium,ECE,0.016753580223347077,count-weighted absolute gap; 10 quantile bins
+r/Conspiracy,four-class thread size,chronological test,class 2: Medium,MCE,0.06274101231166224,maximum absolute gap; 10 quantile bins
+r/Conspiracy,four-class thread size,chronological test,class 3: Large,one-vs-rest Brier score,0.18572226350200424,mean((p_k-I[y=k])^2)
+r/Conspiracy,four-class thread size,chronological test,class 3: Large,ECE,0.027403413108267344,count-weighted absolute gap; 10 quantile bins
+r/Conspiracy,four-class thread size,chronological test,class 3: Large,MCE,0.10156667534821293,maximum absolute gap; 10 quantile bins
+r/CryptoCurrency,thread initiation,chronological test,overall,Brier score,0.16274855423543477,mean((p-y)^2); lower is better
+r/CryptoCurrency,thread initiation,chronological test,overall,log loss,0.5006121414293292,mean negative log probability of true label
+r/CryptoCurrency,thread initiation,chronological test,overall,AUC,0.8195229678695155,"ROC area; discrimination, not calibration"
+r/CryptoCurrency,thread initiation,chronological test,overall,ECE,0.02504466903593211,count-weighted absolute gap; 10 quantile bins
+r/CryptoCurrency,thread initiation,chronological test,overall,MCE,0.0583513503822054,maximum absolute gap; 10 quantile bins
+r/CryptoCurrency,four-class thread size,chronological test,overall,multiclass Brier score,0.5067425733182452,mean row-wise sum of four squared errors; range 0-2
+r/CryptoCurrency,four-class thread size,chronological test,overall,normalized multiclass Brier,0.1266856433295613,multiclass Brier divided by 4; mean per class
+r/CryptoCurrency,four-class thread size,chronological test,overall,log loss,0.966932584593264,mean negative log probability of true class
+r/CryptoCurrency,four-class thread size,chronological test,class 0: Stalled,one-vs-rest Brier score,0.16962886112708522,mean((p_k-I[y=k])^2)
+r/CryptoCurrency,four-class thread size,chronological test,class 0: Stalled,ECE,0.03460069195793966,count-weighted absolute gap; 10 quantile bins
+r/CryptoCurrency,four-class thread size,chronological test,class 0: Stalled,MCE,0.05768544820037795,maximum absolute gap; 10 quantile bins
+r/CryptoCurrency,four-class thread size,chronological test,class 1: Small,one-vs-rest Brier score,0.13413134053432377,mean((p_k-I[y=k])^2)
+r/CryptoCurrency,four-class thread size,chronological test,class 1: Small,ECE,0.035611747029655264,count-weighted absolute gap; 10 quantile bins
+r/CryptoCurrency,four-class thread size,chronological test,class 1: Small,MCE,0.10019081875766794,maximum absolute gap; 10 quantile bins
+r/CryptoCurrency,four-class thread size,chronological test,class 2: Medium,one-vs-rest Brier score,0.10213872443962894,mean((p_k-I[y=k])^2)
+r/CryptoCurrency,four-class thread size,chronological test,class 2: Medium,ECE,0.03494493332386703,count-weighted absolute gap; 10 quantile bins
+r/CryptoCurrency,four-class thread size,chronological test,class 2: Medium,MCE,0.12679483570231598,maximum absolute gap; 10 quantile bins
+r/CryptoCurrency,four-class thread size,chronological test,class 3: Large,one-vs-rest Brier score,0.10084364721720723,mean((p_k-I[y=k])^2)
+r/CryptoCurrency,four-class thread size,chronological test,class 3: Large,ECE,0.027649833105350376,count-weighted absolute gap; 10 quantile bins
+r/CryptoCurrency,four-class thread size,chronological test,class 3: Large,MCE,0.09109966903584772,maximum absolute gap; 10 quantile bins
+r/politics,thread initiation,chronological test,overall,Brier score,0.10310932960816208,mean((p-y)^2); lower is better
+r/politics,thread initiation,chronological test,overall,log loss,0.35029691706189026,mean negative log probability of true label
+r/politics,thread initiation,chronological test,overall,AUC,0.8880276889907148,"ROC area; discrimination, not calibration"
+r/politics,thread initiation,chronological test,overall,ECE,0.052745782712669685,count-weighted absolute gap; 10 quantile bins
+r/politics,thread initiation,chronological test,overall,MCE,0.14361995928661214,maximum absolute gap; 10 quantile bins
+r/politics,four-class thread size,chronological test,overall,multiclass Brier score,0.6031136611925714,mean row-wise sum of four squared errors; range 0-2
+r/politics,four-class thread size,chronological test,overall,normalized multiclass Brier,0.15077841529814284,multiclass Brier divided by 4; mean per class
+r/politics,four-class thread size,chronological test,overall,log loss,1.1303901000708998,mean negative log probability of true class
+r/politics,four-class thread size,chronological test,class 0: Stalled,one-vs-rest Brier score,0.10882525204899958,mean((p_k-I[y=k])^2)
+r/politics,four-class thread size,chronological test,class 0: Stalled,ECE,0.0720767109929468,count-weighted absolute gap; 10 quantile bins
+r/politics,four-class thread size,chronological test,class 0: Stalled,MCE,0.11829720957820733,maximum absolute gap; 10 quantile bins
+r/politics,four-class thread size,chronological test,class 1: Small,one-vs-rest Brier score,0.1623299353433187,mean((p_k-I[y=k])^2)
+r/politics,four-class thread size,chronological test,class 1: Small,ECE,0.020022044834945206,count-weighted absolute gap; 10 quantile bins
+r/politics,four-class thread size,chronological test,class 1: Small,MCE,0.04915338863869956,maximum absolute gap; 10 quantile bins
+r/politics,four-class thread size,chronological test,class 2: Medium,one-vs-rest Brier score,0.17085318418848985,mean((p_k-I[y=k])^2)
+r/politics,four-class thread size,chronological test,class 2: Medium,ECE,0.0411772732625558,count-weighted absolute gap; 10 quantile bins
+r/politics,four-class thread size,chronological test,class 2: Medium,MCE,0.06743729920575958,maximum absolute gap; 10 quantile bins
+r/politics,four-class thread size,chronological test,class 3: Large,one-vs-rest Brier score,0.16110528961176335,mean((p_k-I[y=k])^2)
+r/politics,four-class thread size,chronological test,class 3: Large,ECE,0.032066593325786416,count-weighted absolute gap; 10 quantile bins
+r/politics,four-class thread size,chronological test,class 3: Large,MCE,0.06290931452523674,maximum absolute gap; 10 quantile bins

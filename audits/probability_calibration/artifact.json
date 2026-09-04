@@ -1,0 +1,1463 @@
+{
+  "surface": "report",
+  "manifest": {
+    "version": 1,
+    "surface": "report",
+    "title": "Study 1 probability-calibration evidence audit",
+    "description": "Provenance-first audit of calibration evidence for six validated compact Study 1 models.",
+    "generatedAt": "2026-09-03T20:37:00.172945+00:00",
+    "cards": [],
+    "charts": [
+      {
+        "id": "binary_reliability_chart",
+        "title": "Binary held-out reliability by subreddit",
+        "subtitle": "Saved calibrated Started probabilities; ten quantile bins per subreddit.",
+        "type": "line",
+        "dataset": "binary_reliability",
+        "sourceId": "bins_source",
+        "encodings": {
+          "x": {
+            "field": "mean_predicted_probability",
+            "type": "quantitative",
+            "label": "Mean predicted probability"
+          },
+          "y": {
+            "field": "observed_fraction",
+            "type": "quantitative",
+            "label": "Observed fraction"
+          },
+          "color": {
+            "field": "subreddit",
+            "type": "nominal",
+            "label": "Subreddit"
+          }
+        },
+        "xAxisTitle": "Mean predicted probability",
+        "yAxisTitle": "Observed fraction",
+        "legend": {
+          "show": true
+        },
+        "layout": "full"
+      }
+    ],
+    "tables": [
+      {
+        "id": "config_table",
+        "title": "Validated final compact configurations",
+        "dataset": "configurations",
+        "sourceId": "config_source",
+        "defaultSort": {
+          "field": "subreddit",
+          "direction": "asc"
+        },
+        "columns": [
+          {
+            "field": "subreddit",
+            "label": "Subreddit",
+            "type": "text"
+          },
+          {
+            "field": "task",
+            "label": "Task",
+            "type": "text"
+          },
+          {
+            "field": "predictors",
+            "label": "Predictors",
+            "type": "number"
+          },
+          {
+            "field": "features",
+            "label": "Features",
+            "type": "text"
+          },
+          {
+            "field": "calibration",
+            "label": "Calibration",
+            "type": "text"
+          },
+          {
+            "field": "labels_or_ranges",
+            "label": "Labels / ranges",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "id": "evidence_table",
+        "title": "What survives for each selected model",
+        "dataset": "evidence",
+        "sourceId": "evidence_source",
+        "defaultSort": {
+          "field": "subreddit",
+          "direction": "asc"
+        },
+        "columns": [
+          {
+            "field": "subreddit",
+            "label": "Subreddit",
+            "type": "text"
+          },
+          {
+            "field": "task",
+            "label": "Task",
+            "type": "text"
+          },
+          {
+            "field": "calibrated_rows_labels",
+            "label": "Calibrated rows + labels",
+            "type": "boolean"
+          },
+          {
+            "field": "executed_test_curve_inputs",
+            "label": "Executed test curve inputs",
+            "type": "text"
+          },
+          {
+            "field": "surviving_test_plot",
+            "label": "Surviving test plot",
+            "type": "text"
+          },
+          {
+            "field": "matched_uncalibrated",
+            "label": "Matched uncalibrated",
+            "type": "text"
+          },
+          {
+            "field": "calibration_effect_identifiable",
+            "label": "Effect identifiable",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "id": "metrics_table",
+        "title": "Chronological-holdout probabilistic metrics",
+        "dataset": "metrics",
+        "sourceId": "metrics_source",
+        "defaultSort": {
+          "field": "subreddit",
+          "direction": "asc"
+        },
+        "columns": [
+          {
+            "field": "subreddit",
+            "label": "Subreddit",
+            "type": "text"
+          },
+          {
+            "field": "task",
+            "label": "Task",
+            "type": "text"
+          },
+          {
+            "field": "metric",
+            "label": "Metric",
+            "type": "text"
+          },
+          {
+            "field": "value",
+            "label": "Value",
+            "type": "number"
+          },
+          {
+            "field": "definition",
+            "label": "Definition",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "id": "curves_table",
+        "title": "Existing binary curve attribution and denominators",
+        "dataset": "curve_rows",
+        "sourceId": "curves_source",
+        "defaultSort": {
+          "field": "subreddit",
+          "direction": "asc"
+        },
+        "columns": [
+          {
+            "field": "subreddit",
+            "label": "Subreddit",
+            "type": "text"
+          },
+          {
+            "field": "surviving_plot",
+            "label": "Surviving plot",
+            "type": "text"
+          },
+          {
+            "field": "rule",
+            "label": "Rule",
+            "type": "text"
+          },
+          {
+            "field": "test_bins",
+            "label": "Test bins",
+            "type": "number"
+          },
+          {
+            "field": "test_n",
+            "label": "Test N",
+            "type": "number"
+          },
+          {
+            "field": "oof_bins",
+            "label": "OOF bins",
+            "type": "number"
+          },
+          {
+            "field": "oof_n",
+            "label": "OOF N",
+            "type": "number"
+          }
+        ]
+      },
+      {
+        "id": "validation_table",
+        "title": "Validation checks",
+        "dataset": "validation",
+        "sourceId": "checks_source",
+        "defaultSort": {
+          "field": "subreddit",
+          "direction": "asc"
+        },
+        "columns": [
+          {
+            "field": "subreddit",
+            "label": "Subreddit",
+            "type": "text"
+          },
+          {
+            "field": "task",
+            "label": "Task",
+            "type": "text"
+          },
+          {
+            "field": "check",
+            "label": "Check",
+            "type": "text"
+          },
+          {
+            "field": "status",
+            "label": "Status",
+            "type": "text"
+          },
+          {
+            "field": "detail",
+            "label": "Detail",
+            "type": "text"
+          }
+        ]
+      }
+    ],
+    "sources": [
+      {
+        "id": "report_text",
+        "label": "Detailed audit report",
+        "path": "report.md"
+      },
+      {
+        "id": "config_source",
+        "label": "Final model configurations",
+        "path": "outputs/final_model_configurations.csv",
+        "query": {
+          "engine": "duckdb",
+          "language": "sql",
+          "sql": "SELECT * FROM read_csv_auto('outputs/final_model_configurations.csv', header=true)",
+          "description": "Selected compact configuration reconciliation.",
+          "tables_used": [
+            "outputs/final_model_configurations.csv"
+          ],
+          "filters": [
+            "Aggregate audit outputs only; no row-level probabilities or identifiers"
+          ]
+        }
+      },
+      {
+        "id": "evidence_source",
+        "label": "Artefact survival matrix",
+        "path": "outputs/evidence_matrix.csv",
+        "query": {
+          "engine": "duckdb",
+          "language": "sql",
+          "sql": "SELECT * FROM read_csv_auto('outputs/evidence_matrix.csv', header=true)",
+          "description": "Matched probability, label, curve and uncalibrated evidence status.",
+          "tables_used": [
+            "outputs/evidence_matrix.csv"
+          ],
+          "filters": [
+            "Aggregate audit outputs only; no row-level probabilities or identifiers"
+          ]
+        }
+      },
+      {
+        "id": "metrics_source",
+        "label": "Held-out probability metrics",
+        "path": "outputs/probability_metrics.csv",
+        "query": {
+          "engine": "duckdb",
+          "language": "sql",
+          "sql": "SELECT * FROM read_csv_auto('outputs/probability_metrics.csv', header=true)",
+          "description": "Metrics calculated from saved calibrated probabilities and labels.",
+          "tables_used": [
+            "outputs/probability_metrics.csv"
+          ],
+          "filters": [
+            "Aggregate audit outputs only; no row-level probabilities or identifiers"
+          ]
+        }
+      },
+      {
+        "id": "bins_source",
+        "label": "Held-out reliability bins",
+        "path": "outputs/reliability_bins.csv",
+        "query": {
+          "engine": "duckdb",
+          "language": "sql",
+          "sql": "SELECT * FROM read_csv_auto('outputs/reliability_bins.csv', header=true)",
+          "description": "Ten-quantile-bin reliability calculations from saved calibrated rows.",
+          "tables_used": [
+            "outputs/reliability_bins.csv"
+          ],
+          "filters": [
+            "Aggregate audit outputs only; no row-level probabilities or identifiers"
+          ]
+        }
+      },
+      {
+        "id": "curves_source",
+        "label": "Existing curve provenance",
+        "path": "outputs/existing_curve_summary.csv",
+        "query": {
+          "engine": "duckdb",
+          "language": "sql",
+          "sql": "SELECT * FROM read_csv_auto('outputs/existing_curve_summary.csv', header=true)",
+          "description": "Executed binary curve binning, denominators and plot attribution.",
+          "tables_used": [
+            "outputs/existing_curve_summary.csv"
+          ],
+          "filters": [
+            "Aggregate audit outputs only; no row-level probabilities or identifiers"
+          ]
+        }
+      },
+      {
+        "id": "checks_source",
+        "label": "Validation checks",
+        "path": "outputs/validation_checks.csv",
+        "query": {
+          "engine": "duckdb",
+          "language": "sql",
+          "sql": "SELECT * FROM read_csv_auto('outputs/validation_checks.csv', header=true)",
+          "description": "Automated configuration, row, label and probability reconciliation checks.",
+          "tables_used": [
+            "outputs/validation_checks.csv"
+          ],
+          "filters": [
+            "Aggregate audit outputs only; no row-level probabilities or identifiers"
+          ]
+        }
+      },
+      {
+        "id": "inventory_source",
+        "label": "Checksummed source inventory",
+        "path": "outputs/source_inventory.csv",
+        "query": {
+          "engine": "duckdb",
+          "language": "sql",
+          "sql": "SELECT * FROM read_csv_auto('outputs/source_inventory.csv', header=true)",
+          "description": "Paths, roles, sizes, timestamps and SHA-256 hashes for source artefacts.",
+          "tables_used": [
+            "outputs/source_inventory.csv"
+          ],
+          "filters": [
+            "Aggregate audit outputs only; no row-level probabilities or identifiers"
+          ]
+        }
+      },
+      {
+        "id": "definitions",
+        "label": "Metric definitions",
+        "path": "metric_definitions.md"
+      }
+    ],
+    "blocks": [
+      {
+        "id": "title",
+        "type": "markdown",
+        "body": "# Study 1 probability-calibration evidence audit"
+      },
+      {
+        "id": "answer",
+        "type": "markdown",
+        "sourceId": "evidence_source",
+        "body": "## Technical summary\n\nCalibrated row-level probabilities and true labels survive for all six selected chronological holdouts. Matched uncalibrated probabilities survive for none, so calibration's effect is not identifiable. The existing binary PNGs show OOF training-population curves because they overwrite the test plots; no four-class reliability curve was generated by the original pipeline."
+      },
+      {
+        "id": "config_heading",
+        "type": "markdown",
+        "body": "## All six artefact sets reconcile to the published compact selections\n\nThe selected directories, predictor counts, features, labels and class ranges agree across publication selectors, workbooks, saved feature matrices and prediction files."
+      },
+      {
+        "id": "config",
+        "type": "table",
+        "tableId": "config_table",
+        "layout": "full"
+      },
+      {
+        "id": "evidence_heading",
+        "type": "markdown",
+        "body": "## Probability evidence survives; matched raw probabilities do not\n\nThe distinction is model-wide: empirical assessment of the retained calibrated probabilities is possible, but a before/after calibration comparison is not."
+      },
+      {
+        "id": "evidence",
+        "type": "table",
+        "tableId": "evidence_table",
+        "layout": "full"
+      },
+      {
+        "id": "visual_heading",
+        "type": "markdown",
+        "sourceId": "bins_source",
+        "body": "## Held-out reliability is measurable from retained rows\n\nThe chart shows the binary Started probability. The audit package provides separate print-oriented PNG/SVG figures for thread initiation and four-class thread size; the latter shows all four one-vs-rest classes."
+      },
+      {
+        "id": "visual",
+        "type": "chart",
+        "chartId": "binary_reliability_chart",
+        "layout": "full"
+      },
+      {
+        "id": "metrics_heading",
+        "type": "markdown",
+        "body": "## Probabilistic scores are descriptive, not causal calibration effects\n\nBrier score and log loss combine calibration with other properties of probabilistic predictions. ECE/MCE use a requested ten-quantile-bin rule; duplicate edges can reduce the realised non-empty count."
+      },
+      {
+        "id": "metrics",
+        "type": "table",
+        "tableId": "metrics_table",
+        "layout": "full"
+      },
+      {
+        "id": "curves_heading",
+        "type": "markdown",
+        "body": "## The surviving binary plots are OOF, not chronological test\n\nBoth curve coordinate sets survive, but the code writes both plots to the same filename. OOF observations are fold-held-out within the training population."
+      },
+      {
+        "id": "curves",
+        "type": "table",
+        "tableId": "curves_table",
+        "layout": "full"
+      },
+      {
+        "id": "methods",
+        "type": "markdown",
+        "sourceId": "report_text",
+        "body": "## Methodology\n\nThe audit used only saved artefacts. It matched split-local indices to preprocessing order and retained thread IDs; checked chronological separation, target derivations, configurations, probability ranges/simplexes, and threshold/argmax predictions; reproduced binary test curve coordinates; and calculated transparent held-out summaries. No model object was loaded or scored."
+      },
+      {
+        "id": "limits",
+        "type": "markdown",
+        "sourceId": "report_text",
+        "body": "## Limitations and robustness\n\nNo matched uncalibrated output survives. Stage 2 reliability diagrams are audit reconstructions rather than original pipeline plots. Bin-based gaps depend on the binning rule. This audit establishes internal artefact consistency and provenance, not external generalisability."
+      },
+      {
+        "id": "recommendation",
+        "type": "markdown",
+        "sourceId": "report_text",
+        "body": "## Chapter 4 recommendation\n\nAdd one compact appendix table and the two task-specific held-out figures, with a short Chapter 4 cross-reference. State calibration procedures and held-out diagnostics, but do not claim calibration improved the models. Do not reuse the existing binary PNGs as final-test plots. Thesis-safe Methods, appendix and viva wording is provided in `report.md`."
+      },
+      {
+        "id": "validation_heading",
+        "type": "markdown",
+        "body": "## Validation\n\nAll 45 automated reconciliation checks pass. Full checksums and calculation metadata remain in the package."
+      },
+      {
+        "id": "validation",
+        "type": "table",
+        "tableId": "validation_table",
+        "layout": "full"
+      },
+      {
+        "id": "further",
+        "type": "markdown",
+        "sourceId": "report_text",
+        "body": "## Further questions\n\nA future authorised reproducibility run should retain matched raw and calibrated probabilities, give test and OOF plots distinct filenames, and pre-specify multiclass calibration summaries."
+      }
+    ]
+  },
+  "snapshot": {
+    "version": 1,
+    "generatedAt": "2026-09-03T20:37:00.172945+00:00",
+    "status": "ready",
+    "datasets": {
+      "configurations": [
+        {
+          "subreddit": "r/Conspiracy",
+          "task": "thread initiation",
+          "predictors": 4,
+          "features": "author_freq | question_ratio | domain_freq | subject_length",
+          "calibration": "isotonic",
+          "labels_or_ranges": "0=Stalled (thread_size=1) | 1=Started (thread_size>1)"
+        },
+        {
+          "subreddit": "r/Conspiracy",
+          "task": "four-class thread size",
+          "predictors": 3,
+          "features": "author_freq | domain_freq | question_ratio",
+          "calibration": "sigmoid (one-vs-rest CalibratedClassifierCV)",
+          "labels_or_ranges": "Stalled=1 | Small=2-6 | Medium=7-19 | Large=>=20"
+        },
+        {
+          "subreddit": "r/CryptoCurrency",
+          "task": "thread initiation",
+          "predictors": 4,
+          "features": "author_freq | domain_freq | subject_length | question_ratio",
+          "calibration": "isotonic",
+          "labels_or_ranges": "0=Stalled (thread_size=1) | 1=Started (thread_size>1)"
+        },
+        {
+          "subreddit": "r/CryptoCurrency",
+          "task": "four-class thread size",
+          "predictors": 2,
+          "features": "author_freq | domain_freq",
+          "calibration": "sigmoid (one-vs-rest CalibratedClassifierCV)",
+          "labels_or_ranges": "Stalled=1 | Small=2-10 | Medium=11-32 | Large=>=33"
+        },
+        {
+          "subreddit": "r/politics",
+          "task": "thread initiation",
+          "predictors": 4,
+          "features": "domain_pagerank | author_freq | domain_freq | hour",
+          "calibration": "isotonic",
+          "labels_or_ranges": "0=Stalled (thread_size=1) | 1=Started (thread_size>1)"
+        },
+        {
+          "subreddit": "r/politics",
+          "task": "four-class thread size",
+          "predictors": 3,
+          "features": "domain_pagerank | domain_freq | author_freq",
+          "calibration": "sigmoid (one-vs-rest CalibratedClassifierCV)",
+          "labels_or_ranges": "Stalled=1 | Small=2-9 | Medium=10-30 | Large=>=31"
+        }
+      ],
+      "evidence": [
+        {
+          "subreddit": "r/Conspiracy",
+          "task": "thread initiation",
+          "calibrated_rows_labels": true,
+          "executed_test_curve_inputs": "yes",
+          "surviving_test_plot": "no; overwritten by OOF plot",
+          "matched_uncalibrated": "no",
+          "calibration_effect_identifiable": "no"
+        },
+        {
+          "subreddit": "r/Conspiracy",
+          "task": "four-class thread size",
+          "calibrated_rows_labels": true,
+          "executed_test_curve_inputs": "no",
+          "surviving_test_plot": "no",
+          "matched_uncalibrated": "no",
+          "calibration_effect_identifiable": "no"
+        },
+        {
+          "subreddit": "r/CryptoCurrency",
+          "task": "thread initiation",
+          "calibrated_rows_labels": true,
+          "executed_test_curve_inputs": "yes",
+          "surviving_test_plot": "no; overwritten by OOF plot",
+          "matched_uncalibrated": "no",
+          "calibration_effect_identifiable": "no"
+        },
+        {
+          "subreddit": "r/CryptoCurrency",
+          "task": "four-class thread size",
+          "calibrated_rows_labels": true,
+          "executed_test_curve_inputs": "no",
+          "surviving_test_plot": "no",
+          "matched_uncalibrated": "no",
+          "calibration_effect_identifiable": "no"
+        },
+        {
+          "subreddit": "r/politics",
+          "task": "thread initiation",
+          "calibrated_rows_labels": true,
+          "executed_test_curve_inputs": "yes",
+          "surviving_test_plot": "no; overwritten by OOF plot",
+          "matched_uncalibrated": "no",
+          "calibration_effect_identifiable": "no"
+        },
+        {
+          "subreddit": "r/politics",
+          "task": "four-class thread size",
+          "calibrated_rows_labels": true,
+          "executed_test_curve_inputs": "no",
+          "surviving_test_plot": "no",
+          "matched_uncalibrated": "no",
+          "calibration_effect_identifiable": "no"
+        }
+      ],
+      "metrics": [
+        {
+          "subreddit": "r/Conspiracy",
+          "task": "thread initiation",
+          "metric": "Brier score",
+          "value": 0.104495,
+          "definition": "mean((p-y)^2); lower is better"
+        },
+        {
+          "subreddit": "r/Conspiracy",
+          "task": "thread initiation",
+          "metric": "log loss",
+          "value": 0.367931,
+          "definition": "mean negative log probability of true label"
+        },
+        {
+          "subreddit": "r/Conspiracy",
+          "task": "thread initiation",
+          "metric": "AUC",
+          "value": 0.71309,
+          "definition": "ROC area; discrimination, not calibration"
+        },
+        {
+          "subreddit": "r/Conspiracy",
+          "task": "thread initiation",
+          "metric": "ECE",
+          "value": 0.026615,
+          "definition": "count-weighted absolute gap; 10 quantile bins"
+        },
+        {
+          "subreddit": "r/Conspiracy",
+          "task": "thread initiation",
+          "metric": "MCE",
+          "value": 0.074593,
+          "definition": "maximum absolute gap; 10 quantile bins"
+        },
+        {
+          "subreddit": "r/Conspiracy",
+          "task": "four-class thread size",
+          "metric": "multiclass Brier score",
+          "value": 0.692154,
+          "definition": "mean row-wise sum of four squared errors; range 0-2"
+        },
+        {
+          "subreddit": "r/Conspiracy",
+          "task": "four-class thread size",
+          "metric": "normalized multiclass Brier",
+          "value": 0.173038,
+          "definition": "multiclass Brier divided by 4; mean per class"
+        },
+        {
+          "subreddit": "r/Conspiracy",
+          "task": "four-class thread size",
+          "metric": "log loss",
+          "value": 1.269167,
+          "definition": "mean negative log probability of true class"
+        },
+        {
+          "subreddit": "r/CryptoCurrency",
+          "task": "thread initiation",
+          "metric": "Brier score",
+          "value": 0.162749,
+          "definition": "mean((p-y)^2); lower is better"
+        },
+        {
+          "subreddit": "r/CryptoCurrency",
+          "task": "thread initiation",
+          "metric": "log loss",
+          "value": 0.500612,
+          "definition": "mean negative log probability of true label"
+        },
+        {
+          "subreddit": "r/CryptoCurrency",
+          "task": "thread initiation",
+          "metric": "AUC",
+          "value": 0.819523,
+          "definition": "ROC area; discrimination, not calibration"
+        },
+        {
+          "subreddit": "r/CryptoCurrency",
+          "task": "thread initiation",
+          "metric": "ECE",
+          "value": 0.025045,
+          "definition": "count-weighted absolute gap; 10 quantile bins"
+        },
+        {
+          "subreddit": "r/CryptoCurrency",
+          "task": "thread initiation",
+          "metric": "MCE",
+          "value": 0.058351,
+          "definition": "maximum absolute gap; 10 quantile bins"
+        },
+        {
+          "subreddit": "r/CryptoCurrency",
+          "task": "four-class thread size",
+          "metric": "multiclass Brier score",
+          "value": 0.506743,
+          "definition": "mean row-wise sum of four squared errors; range 0-2"
+        },
+        {
+          "subreddit": "r/CryptoCurrency",
+          "task": "four-class thread size",
+          "metric": "normalized multiclass Brier",
+          "value": 0.126686,
+          "definition": "multiclass Brier divided by 4; mean per class"
+        },
+        {
+          "subreddit": "r/CryptoCurrency",
+          "task": "four-class thread size",
+          "metric": "log loss",
+          "value": 0.966933,
+          "definition": "mean negative log probability of true class"
+        },
+        {
+          "subreddit": "r/politics",
+          "task": "thread initiation",
+          "metric": "Brier score",
+          "value": 0.103109,
+          "definition": "mean((p-y)^2); lower is better"
+        },
+        {
+          "subreddit": "r/politics",
+          "task": "thread initiation",
+          "metric": "log loss",
+          "value": 0.350297,
+          "definition": "mean negative log probability of true label"
+        },
+        {
+          "subreddit": "r/politics",
+          "task": "thread initiation",
+          "metric": "AUC",
+          "value": 0.888028,
+          "definition": "ROC area; discrimination, not calibration"
+        },
+        {
+          "subreddit": "r/politics",
+          "task": "thread initiation",
+          "metric": "ECE",
+          "value": 0.052746,
+          "definition": "count-weighted absolute gap; 10 quantile bins"
+        },
+        {
+          "subreddit": "r/politics",
+          "task": "thread initiation",
+          "metric": "MCE",
+          "value": 0.14362,
+          "definition": "maximum absolute gap; 10 quantile bins"
+        },
+        {
+          "subreddit": "r/politics",
+          "task": "four-class thread size",
+          "metric": "multiclass Brier score",
+          "value": 0.603114,
+          "definition": "mean row-wise sum of four squared errors; range 0-2"
+        },
+        {
+          "subreddit": "r/politics",
+          "task": "four-class thread size",
+          "metric": "normalized multiclass Brier",
+          "value": 0.150778,
+          "definition": "multiclass Brier divided by 4; mean per class"
+        },
+        {
+          "subreddit": "r/politics",
+          "task": "four-class thread size",
+          "metric": "log loss",
+          "value": 1.13039,
+          "definition": "mean negative log probability of true class"
+        }
+      ],
+      "curve_rows": [
+        {
+          "subreddit": "r/Conspiracy",
+          "surviving_plot": "OOF training (overwrote test plot)",
+          "rule": "sklearn calibration_curve; n_bins=10; strategy=quantile",
+          "test_bins": 10,
+          "test_n": 2279,
+          "oof_bins": 10,
+          "oof_n": 9116
+        },
+        {
+          "subreddit": "r/CryptoCurrency",
+          "surviving_plot": "OOF training (overwrote test plot)",
+          "rule": "sklearn calibration_curve; n_bins=10; strategy=quantile",
+          "test_bins": 10,
+          "test_n": 2964,
+          "oof_bins": 10,
+          "oof_n": 11854
+        },
+        {
+          "subreddit": "r/politics",
+          "surviving_plot": "OOF training (overwrote test plot)",
+          "rule": "sklearn calibration_curve; n_bins=10; strategy=quantile",
+          "test_bins": 10,
+          "test_n": 13069,
+          "oof_bins": 10,
+          "oof_n": 52274
+        }
+      ],
+      "validation": [
+        {
+          "subreddit": "r/Conspiracy",
+          "task": "shared population",
+          "check": "chronological partition",
+          "status": "PASS",
+          "detail": "train end 2022-10-25 04:39:29; test start 2022-10-25 04:43:36"
+        },
+        {
+          "subreddit": "r/Conspiracy",
+          "task": "shared population",
+          "check": "split-local index maps to thread_id",
+          "status": "PASS",
+          "detail": "9116 train; 2279 test"
+        },
+        {
+          "subreddit": "r/Conspiracy",
+          "task": "thread initiation",
+          "check": "probability rows match holdout",
+          "status": "PASS",
+          "detail": "N=2279; split-local ordinal identifiers"
+        },
+        {
+          "subreddit": "r/Conspiracy",
+          "task": "thread initiation",
+          "check": "binary target derivation",
+          "status": "PASS",
+          "detail": "success equals 1(thread_size>1)"
+        },
+        {
+          "subreddit": "r/Conspiracy",
+          "task": "thread initiation",
+          "check": "probability validity",
+          "status": "PASS",
+          "detail": "range [0, 1]"
+        },
+        {
+          "subreddit": "r/Conspiracy",
+          "task": "thread initiation",
+          "check": "saved threshold predictions",
+          "status": "PASS",
+          "detail": "threshold=0.3658"
+        },
+        {
+          "subreddit": "r/Conspiracy",
+          "task": "thread initiation",
+          "check": "compact configuration",
+          "status": "PASS",
+          "detail": "author_freq | question_ratio | domain_freq | subject_length"
+        },
+        {
+          "subreddit": "r/Conspiracy",
+          "task": "thread initiation",
+          "check": "saved test curve inputs reproduce",
+          "status": "PASS",
+          "detail": "10 non-empty quantile bins"
+        },
+        {
+          "subreddit": "r/Conspiracy",
+          "task": "four-class thread size",
+          "check": "row identifiers",
+          "status": "PASS",
+          "detail": "N=2279; split-local ordinal identifiers"
+        },
+        {
+          "subreddit": "r/Conspiracy",
+          "task": "four-class thread size",
+          "check": "encoded targets match class ranges",
+          "status": "PASS",
+          "detail": "1 | 2-6 | 7-19 | >=20"
+        },
+        {
+          "subreddit": "r/Conspiracy",
+          "task": "four-class thread size",
+          "check": "CSV and Parquet probabilities match",
+          "status": "PASS",
+          "detail": "four columns, row-aligned"
+        },
+        {
+          "subreddit": "r/Conspiracy",
+          "task": "four-class thread size",
+          "check": "probability simplex",
+          "status": "PASS",
+          "detail": "max |sum(p)-1|=2.22e-16"
+        },
+        {
+          "subreddit": "r/Conspiracy",
+          "task": "four-class thread size",
+          "check": "saved predictions equal argmax",
+          "status": "PASS",
+          "detail": "CSV and Parquet agree"
+        },
+        {
+          "subreddit": "r/Conspiracy",
+          "task": "four-class thread size",
+          "check": "compact configuration",
+          "status": "PASS",
+          "detail": "author_freq | domain_freq | question_ratio"
+        },
+        {
+          "subreddit": "r/Conspiracy",
+          "task": "four-class thread size",
+          "check": "workbook bin definition recovered",
+          "status": "PASS",
+          "detail": "[np.float64(-0.001), np.float64(0.6921471805599453), np.float64(1.791759469228055), np.float64(2.9444389791664403), np.float64(7.729415779841042)]"
+        },
+        {
+          "subreddit": "r/CryptoCurrency",
+          "task": "shared population",
+          "check": "chronological partition",
+          "status": "PASS",
+          "detail": "train end 2022-10-25 14:12:51; test start 2022-10-25 14:13:07"
+        },
+        {
+          "subreddit": "r/CryptoCurrency",
+          "task": "shared population",
+          "check": "split-local index maps to thread_id",
+          "status": "PASS",
+          "detail": "11854 train; 2964 test"
+        },
+        {
+          "subreddit": "r/CryptoCurrency",
+          "task": "thread initiation",
+          "check": "probability rows match holdout",
+          "status": "PASS",
+          "detail": "N=2964; split-local ordinal identifiers"
+        },
+        {
+          "subreddit": "r/CryptoCurrency",
+          "task": "thread initiation",
+          "check": "binary target derivation",
+          "status": "PASS",
+          "detail": "success equals 1(thread_size>1)"
+        },
+        {
+          "subreddit": "r/CryptoCurrency",
+          "task": "thread initiation",
+          "check": "probability validity",
+          "status": "PASS",
+          "detail": "range [0, 1]"
+        },
+        {
+          "subreddit": "r/CryptoCurrency",
+          "task": "thread initiation",
+          "check": "saved threshold predictions",
+          "status": "PASS",
+          "detail": "threshold=0.5328"
+        },
+        {
+          "subreddit": "r/CryptoCurrency",
+          "task": "thread initiation",
+          "check": "compact configuration",
+          "status": "PASS",
+          "detail": "author_freq | domain_freq | subject_length | question_ratio"
+        },
+        {
+          "subreddit": "r/CryptoCurrency",
+          "task": "thread initiation",
+          "check": "saved test curve inputs reproduce",
+          "status": "PASS",
+          "detail": "10 non-empty quantile bins"
+        },
+        {
+          "subreddit": "r/CryptoCurrency",
+          "task": "four-class thread size",
+          "check": "row identifiers",
+          "status": "PASS",
+          "detail": "N=2964; split-local ordinal identifiers"
+        },
+        {
+          "subreddit": "r/CryptoCurrency",
+          "task": "four-class thread size",
+          "check": "encoded targets match class ranges",
+          "status": "PASS",
+          "detail": "1 | 2-10 | 11-32 | >=33"
+        },
+        {
+          "subreddit": "r/CryptoCurrency",
+          "task": "four-class thread size",
+          "check": "CSV and Parquet probabilities match",
+          "status": "PASS",
+          "detail": "four columns, row-aligned"
+        },
+        {
+          "subreddit": "r/CryptoCurrency",
+          "task": "four-class thread size",
+          "check": "probability simplex",
+          "status": "PASS",
+          "detail": "max |sum(p)-1|=2.22e-16"
+        },
+        {
+          "subreddit": "r/CryptoCurrency",
+          "task": "four-class thread size",
+          "check": "saved predictions equal argmax",
+          "status": "PASS",
+          "detail": "CSV and Parquet agree"
+        },
+        {
+          "subreddit": "r/CryptoCurrency",
+          "task": "four-class thread size",
+          "check": "compact configuration",
+          "status": "PASS",
+          "detail": "author_freq | domain_freq"
+        },
+        {
+          "subreddit": "r/CryptoCurrency",
+          "task": "four-class thread size",
+          "check": "workbook bin definition recovered",
+          "status": "PASS",
+          "detail": "[np.float64(-0.001), np.float64(0.6921471805599453), np.float64(2.302585092994046), np.float64(3.4657359027997265), np.float64(8.38283155348556)]"
+        },
+        {
+          "subreddit": "r/politics",
+          "task": "shared population",
+          "check": "chronological partition",
+          "status": "PASS",
+          "detail": "train end 2020-11-10 23:18:58; test start 2020-11-10 23:19:02"
+        },
+        {
+          "subreddit": "r/politics",
+          "task": "shared population",
+          "check": "split-local index maps to thread_id",
+          "status": "PASS",
+          "detail": "52274 train; 13069 test"
+        },
+        {
+          "subreddit": "r/politics",
+          "task": "thread initiation",
+          "check": "probability rows match holdout",
+          "status": "PASS",
+          "detail": "N=13069; split-local ordinal identifiers"
+        },
+        {
+          "subreddit": "r/politics",
+          "task": "thread initiation",
+          "check": "binary target derivation",
+          "status": "PASS",
+          "detail": "success equals 1(thread_size>1)"
+        },
+        {
+          "subreddit": "r/politics",
+          "task": "thread initiation",
+          "check": "probability validity",
+          "status": "PASS",
+          "detail": "range [0, 0.995455]"
+        },
+        {
+          "subreddit": "r/politics",
+          "task": "thread initiation",
+          "check": "saved threshold predictions",
+          "status": "PASS",
+          "detail": "threshold=0.5456"
+        },
+        {
+          "subreddit": "r/politics",
+          "task": "thread initiation",
+          "check": "compact configuration",
+          "status": "PASS",
+          "detail": "domain_pagerank | author_freq | domain_freq | hour"
+        },
+        {
+          "subreddit": "r/politics",
+          "task": "thread initiation",
+          "check": "saved test curve inputs reproduce",
+          "status": "PASS",
+          "detail": "10 non-empty quantile bins"
+        },
+        {
+          "subreddit": "r/politics",
+          "task": "four-class thread size",
+          "check": "row identifiers",
+          "status": "PASS",
+          "detail": "N=13069; split-local ordinal identifiers"
+        },
+        {
+          "subreddit": "r/politics",
+          "task": "four-class thread size",
+          "check": "encoded targets match class ranges",
+          "status": "PASS",
+          "detail": "1 | 2-9 | 10-30 | >=31"
+        },
+        {
+          "subreddit": "r/politics",
+          "task": "four-class thread size",
+          "check": "CSV and Parquet probabilities match",
+          "status": "PASS",
+          "detail": "four columns, row-aligned"
+        },
+        {
+          "subreddit": "r/politics",
+          "task": "four-class thread size",
+          "check": "probability simplex",
+          "status": "PASS",
+          "detail": "max |sum(p)-1|=2.22e-16"
+        },
+        {
+          "subreddit": "r/politics",
+          "task": "four-class thread size",
+          "check": "saved predictions equal argmax",
+          "status": "PASS",
+          "detail": "CSV and Parquet agree"
+        },
+        {
+          "subreddit": "r/politics",
+          "task": "four-class thread size",
+          "check": "compact configuration",
+          "status": "PASS",
+          "detail": "domain_pagerank | domain_freq | author_freq"
+        },
+        {
+          "subreddit": "r/politics",
+          "task": "four-class thread size",
+          "check": "workbook bin definition recovered",
+          "status": "PASS",
+          "detail": "[np.float64(-0.001), np.float64(0.6921471805599453), np.float64(2.1972245773362196), np.float64(3.4011973816621555), np.float64(9.620332585860503)]"
+        }
+      ],
+      "binary_reliability": [
+        {
+          "subreddit": "r/Conspiracy",
+          "bin": 1,
+          "mean_predicted_probability": 0.6174911861492268,
+          "observed_fraction": 0.5983263598326359,
+          "n": 239
+        },
+        {
+          "subreddit": "r/Conspiracy",
+          "bin": 2,
+          "mean_predicted_probability": 0.7832048134462137,
+          "observed_fraction": 0.8577981651376146,
+          "n": 218
+        },
+        {
+          "subreddit": "r/Conspiracy",
+          "bin": 3,
+          "mean_predicted_probability": 0.8000285816587774,
+          "observed_fraction": 0.8370044052863436,
+          "n": 227
+        },
+        {
+          "subreddit": "r/Conspiracy",
+          "bin": 4,
+          "mean_predicted_probability": 0.8136113363230747,
+          "observed_fraction": 0.8289473684210527,
+          "n": 228
+        },
+        {
+          "subreddit": "r/Conspiracy",
+          "bin": 5,
+          "mean_predicted_probability": 0.8294633994915508,
+          "observed_fraction": 0.8771929824561403,
+          "n": 228
+        },
+        {
+          "subreddit": "r/Conspiracy",
+          "bin": 6,
+          "mean_predicted_probability": 0.8486813636673383,
+          "observed_fraction": 0.8546255506607929,
+          "n": 227
+        },
+        {
+          "subreddit": "r/Conspiracy",
+          "bin": 7,
+          "mean_predicted_probability": 0.8714146088690712,
+          "observed_fraction": 0.8874458874458875,
+          "n": 231
+        },
+        {
+          "subreddit": "r/Conspiracy",
+          "bin": 8,
+          "mean_predicted_probability": 0.9093418140463586,
+          "observed_fraction": 0.9377777777777778,
+          "n": 225
+        },
+        {
+          "subreddit": "r/Conspiracy",
+          "bin": 9,
+          "mean_predicted_probability": 0.9449758974185934,
+          "observed_fraction": 0.9652173913043478,
+          "n": 230
+        },
+        {
+          "subreddit": "r/Conspiracy",
+          "bin": 10,
+          "mean_predicted_probability": 0.978164626555605,
+          "observed_fraction": 0.9823008849557522,
+          "n": 226
+        },
+        {
+          "subreddit": "r/CryptoCurrency",
+          "bin": 1,
+          "mean_predicted_probability": 0.07091061414461733,
+          "observed_fraction": 0.10702341137123746,
+          "n": 299
+        },
+        {
+          "subreddit": "r/CryptoCurrency",
+          "bin": 2,
+          "mean_predicted_probability": 0.15306265321226592,
+          "observed_fraction": 0.15932203389830507,
+          "n": 295
+        },
+        {
+          "subreddit": "r/CryptoCurrency",
+          "bin": 3,
+          "mean_predicted_probability": 0.19496234377820928,
+          "observed_fraction": 0.18791946308724833,
+          "n": 298
+        },
+        {
+          "subreddit": "r/CryptoCurrency",
+          "bin": 4,
+          "mean_predicted_probability": 0.22911477375009043,
+          "observed_fraction": 0.28716216216216217,
+          "n": 296
+        },
+        {
+          "subreddit": "r/CryptoCurrency",
+          "bin": 5,
+          "mean_predicted_probability": 0.2667856674211574,
+          "observed_fraction": 0.2755102040816326,
+          "n": 294
+        },
+        {
+          "subreddit": "r/CryptoCurrency",
+          "bin": 6,
+          "mean_predicted_probability": 0.316283211569081,
+          "observed_fraction": 0.2895622895622896,
+          "n": 297
+        },
+        {
+          "subreddit": "r/CryptoCurrency",
+          "bin": 7,
+          "mean_predicted_probability": 0.4194733533354784,
+          "observed_fraction": 0.46621621621621623,
+          "n": 296
+        },
+        {
+          "subreddit": "r/CryptoCurrency",
+          "bin": 8,
+          "mean_predicted_probability": 0.6916486496177946,
+          "observed_fraction": 0.75,
+          "n": 296
+        },
+        {
+          "subreddit": "r/CryptoCurrency",
+          "bin": 9,
+          "mean_predicted_probability": 0.8543518533569563,
+          "observed_fraction": 0.8543046357615894,
+          "n": 302
+        },
+        {
+          "subreddit": "r/CryptoCurrency",
+          "bin": 10,
+          "mean_predicted_probability": 0.9198765480400461,
+          "observed_fraction": 0.9175257731958762,
+          "n": 291
+        },
+        {
+          "subreddit": "r/politics",
+          "bin": 1,
+          "mean_predicted_probability": 0.021593799101853318,
+          "observed_fraction": 0.025436046511627907,
+          "n": 1376
+        },
+        {
+          "subreddit": "r/politics",
+          "bin": 2,
+          "mean_predicted_probability": 0.08980605226777426,
+          "observed_fraction": 0.13489499192245558,
+          "n": 1238
+        },
+        {
+          "subreddit": "r/politics",
+          "bin": 3,
+          "mean_predicted_probability": 0.47557272921300703,
+          "observed_fraction": 0.6191926884996192,
+          "n": 1313
+        },
+        {
+          "subreddit": "r/politics",
+          "bin": 4,
+          "mean_predicted_probability": 0.7216136181058763,
+          "observed_fraction": 0.8003072196620584,
+          "n": 1302
+        },
+        {
+          "subreddit": "r/politics",
+          "bin": 5,
+          "mean_predicted_probability": 0.7780601924798362,
+          "observed_fraction": 0.8399693721286371,
+          "n": 1306
+        },
+        {
+          "subreddit": "r/politics",
+          "bin": 6,
+          "mean_predicted_probability": 0.8189245982480022,
+          "observed_fraction": 0.8861726508785333,
+          "n": 1309
+        },
+        {
+          "subreddit": "r/politics",
+          "bin": 7,
+          "mean_predicted_probability": 0.8582998633353477,
+          "observed_fraction": 0.9133435582822086,
+          "n": 1304
+        },
+        {
+          "subreddit": "r/politics",
+          "bin": 8,
+          "mean_predicted_probability": 0.8920643879062328,
+          "observed_fraction": 0.9150726855394032,
+          "n": 1307
+        },
+        {
+          "subreddit": "r/politics",
+          "bin": 9,
+          "mean_predicted_probability": 0.9169393653231985,
+          "observed_fraction": 0.9443173150266971,
+          "n": 1311
+        },
+        {
+          "subreddit": "r/politics",
+          "bin": 10,
+          "mean_predicted_probability": 0.938930841150562,
+          "observed_fraction": 0.9623944742900997,
+          "n": 1303
+        }
+      ]
+    }
+  },
+  "sources": [
+    {
+      "id": "report_text",
+      "label": "Detailed audit report",
+      "path": "report.md"
+    },
+    {
+      "id": "config_source",
+      "label": "Final model configurations",
+      "path": "outputs/final_model_configurations.csv",
+      "query": {
+        "engine": "duckdb",
+        "language": "sql",
+        "sql": "SELECT * FROM read_csv_auto('outputs/final_model_configurations.csv', header=true)",
+        "description": "Selected compact configuration reconciliation.",
+        "tables_used": [
+          "outputs/final_model_configurations.csv"
+        ],
+        "filters": [
+          "Aggregate audit outputs only; no row-level probabilities or identifiers"
+        ]
+      }
+    },
+    {
+      "id": "evidence_source",
+      "label": "Artefact survival matrix",
+      "path": "outputs/evidence_matrix.csv",
+      "query": {
+        "engine": "duckdb",
+        "language": "sql",
+        "sql": "SELECT * FROM read_csv_auto('outputs/evidence_matrix.csv', header=true)",
+        "description": "Matched probability, label, curve and uncalibrated evidence status.",
+        "tables_used": [
+          "outputs/evidence_matrix.csv"
+        ],
+        "filters": [
+          "Aggregate audit outputs only; no row-level probabilities or identifiers"
+        ]
+      }
+    },
+    {
+      "id": "metrics_source",
+      "label": "Held-out probability metrics",
+      "path": "outputs/probability_metrics.csv",
+      "query": {
+        "engine": "duckdb",
+        "language": "sql",
+        "sql": "SELECT * FROM read_csv_auto('outputs/probability_metrics.csv', header=true)",
+        "description": "Metrics calculated from saved calibrated probabilities and labels.",
+        "tables_used": [
+          "outputs/probability_metrics.csv"
+        ],
+        "filters": [
+          "Aggregate audit outputs only; no row-level probabilities or identifiers"
+        ]
+      }
+    },
+    {
+      "id": "bins_source",
+      "label": "Held-out reliability bins",
+      "path": "outputs/reliability_bins.csv",
+      "query": {
+        "engine": "duckdb",
+        "language": "sql",
+        "sql": "SELECT * FROM read_csv_auto('outputs/reliability_bins.csv', header=true)",
+        "description": "Ten-quantile-bin reliability calculations from saved calibrated rows.",
+        "tables_used": [
+          "outputs/reliability_bins.csv"
+        ],
+        "filters": [
+          "Aggregate audit outputs only; no row-level probabilities or identifiers"
+        ]
+      }
+    },
+    {
+      "id": "curves_source",
+      "label": "Existing curve provenance",
+      "path": "outputs/existing_curve_summary.csv",
+      "query": {
+        "engine": "duckdb",
+        "language": "sql",
+        "sql": "SELECT * FROM read_csv_auto('outputs/existing_curve_summary.csv', header=true)",
+        "description": "Executed binary curve binning, denominators and plot attribution.",
+        "tables_used": [
+          "outputs/existing_curve_summary.csv"
+        ],
+        "filters": [
+          "Aggregate audit outputs only; no row-level probabilities or identifiers"
+        ]
+      }
+    },
+    {
+      "id": "checks_source",
+      "label": "Validation checks",
+      "path": "outputs/validation_checks.csv",
+      "query": {
+        "engine": "duckdb",
+        "language": "sql",
+        "sql": "SELECT * FROM read_csv_auto('outputs/validation_checks.csv', header=true)",
+        "description": "Automated configuration, row, label and probability reconciliation checks.",
+        "tables_used": [
+          "outputs/validation_checks.csv"
+        ],
+        "filters": [
+          "Aggregate audit outputs only; no row-level probabilities or identifiers"
+        ]
+      }
+    },
+    {
+      "id": "inventory_source",
+      "label": "Checksummed source inventory",
+      "path": "outputs/source_inventory.csv",
+      "query": {
+        "engine": "duckdb",
+        "language": "sql",
+        "sql": "SELECT * FROM read_csv_auto('outputs/source_inventory.csv', header=true)",
+        "description": "Paths, roles, sizes, timestamps and SHA-256 hashes for source artefacts.",
+        "tables_used": [
+          "outputs/source_inventory.csv"
+        ],
+        "filters": [
+          "Aggregate audit outputs only; no row-level probabilities or identifiers"
+        ]
+      }
+    },
+    {
+      "id": "definitions",
+      "label": "Metric definitions",
+      "path": "metric_definitions.md"
+    }
+  ]
+}

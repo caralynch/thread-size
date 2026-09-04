@@ -1,0 +1,18 @@
+{
+  "generated_utc": "2026-09-03T20:36:30.283055+00:00",
+  "script": "Scripts/audits/probability_calibration/audit_probability_calibration.py",
+  "python": "3.11.12 | packaged by conda-forge | (main, Apr 10 2025, 22:23:25) [GCC 13.3.0]",
+  "library_versions": {
+    "pandas": "2.2.3",
+    "numpy": "2.2.6",
+    "sklearn": "1.6.1",
+    "joblib": "1.5.1"
+  },
+  "scripts_git_commit": "1051e881a2d0fe4a9ae7886d2d3b2985d0da610a",
+  "models_loaded_or_scored": false,
+  "existing_pipeline_files_modified": false,
+  "scope": "three subreddits x two selected compact Study 1 tasks",
+  "checks_total": 45,
+  "checks_failed": 0,
+  "failed_checks": []
+}

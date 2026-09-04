@@ -1,0 +1,46 @@
+subreddit,task,check,status,detail
+r/Conspiracy,shared population,chronological partition,PASS,train end 2022-10-25 04:39:29; test start 2022-10-25 04:43:36
+r/Conspiracy,shared population,split-local index maps to thread_id,PASS,9116 train; 2279 test
+r/Conspiracy,thread initiation,probability rows match holdout,PASS,N=2279; split-local ordinal identifiers
+r/Conspiracy,thread initiation,binary target derivation,PASS,success equals 1(thread_size>1)
+r/Conspiracy,thread initiation,probability validity,PASS,"range [0, 1]"
+r/Conspiracy,thread initiation,saved threshold predictions,PASS,threshold=0.3658
+r/Conspiracy,thread initiation,compact configuration,PASS,author_freq | question_ratio | domain_freq | subject_length
+r/Conspiracy,thread initiation,saved test curve inputs reproduce,PASS,10 non-empty quantile bins
+r/Conspiracy,four-class thread size,row identifiers,PASS,N=2279; split-local ordinal identifiers
+r/Conspiracy,four-class thread size,encoded targets match class ranges,PASS,1 | 2-6 | 7-19 | >=20
+r/Conspiracy,four-class thread size,CSV and Parquet probabilities match,PASS,"four columns, row-aligned"
+r/Conspiracy,four-class thread size,probability simplex,PASS,max |sum(p)-1|=2.22e-16
+r/Conspiracy,four-class thread size,saved predictions equal argmax,PASS,CSV and Parquet agree
+r/Conspiracy,four-class thread size,compact configuration,PASS,author_freq | domain_freq | question_ratio
+r/Conspiracy,four-class thread size,workbook bin definition recovered,PASS,"[np.float64(-0.001), np.float64(0.6921471805599453), np.float64(1.791759469228055), np.float64(2.9444389791664403), np.float64(7.729415779841042)]"
+r/CryptoCurrency,shared population,chronological partition,PASS,train end 2022-10-25 14:12:51; test start 2022-10-25 14:13:07
+r/CryptoCurrency,shared population,split-local index maps to thread_id,PASS,11854 train; 2964 test
+r/CryptoCurrency,thread initiation,probability rows match holdout,PASS,N=2964; split-local ordinal identifiers
+r/CryptoCurrency,thread initiation,binary target derivation,PASS,success equals 1(thread_size>1)
+r/CryptoCurrency,thread initiation,probability validity,PASS,"range [0, 1]"
+r/CryptoCurrency,thread initiation,saved threshold predictions,PASS,threshold=0.5328
+r/CryptoCurrency,thread initiation,compact configuration,PASS,author_freq | domain_freq | subject_length | question_ratio
+r/CryptoCurrency,thread initiation,saved test curve inputs reproduce,PASS,10 non-empty quantile bins
+r/CryptoCurrency,four-class thread size,row identifiers,PASS,N=2964; split-local ordinal identifiers
+r/CryptoCurrency,four-class thread size,encoded targets match class ranges,PASS,1 | 2-10 | 11-32 | >=33
+r/CryptoCurrency,four-class thread size,CSV and Parquet probabilities match,PASS,"four columns, row-aligned"
+r/CryptoCurrency,four-class thread size,probability simplex,PASS,max |sum(p)-1|=2.22e-16
+r/CryptoCurrency,four-class thread size,saved predictions equal argmax,PASS,CSV and Parquet agree
+r/CryptoCurrency,four-class thread size,compact configuration,PASS,author_freq | domain_freq
+r/CryptoCurrency,four-class thread size,workbook bin definition recovered,PASS,"[np.float64(-0.001), np.float64(0.6921471805599453), np.float64(2.302585092994046), np.float64(3.4657359027997265), np.float64(8.38283155348556)]"
+r/politics,shared population,chronological partition,PASS,train end 2020-11-10 23:18:58; test start 2020-11-10 23:19:02
+r/politics,shared population,split-local index maps to thread_id,PASS,52274 train; 13069 test
+r/politics,thread initiation,probability rows match holdout,PASS,N=13069; split-local ordinal identifiers
+r/politics,thread initiation,binary target derivation,PASS,success equals 1(thread_size>1)
+r/politics,thread initiation,probability validity,PASS,"range [0, 0.995455]"
+r/politics,thread initiation,saved threshold predictions,PASS,threshold=0.5456
+r/politics,thread initiation,compact configuration,PASS,domain_pagerank | author_freq | domain_freq | hour
+r/politics,thread initiation,saved test curve inputs reproduce,PASS,10 non-empty quantile bins
+r/politics,four-class thread size,row identifiers,PASS,N=13069; split-local ordinal identifiers
+r/politics,four-class thread size,encoded targets match class ranges,PASS,1 | 2-9 | 10-30 | >=31
+r/politics,four-class thread size,CSV and Parquet probabilities match,PASS,"four columns, row-aligned"
+r/politics,four-class thread size,probability simplex,PASS,max |sum(p)-1|=2.22e-16
+r/politics,four-class thread size,saved predictions equal argmax,PASS,CSV and Parquet agree
+r/politics,four-class thread size,compact configuration,PASS,domain_pagerank | domain_freq | author_freq
+r/politics,four-class thread size,workbook bin definition recovered,PASS,"[np.float64(-0.001), np.float64(0.6921471805599453), np.float64(2.1972245773362196), np.float64(3.4011973816621555), np.float64(9.620332585860503)]"

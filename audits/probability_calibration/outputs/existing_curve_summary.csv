@@ -1,0 +1,4 @@
+subreddit,task,existing_plot_split,existing_plot_is_chronological_holdout,curve_rule,test_requested_bins,test_realized_nonempty_bins,test_denominator,oof_requested_bins,oof_realized_nonempty_bins,oof_denominator,attribution_basis
+r/Conspiracy,thread initiation,OOF training (overwrote test plot),False,sklearn calibration_curve; n_bins=10; strategy=quantile,10,10,2279,10,10,9116,source loop writes test then OOF to same PNG; mtimes follow that order
+r/CryptoCurrency,thread initiation,OOF training (overwrote test plot),False,sklearn calibration_curve; n_bins=10; strategy=quantile,10,10,2964,10,10,11854,source loop writes test then OOF to same PNG; mtimes follow that order
+r/politics,thread initiation,OOF training (overwrote test plot),False,sklearn calibration_curve; n_bins=10; strategy=quantile,10,10,13069,10,10,52274,source loop writes test then OOF to same PNG; mtimes follow that order
