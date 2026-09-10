@@ -1,0 +1,64 @@
+subreddit,category,check,status,detail
+r/Conspiracy,population,training count matches final preprocessing table,PASS,observed=9116; table=9116
+r/Conspiracy,population,held-out count matches final preprocessing table,PASS,observed=2279; table=2279
+r/Conspiracy,population,full count is exact train plus held-out,PASS,full=11395; train=9116; held-out=2279
+r/Conspiracy,population,split-local outcomes map exactly to retained thread IDs,PASS,"index, timestamp and thread_size agree in both splits"
+r/Conspiracy,population,chronological partitions are internally ordered and non-overlapping,PASS,train_end=2022-10-25 04:39:29; held_out_start=2022-10-25 04:43:36
+r/Conspiracy,population,final population equals raw eligible roots,PASS,"thread_id, timestamp and thread_size match exactly"
+r/Conspiracy,population,feature-construction output preserves raw eligible roots,PASS,"thread_id, timestamp and thread_size values match exactly; storage dtype may differ"
+r/Conspiracy,data quality,eligible root IDs are unique,PASS,unique=11395; rows=11395
+r/Conspiracy,data quality,retained comment IDs are unique,PASS,unique=365990; rows=365990
+r/Conspiracy,data quality,no retained comments point outside eligible roots,PASS,orphan_comments=0
+r/Conspiracy,definition,root-inclusive T equals one plus retained descendant count,PASS,mismatched_roots=0; comments=365990
+r/Conspiracy,definition,started/stalled indicator matches T,PASS,mismatched_roots=0
+r/Conspiracy,self-comments,retained root-author self-comments contribute to C,PASS,self_comments=30362; affected_roots=7275
+r/Conspiracy,class reconciliation,training class counts match selected-model class table,PASS,"recomputed=[1404, 2625, 2532, 2555]; workbook=[1404, 2625, 2532, 2555]"
+r/Conspiracy,class reconciliation,training class shares match thesis-facing publication table,PASS,max_abs_difference=5.55e-17
+r/Conspiracy,class reconciliation,held_out class counts match selected-model class table,PASS,"recomputed=[316, 706, 631, 626]; workbook=[316, 706, 631, 626]"
+r/Conspiracy,class reconciliation,held_out class shares match thesis-facing publication table,PASS,max_abs_difference=5.55e-17
+r/Conspiracy,class boundaries,positive-infinity top edge leaves training labels unchanged,PASS,finite_top=7.72941577984104; max_log_T=7.72841577984104; changed_rows=0
+r/Conspiracy,class boundaries,positive-infinity top edge leaves held_out labels unchanged,PASS,finite_top=7.72941577984104; max_log_T=7.10167597161944; changed_rows=0
+r/Conspiracy,leakage,stored lower boundaries reproduce from training labels only,PASS,"stored=[0.6921471805599453, 1.791759469228055, 2.9444389791664403]; training_recomputed=[0.6921471805599453, 1.791759469228055, 2.9444389791664403]"
+r/Conspiracy,leakage,held-out labels are not an input to lower-bound construction,PASS,2_tuning.py loads args.train_y only (lines 309-335); downstream tuning reuses stored bins; final evaluation can adjust only bins[-1]
+r/CryptoCurrency,population,training count matches final preprocessing table,PASS,observed=11854; table=11854
+r/CryptoCurrency,population,held-out count matches final preprocessing table,PASS,observed=2964; table=2964
+r/CryptoCurrency,population,full count is exact train plus held-out,PASS,full=14818; train=11854; held-out=2964
+r/CryptoCurrency,population,split-local outcomes map exactly to retained thread IDs,PASS,"index, timestamp and thread_size agree in both splits"
+r/CryptoCurrency,population,chronological partitions are internally ordered and non-overlapping,PASS,train_end=2022-10-25 14:12:51; held_out_start=2022-10-25 14:13:07
+r/CryptoCurrency,population,final population equals raw eligible roots,PASS,"thread_id, timestamp and thread_size match exactly"
+r/CryptoCurrency,population,feature-construction output preserves raw eligible roots,PASS,"thread_id, timestamp and thread_size values match exactly; storage dtype may differ"
+r/CryptoCurrency,data quality,eligible root IDs are unique,PASS,unique=14818; rows=14818
+r/CryptoCurrency,data quality,retained comment IDs are unique,PASS,unique=392671; rows=392671
+r/CryptoCurrency,data quality,no retained comments point outside eligible roots,PASS,orphan_comments=0
+r/CryptoCurrency,definition,root-inclusive T equals one plus retained descendant count,PASS,mismatched_roots=0; comments=392671
+r/CryptoCurrency,definition,started/stalled indicator matches T,PASS,mismatched_roots=0
+r/CryptoCurrency,self-comments,retained root-author self-comments contribute to C,PASS,self_comments=17742; affected_roots=3257
+r/CryptoCurrency,class reconciliation,training class counts match selected-model class table,PASS,"recomputed=[6356, 1835, 1853, 1810]; workbook=[6356, 1835, 1853, 1810]"
+r/CryptoCurrency,class reconciliation,training class shares match thesis-facing publication table,PASS,max_abs_difference=2.78e-17
+r/CryptoCurrency,class reconciliation,held_out class counts match selected-model class table,PASS,"recomputed=[1692, 510, 386, 376]; workbook=[1692, 510, 386, 376]"
+r/CryptoCurrency,class reconciliation,held_out class shares match thesis-facing publication table,PASS,max_abs_difference=2.78e-17
+r/CryptoCurrency,class boundaries,positive-infinity top edge leaves training labels unchanged,PASS,finite_top=8.38283155348556; max_log_T=8.38183155348556; changed_rows=0
+r/CryptoCurrency,class boundaries,positive-infinity top edge leaves held_out labels unchanged,PASS,finite_top=8.38283155348556; max_log_T=8.2995345703326; changed_rows=0
+r/CryptoCurrency,leakage,stored lower boundaries reproduce from training labels only,PASS,"stored=[0.6921471805599453, 2.302585092994046, 3.4657359027997265]; training_recomputed=[0.6921471805599453, 2.302585092994046, 3.4657359027997265]"
+r/CryptoCurrency,leakage,held-out labels are not an input to lower-bound construction,PASS,2_tuning.py loads args.train_y only (lines 309-335); downstream tuning reuses stored bins; final evaluation can adjust only bins[-1]
+r/politics,population,training count matches final preprocessing table,PASS,observed=52274; table=52274
+r/politics,population,held-out count matches final preprocessing table,PASS,observed=13069; table=13069
+r/politics,population,full count is exact train plus held-out,PASS,full=65343; train=52274; held-out=13069
+r/politics,population,split-local outcomes map exactly to retained thread IDs,PASS,"index, timestamp and thread_size agree in both splits"
+r/politics,population,chronological partitions are internally ordered and non-overlapping,PASS,train_end=2020-11-10 23:18:58; held_out_start=2020-11-10 23:19:02
+r/politics,population,final population equals raw eligible roots,PASS,"thread_id, timestamp and thread_size match exactly"
+r/politics,population,feature-construction output preserves raw eligible roots,PASS,"thread_id, timestamp and thread_size values match exactly; storage dtype may differ"
+r/politics,data quality,eligible root IDs are unique,PASS,unique=65343; rows=65343
+r/politics,data quality,retained comment IDs are unique,PASS,unique=3574447; rows=3574447
+r/politics,data quality,no retained comments point outside eligible roots,PASS,orphan_comments=0
+r/politics,definition,root-inclusive T equals one plus retained descendant count,PASS,mismatched_roots=0; comments=3574447
+r/politics,definition,started/stalled indicator matches T,PASS,mismatched_roots=0
+r/politics,self-comments,retained root-author self-comments contribute to C,PASS,self_comments=31881; affected_roots=14170
+r/politics,class reconciliation,training class counts match selected-model class table,PASS,"recomputed=[18814, 11717, 10816, 10927]; workbook=[18814, 11717, 10816, 10927]"
+r/politics,class reconciliation,training class shares match thesis-facing publication table,PASS,max_abs_difference=5.55e-17
+r/politics,class reconciliation,held_out class counts match selected-model class table,PASS,"recomputed=[3876, 2921, 3121, 3151]; workbook=[3876, 2921, 3121, 3151]"
+r/politics,class reconciliation,held_out class shares match thesis-facing publication table,PASS,max_abs_difference=2.78e-17
+r/politics,class boundaries,positive-infinity top edge leaves training labels unchanged,PASS,finite_top=9.6203325858605; max_log_T=9.6193325858605; changed_rows=0
+r/politics,class boundaries,positive-infinity top edge leaves held_out labels unchanged,PASS,finite_top=9.6203325858605; max_log_T=8.56598335558567; changed_rows=0
+r/politics,leakage,stored lower boundaries reproduce from training labels only,PASS,"stored=[0.6921471805599453, 2.1972245773362196, 3.4011973816621555]; training_recomputed=[0.6921471805599453, 2.1972245773362196, 3.4011973816621555]"
+r/politics,leakage,held-out labels are not an input to lower-bound construction,PASS,2_tuning.py loads args.train_y only (lines 309-335); downstream tuning reuses stored bins; final evaluation can adjust only bins[-1]

@@ -1,0 +1,15 @@
+{
+  "generated_utc": "2026-09-10T19:30:28.064748+00:00",
+  "scripts_git_commit": "1051e881a2d0fe4a9ae7886d2d3b2985d0da610a",
+  "python": "3.11.12 | packaged by conda-forge | (main, Apr 10 2025, 22:23:25) [GCC 13.3.0]",
+  "pandas": "2.2.3",
+  "numpy": "2.2.6",
+  "matplotlib": "3.10.9",
+  "openpyxl": "3.1.5",
+  "model_loaded_or_scored": false,
+  "writes_outside_audit_directory": false,
+  "quantile_method": "Hyndman-Fan type 7 / pandas linear interpolation",
+  "ccdf_definition": "survival_probability_ge = count(T >= t) / partition N for every observed unique integer t",
+  "validation_checks": 63,
+  "validation_failures": 0
+}
